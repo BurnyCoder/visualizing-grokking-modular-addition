@@ -1,6 +1,6 @@
 # pyproject.toml — project metadata, dependencies and tool configuration for the grokviz pipeline.
 # Global context: managed by uv (https://docs.astral.sh/uv/concepts/projects/config/); the build backend
-# uv_build packages src/grokviz so `uv run grokviz` works after `uv sync`.
+# uv_build packages src/grokviz so `uv run grokviz` works after `uv sync --extra cu130` (or `--extra cpu`).
 [project]
 name = "grokviz"
 version = "0.1.0"
@@ -11,8 +11,59 @@ authors = [
 ]
 license = "MIT"
 requires-python = ">=3.12"
-dependencies = []
+# Core numeric + IO stack used by every phase (torch comes from one of the accelerator extras below).
+dependencies = [
+    "numpy>=2.3",
+    "scipy>=1.16",
+    "python-dotenv>=1.1",
+    "safetensors>=0.6",
+    "huggingface-hub>=0.35",
+]
+
+# Accelerator extras: pick exactly one at sync time, e.g. `uv sync --extra cu130` (NVIDIA, CUDA 13.0)
+# or `uv sync --extra cpu` (CI / no GPU). Pattern from the uv PyTorch guide:
+# https://docs.astral.sh/uv/guides/integration/pytorch/#configuring-accelerators-with-optional-dependencies
+[project.optional-dependencies]
+cpu = ["torch>=2.14.1"]
+cu130 = ["torch>=2.14.1"]
+
+# Console entry point: `uv run grokviz --phases ...` dispatches to the pipeline wrapper.
+[project.scripts]
+grokviz = "grokviz.__main__:main"
+
+[dependency-groups]
+dev = ["pytest>=8.4"]
 
 [build-system]
 requires = ["uv_build>=0.13.0,<0.14.0"]
 build-backend = "uv_build"
+
+[tool.uv]
+# The two accelerator extras install different torch builds, so they must never be combined.
+conflicts = [[{ extra = "cpu" }, { extra = "cu130" }]]
+
+[tool.uv.sources]
+torch = [
+    { index = "pytorch-cpu", extra = "cpu" },
+    { index = "pytorch-cu130", extra = "cu130" },
+]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[[tool.uv.index]]
+name = "pytorch-cu130"
+url = "https://download.pytorch.org/whl/cu130"
+explicit = true
+
+[tool.pytest.ini_options]
+# Only collect our tests (never the notebooks submodule); markers gate slow/hardware/network tests.
+testpaths = ["tests"]
+markers = [
+    "gpu: needs a CUDA GPU",
+    "slow: takes more than ~30 s",
+    "network: downloads from the internet",
+    "browser: drives a headless browser (Playwright)",
+]

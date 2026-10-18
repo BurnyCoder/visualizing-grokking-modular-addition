@@ -13,9 +13,14 @@ from __future__ import annotations  # postponed annotations
 import logging  # pipeline-level logger
 from typing import Callable  # type of phase functions
 
+from grokviz.checkpoint_metrics import compute_checkpoint_metrics  # curves over training
 from grokviz.context import PipelineContext  # uniform phase argument
 from grokviz.envcheck import check_environment  # phase 1: environment and device check
+from grokviz.geometry import compute_geometry  # activation / output geometry frames
+from grokviz.gradients import compute_gradient_dynamics  # exact full-batch gradients per checkpoint
 from grokviz.logs import phase_timer  # start/done/elapsed logging around each phase
+from grokviz.phases import detect_phases  # objective phase boundaries
+from grokviz.rchecks import validate_against_paper  # reproduce paper/ARENA numbers
 from grokviz.sources import acquire_paper_sources, convert_paper_run, validate_paper_run  # paper run
 
 log = logging.getLogger("grokviz.pipeline")  # logger for the wrapper itself
@@ -26,6 +31,11 @@ PHASES: dict[str, Callable[[PipelineContext], None]] = {
     "acquire_paper_sources": acquire_paper_sources,  # pinned HF checkpoint + arXiv PDFs (sha-checked)
     "convert_paper_run": convert_paper_run,  # → runs/paper/ in our run format
     "validate_paper_run": validate_paper_run,  # recomputed losses must match the logged ones
+    "validate_against_paper": validate_against_paper,  # R-checks on the epoch-40k model
+    "compute_checkpoint_metrics": compute_checkpoint_metrics,  # every metric at every checkpoint
+    "compute_gradient_dynamics": compute_gradient_dynamics,  # what the gradients point at, over training
+    "compute_geometry": compute_geometry,  # circles, PCA, output-distribution geometry
+    "detect_phases": detect_phases,  # memorisation / circuit formation / cleanup boundaries
 }
 
 

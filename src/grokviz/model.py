@@ -121,8 +121,14 @@ class GrokTransformer(nn.Module):
         tokens: torch.Tensor,
         hooks: dict[str, Hook] | None = None,
         cache: dict[str, torch.Tensor] | None = None,
+        last_only: bool = False,
     ) -> torch.Tensor:
-        """Map tokens [batch, n_ctx] to logits [batch, n_ctx, d_vocab], applying/recording named hooks."""
+        """Map tokens [batch, n_ctx] to logits [batch, n_ctx, d_vocab], applying/recording named hooks.
+
+        last_only=True computes the final block's MLP and the unembedding only at the last ('=') position and
+        returns logits [batch, 1, d_vocab]. Training reads only that position, and positions 0-1 of the final
+        MLP feed nothing else, so loss and gradients are unchanged while ~2/3 of the MLP compute is skipped.
+        """
 
         def h(name: str, x: torch.Tensor) -> torch.Tensor:
             """Hook point: optionally replace `x` (intervention), optionally record it (cache)."""
@@ -153,6 +159,8 @@ class GrokTransformer(nn.Module):
             z_flat = z.permute(0, 2, 1, 3).reshape(z.shape[0], n, -1)  # [batch, pos, head*d_head] ('b q (i h)')
             attn_out = h(f"{pre}.attn_out", torch.einsum("df,bqf->bqd", a.W_O, z_flat))  # write back to d_model
             x = h(f"{pre}.resid_mid", x + attn_out)  # residual connection around attention
+            if last_only and i == len(self.blocks) - 1:
+                x = x[:, -1:]  # only the '=' position influences the training loss from here on
             m = block.mlp
             pre_act = h(f"{pre}.mlp.pre", torch.einsum("md,bpd->bpm", m.W_in, x) + m.b_in)  # neuron inputs
             post = h(f"{pre}.mlp.post", F.relu(pre_act))  # neuron activations (ReLU)

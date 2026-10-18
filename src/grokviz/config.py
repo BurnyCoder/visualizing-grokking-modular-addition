@@ -84,6 +84,7 @@ class Config:
     ckpt_every: int = _setting("GROKVIZ_CKPT_EVERY", int)  # parameter snapshot interval
     optim_every: int = _setting("GROKVIZ_OPTIM_EVERY", int)  # Adam-moment snapshot interval
     norms_every: int = _setting("GROKVIZ_NORMS_EVERY", int)  # per-parameter norm logging interval
+    test_every: int = _setting("GROKVIZ_TEST_EVERY", int)  # test loss/accuracy logging interval
     # --- run matrix ---
     wd1_seeds: list = _setting("GROKVIZ_WD1_SEEDS", parse_seed_list)  # confirmatory runs (λ = 1)
     wd0_seeds: list = _setting("GROKVIZ_WD0_SEEDS", parse_seed_list)  # control: no weight decay

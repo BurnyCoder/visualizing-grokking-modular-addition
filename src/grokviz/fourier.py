@@ -122,5 +122,5 @@ def gini(values: torch.Tensor) -> float:
     total = c.sum()
     if total == 0:  # all-zero vector: define as perfectly spread
         return 0.0
-    k = torch.arange(1, n + 1, dtype=torch.float64)  # ranks 1..N
+    k = torch.arange(1, n + 1, dtype=torch.float64, device=c.device)  # ranks 1..N, on the input's device
     return float(1 - 2 * torch.sum((c / total) * (n - k + 0.5) / n))

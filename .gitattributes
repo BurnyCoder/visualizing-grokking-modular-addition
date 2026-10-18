@@ -1,0 +1,16 @@
+# .gitattributes — line-ending and binary handling for every tracked file.
+# Global context: the repo is developed on Windows but built on Linux CI (GitHub Actions),
+# so text files are normalized to LF and binary formats are never diffed or converted.
+# Syntax: https://git-scm.com/docs/gitattributes
+
+# Normalize all text files to LF in the repository and working tree.
+* text=auto eol=lf
+
+# Binary formats: no line-ending conversion, no textual diff.
+*.pdf binary
+*.png binary
+*.jpg binary
+*.bin binary
+*.safetensors binary
+*.woff2 binary
+*.ttf binary

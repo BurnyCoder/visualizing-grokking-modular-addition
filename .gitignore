@@ -1,0 +1,27 @@
+# .gitignore — files git must never track.
+# Global context: large generated artifacts (training runs, site data, logs) are published to
+# Hugging Face instead of git (see docs/deployment.md), and secrets live only in a local .env.
+# Pattern syntax: https://git-scm.com/docs/gitignore
+
+# ---- Python / uv virtual environment and bytecode caches ----
+.venv/
+__pycache__/
+*.py[oc]
+.pytest_cache/
+
+# ---- Secrets: the real .env holds tokens and machine-specific settings (.env.example is tracked) ----
+.env
+
+# ---- Generated artifacts (reproducible from the pipeline; mirrored on Hugging Face) ----
+runs/
+data/
+site/
+logs/
+
+# ---- Copyrighted paper PDF at the repo root (arXiv non-exclusive license: link it, never re-host) ----
+/paper.pdf
+
+# ---- Tooling leftovers ----
+node_modules/
+.ipynb_checkpoints/
+test-results/

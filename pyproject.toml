@@ -1,0 +1,18 @@
+# pyproject.toml — project metadata, dependencies and tool configuration for the grokviz pipeline.
+# Global context: managed by uv (https://docs.astral.sh/uv/concepts/projects/config/); the build backend
+# uv_build packages src/grokviz so `uv run grokviz` works after `uv sync`.
+[project]
+name = "grokviz"
+version = "0.1.0"
+description = "Train, analyse and visualize the transformer that groks modular addition (Nanda et al. 2023)."
+readme = "README.md"
+authors = [
+    { name = "Libor Burian (BurnyCoder)", email = "happymancz@email.cz" }
+]
+license = "MIT"
+requires-python = ">=3.12"
+dependencies = []
+
+[build-system]
+requires = ["uv_build>=0.13.0,<0.14.0"]
+build-backend = "uv_build"

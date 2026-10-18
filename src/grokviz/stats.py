@@ -63,7 +63,9 @@ def holm(pvalues: dict[str, float], alpha: float = 0.05) -> dict[str, dict]:
 
 def sign_test_power(n: int, true_rate: float, alpha: float) -> float:
     """Power of the one-sided exact sign test with n seeds when each seed agrees with probability true_rate."""
-    crit = next(k for k in range(n + 1) if stats.binom.sf(k - 1, n, 0.5) <= alpha)  # smallest k with P(X ≥ k) ≤ α
+    crit = next((k for k in range(n + 1) if stats.binom.sf(k - 1, n, 0.5) <= alpha), None)  # smallest k with P(X ≥ k) ≤ α
+    if crit is None:  # even n/n agreeing seeds cannot reach significance (e.g. n = 5 at α = 0.01)
+        return 0.0
     return float(stats.binom.sf(crit - 1, n, true_rate))
 
 

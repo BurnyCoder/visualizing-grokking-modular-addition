@@ -22,6 +22,7 @@ from grokviz.logs import phase_timer  # start/done/elapsed logging around each p
 from grokviz.phases import detect_phases  # objective phase boundaries
 from grokviz.rchecks import validate_against_paper  # reproduce paper/ARENA numbers
 from grokviz.sources import acquire_paper_sources, convert_paper_run, validate_paper_run  # paper run
+from grokviz.train import train_all_runs  # our own runs (seeds + controls), trained together
 
 log = logging.getLogger("grokviz.pipeline")  # logger for the wrapper itself
 
@@ -32,6 +33,7 @@ PHASES: dict[str, Callable[[PipelineContext], None]] = {
     "convert_paper_run": convert_paper_run,  # → runs/paper/ in our run format
     "validate_paper_run": validate_paper_run,  # recomputed losses must match the logged ones
     "validate_against_paper": validate_against_paper,  # R-checks on the epoch-40k model
+    "train_all_runs": train_all_runs,  # 22 preregistered runs (docs/preregistration.md)
     "compute_checkpoint_metrics": compute_checkpoint_metrics,  # every metric at every checkpoint
     "compute_gradient_dynamics": compute_gradient_dynamics,  # what the gradients point at, over training
     "compute_geometry": compute_geometry,  # circles, PCA, output-distribution geometry

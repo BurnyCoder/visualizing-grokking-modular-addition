@@ -94,7 +94,8 @@ class Config:
     paper_hf_file: str = _setting("GROKVIZ_PAPER_HF_FILE", str)
     paper_hf_revision: str = _setting("GROKVIZ_PAPER_HF_REVISION", str)
     paper_sha256: str = _setting("GROKVIZ_PAPER_SHA256", str)
-    paper_pdf_url: str = _setting("GROKVIZ_PAPER_PDF_URL", str)
+    paper_pdf_url: str = _setting("GROKVIZ_PAPER_PDF_URL", str)  # Nanda et al. 2023 (quote checking only)
+    power_pdf_url: str = _setting("GROKVIZ_POWER_PDF_URL", str)  # Power et al. 2022 (quote checking only)
     # --- Hugging Face publishing ---
     hf_runs_repo: str = _setting("GROKVIZ_HF_RUNS_REPO", str)
     hf_site_data_repo: str = _setting("GROKVIZ_HF_SITE_DATA_REPO", str)

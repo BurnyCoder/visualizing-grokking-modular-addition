@@ -16,12 +16,16 @@ from typing import Callable  # type of phase functions
 from grokviz.context import PipelineContext  # uniform phase argument
 from grokviz.envcheck import check_environment  # phase 1: environment and device check
 from grokviz.logs import phase_timer  # start/done/elapsed logging around each phase
+from grokviz.sources import acquire_paper_sources, convert_paper_run, validate_paper_run  # paper run
 
 log = logging.getLogger("grokviz.pipeline")  # logger for the wrapper itself
 
 # Ordered registry: execution order is the order of this dict (dicts preserve insertion order).
 PHASES: dict[str, Callable[[PipelineContext], None]] = {
-    "check_environment": check_environment,
+    "check_environment": check_environment,  # versions, GPU, determinism settings
+    "acquire_paper_sources": acquire_paper_sources,  # pinned HF checkpoint + arXiv PDFs (sha-checked)
+    "convert_paper_run": convert_paper_run,  # → runs/paper/ in our run format
+    "validate_paper_run": validate_paper_run,  # recomputed losses must match the logged ones
 }
 
 

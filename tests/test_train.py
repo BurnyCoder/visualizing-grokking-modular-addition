@@ -104,6 +104,20 @@ def test_first_step_has_zero_learning_rate_and_format(batched_runs):
     assert not (out / "a" / "_tmp").exists() and (out / "a" / "optim.safetensors").exists()
 
 
+def test_resumed_training_is_bitwise_identical(cfg, device, tmp_path):
+    """Crash after 40 steps (resume state saved every 20), resume, finish 60 → identical to an uninterrupted run."""
+    specs = [RunSpec("r1", "wd1", 2, 2, 1.0), RunSpec("r2", "wd0", 3, 3, 0.0)]
+    train_runs(cfg, specs, device, tmp_path / "straight", num_steps=60, resume_every=20)
+    train_runs(cfg, specs, device, tmp_path / "crashy", num_steps=60, resume_every=20, stop_after=40)
+    assert not (tmp_path / "crashy" / "r1" / "meta.json").exists()  # the "crash" left an unfinished run
+    train_runs(cfg, specs, device, tmp_path / "crashy", num_steps=60, resume_every=20)  # resumes at step 40
+    for rid in ("r1", "r2"):
+        a, b = RunStore(tmp_path / "straight" / rid), RunStore(tmp_path / "crashy" / rid)
+        assert all(torch.equal(a.state_dict(t)[k], b.state_dict(t)[k]) for t in range(len(a.ckpt_steps)) for k in a.state_dict(0))
+        assert np.array_equal(a.curves()["train_loss"], b.curves()["train_loss"])
+    assert not (tmp_path / "crashy" / "_resume").exists()
+
+
 def test_training_is_bitwise_deterministic(cfg, device, tmp_path):
     """Two identical batched trainings give identical weights."""
     specs = [RunSpec("d", "wd1", 3, 3, 1.0), RunSpec("e", "wd1", 4, 4, 1.0)]

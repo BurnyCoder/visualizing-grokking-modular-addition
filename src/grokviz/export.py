@@ -88,9 +88,10 @@ def export_run(root: Path, store: RunStore, p: int, weight_every: int | None) ->
     tr_steps = c.get("train_loss_steps", np.arange(len(c["train_loss"])))
     sel = tr_steps % 10 == 0
     w.add("curve_train_loss", c["train_loss"][sel], "train loss (training objective) every 10 steps", step0=0, step_every=10)
-    te_steps = c.get("test_loss_steps", np.arange(len(c["test_loss"])) * 10)
-    te_sel = te_steps % 10 == 0
-    w.add("curve_test_loss", c["test_loss"][te_sel], "test loss every 10 steps", step0=0, step_every=10)
+    te_steps = c.get("test_loss_steps", np.arange(len(c["test_loss"])) * 10)  # paper run: logged every 10 epochs
+    every = max(10, int(te_steps[1] - te_steps[0])) if len(te_steps) > 1 else 10  # coarser if GROKVIZ_TEST_EVERY > 10
+    te_sel = te_steps % every == 0
+    w.add("curve_test_loss", c["test_loss"][te_sel], f"test loss every {every} steps", step0=0, step_every=every)
     # Per-checkpoint metrics.
     w.add("ckpt_scalars", np.stack([m[k] for k in SCALAR_COLUMNS], 1), "per-checkpoint scalar metrics", columns=SCALAR_COLUMNS)
     w.add("excl_per_freq", m["excl_per_freq"], "excluded loss (train) removing one frequency k=1..56")
@@ -153,7 +154,7 @@ def export_site_data(ctx: PipelineContext) -> None:
         shutil.rmtree(root)
     root.mkdir(parents=True, exist_ok=True)
     runs = []
-    for run_dir in run_dirs(ctx):
+    for run_dir in run_dirs(ctx, all_runs=True):  # the manifest lists every run, whatever --runs says
         if not (run_dir / "analysis" / "ckpt_metrics.npz").exists():
             continue
         store = RunStore(run_dir)

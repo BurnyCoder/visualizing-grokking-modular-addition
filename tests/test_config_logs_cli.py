@@ -90,3 +90,14 @@ def test_auto_device_is_blackwell_gpu():
     device = resolve_device("auto")
     assert device.type == "cuda"
     assert torch.cuda.get_device_capability(device) == (12, 0)
+
+
+def test_run_filter_matches_ids_and_groups_not_number_prefixes(tmp_path):
+    """--runs wd1 selects the whole group; --runs wd1_s1 selects exactly that run (not wd1_s10)."""
+    from grokviz.context import PipelineContext
+
+    cfg = config_module.load_config()
+    ctx = PipelineContext(cfg, tmp_path / "x.log", runs=["wd1_s1", "split0"])
+    assert ctx.wants("wd1_s1") and not ctx.wants("wd1_s10") and ctx.wants("split0_init100") and not ctx.wants("paper")
+    assert PipelineContext(cfg, tmp_path / "x.log", runs=["wd1"]).wants("wd1_s10")
+    assert PipelineContext(cfg, tmp_path / "x.log").wants("anything")

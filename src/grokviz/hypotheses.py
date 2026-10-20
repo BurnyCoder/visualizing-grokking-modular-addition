@@ -125,7 +125,9 @@ def evaluate_hypotheses(runs: list[dict]) -> dict:
         t1, t2 = ph["t1"], ph["t2"]
         t_test = _drop_time(m["steps"], m["loss_test"], t1) if t1 else None
         t_restr = _drop_time(m["steps"], m["restricted_loss"], t1) if t1 else None
-        delta = None if t_restr is None else (float("inf") if t_test is None else t_test - t_restr)
+        # Δ = t_test − t_restr; if the test loss never drops 10× but the restricted loss does, Δ is +∞ (H1 holds),
+        # stored as None so the JSON stays standard (H1_ok below keeps the +∞ meaning)
+        delta = None if (t_restr is None or t_test is None) else t_test - t_restr
         i1 = int(np.searchsorted(m["steps"], t1)) if t1 else None
         i2 = int(np.searchsorted(m["steps"], t2)) if t2 else None
         excl_ratio = float(m["excluded_loss"][i2] / m["excluded_loss"][i1]) if (i1 is not None and i2 is not None) else None
@@ -136,7 +138,7 @@ def evaluate_hypotheses(runs: list[dict]) -> dict:
         nonkey_max = float(max(single[k - 1] for k in range(1, len(single) + 1) if k not in keys))
         keep_ratio = abl["only_key_kept"] / abl["original"]
         per_run[r["id"]] = {
-            "t1": t1, "t2": t2, "t_test_drop": t_test, "t_restricted_drop": t_restr, "H1_delta": delta, "H1_ok": delta is not None and delta > 0,
+            "t1": t1, "t2": t2, "t_test_drop": t_test, "t_restricted_drop": t_restr, "H1_delta": delta, "H1_ok": t_restr is not None and (t_test is None or delta > 0),
             "H2_ratio": excl_ratio, "H2_ok": excl_ratio is not None and excl_ratio > 10,
             "H3_ok": (fin["gini_we"] > max(fin["gini_we_init"] + 0.3, fin["gini_null_we_p99"]))
                      and (fin["gini_wl"] > max(fin["gini_wl_init"] + 0.3, fin["gini_null_wl_p99"])),
@@ -197,14 +199,16 @@ def write_markdown(result: dict, path) -> None:
 
 def test_hypotheses(ctx: PipelineContext) -> None:
     """Phase entry point: evaluate H1–H5 on all trained runs and write reports/tables/hypotheses.{json,md}."""
-    runs = [_load(d) for d in run_dirs(ctx) if (d / "analysis" / "final.json").exists() and json.loads((d / "meta.json").read_text(encoding="utf-8")).get("kind") == "trained"]
-    if not runs:
-        log.warning("no analysed trained runs; skipping")
+    runs = [_load(d) for d in run_dirs(ctx, all_runs=True) if (d / "analysis" / "final.json").exists() and json.loads((d / "meta.json").read_text(encoding="utf-8")).get("kind") == "trained"]
+    if not any(r["meta"].get("group") == "wd1" for r in runs):
+        log.warning("no analysed wd1 runs; skipping the hypothesis tests")
         return
     result = evaluate_hypotheses(runs)
     out = ctx.cfg.reports_dir / "tables" / "hypotheses.json"
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(result, indent=2, default=float), encoding="utf-8")
+    tmp = out.with_suffix(".tmp")  # write-then-rename: an interrupted run never leaves a truncated table
+    tmp.write_text(json.dumps(result, indent=2, default=float), encoding="utf-8")
+    tmp.replace(out)
     write_markdown(result, ctx.cfg.reports_dir / "tables" / "hypotheses.md")
     for h, v in result["verdict"].items():
         log.info("%s: supported=%s p=%.3g p_holm=%.3g", h, v["supported"], v["p"], v["p_holm"])

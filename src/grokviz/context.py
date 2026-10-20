@@ -24,5 +24,6 @@ class PipelineContext:
     runs: list[str] = field(default_factory=list)  # run-id filter; empty means "all runs"
 
     def wants(self, run_id: str) -> bool:
-        """True when `run_id` is selected by the --runs filter (prefix match, so "wd1" selects all wd1_s*)."""
-        return not self.runs or any(run_id.startswith(prefix) for prefix in self.runs)
+        """True when `run_id` is selected by the --runs filter: an exact id, or a group prefix ending at "_"
+        ("wd1" selects all wd1_s*, while "wd1_s1" selects wd1_s1 only, not wd1_s10)."""
+        return not self.runs or any(run_id == sel or run_id.startswith(sel + "_") for sel in self.runs)

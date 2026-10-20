@@ -60,3 +60,41 @@ def test_power_table_numbers_for_eleven_seeds():
     tab = stats.power_table(11, 0.05, 5)
     assert tab["p_one_disagrees"] == pytest.approx(12 / 2048)
     assert tab["p_one_disagrees"] < tab["holm_strictest_alpha"]
+
+
+def _synthetic_run(run_id: str, group: str, excl_t2: float = 1.0, grokked: bool = True) -> dict:
+    """A run shaped like hypotheses._load's output, built so that H1–H4 hold unless told otherwise.
+
+    Checkpoints every 100 steps; t1 = 200, t2 = 600. Restricted loss drops 10× at step 400, test loss at 600 (Δ = 200);
+    excluded loss goes 1e-4 → excl_t2; key ablations ×10⁴, non-key ×1.1, keeping only key frequencies ×1.2.
+    """
+    steps = np.arange(0, 1100, 100)
+    drop = lambda at: np.where(steps >= at, 0.01, 5.0)  # noqa: E731 — tiny step-function helper
+    excl = np.where(steps >= 600, excl_t2, 1e-4)
+    acc = np.full(len(steps), 1.0 if grokked else 0.05)
+    keys = [14, 35, 41]
+    single = [1e-3 if k in keys else 1.1e-7 for k in range(1, 57)]
+    final = {"key_freqs": keys, "ablation": {"single_freq": single, "original": 1e-7, "only_key_kept": 1.2e-7},
+             "gini_we": 0.8, "gini_we_init": 0.05, "gini_null_we_p99": 0.3, "gini_wl": 0.8, "gini_wl_init": 0.05,
+             "gini_null_wl_p99": 0.3, "frac_neurons_085": 0.85, "logit_fve": 0.95, "wl_resid_sq_frac": 0.005,
+             "patching": {n: {"mean": v} for n, v in (("key", 0.99), ("complement", 0.01), ("random", 0.07))}}
+    m = {"steps": steps, "loss_test": drop(600), "restricted_loss": drop(400), "excluded_loss": excl, "acc_test": acc,
+         "acc_train": np.ones(len(steps)), "excluded_loss_max": excl}
+    return {"id": run_id, "meta": {"group": group}, "m": m, "final": final,
+            "phases": {"t1": 200, "t2": 600, "t3": 800, "t_grok": 600 if grokked else None}}
+
+
+def test_preregistered_hypotheses_on_synthetic_runs():
+    """11/11 seeds agree → every H supported; H5 Fisher p = 1/C(16,5) = 2.3e-4 (as stated in the preregistration);
+    two seeds with a too-small excluded-loss rise make H2 fail by the "≥ 2 failures" rule."""
+    from grokviz.hypotheses import evaluate_hypotheses
+
+    wd1 = [_synthetic_run(f"wd1_s{s}", "wd1") for s in range(11)]
+    wd0 = [_synthetic_run(f"wd0_s{s}", "wd0", grokked=False) for s in range(5)]
+    v = evaluate_hypotheses(wd1 + wd0)["verdict"]
+    assert all(v[h]["supported"] for h in ("H1", "H2", "H3", "H4", "H5"))
+    assert v["H1"]["successes"] == 11 and v["H1"]["p"] == pytest.approx(0.5 ** 11)
+    assert v["H5"]["p"] == pytest.approx(1 / 4368)
+    wd1[0], wd1[1] = _synthetic_run("wd1_s0", "wd1", excl_t2=5e-4), _synthetic_run("wd1_s1", "wd1", excl_t2=5e-4)  # ratio 5 < 10
+    v = evaluate_hypotheses(wd1 + wd0)["verdict"]
+    assert v["H2"]["successes"] == 9 and not v["H2"]["supported"] and v["H1"]["supported"]

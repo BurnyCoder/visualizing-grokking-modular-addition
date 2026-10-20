@@ -4,14 +4,14 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="chapter-layout">
-  <aside class="toc">
-    <p class="toc-title">Chapters</p>
+  <details class="toc" open>
+    <summary class="toc-title">Chapters</summary>
     <ol start="0">
       {% for ch in chapters %}
       <li {% if ch.slug == chapter.slug %}class="current"{% endif %}><a href="{{ ch.slug }}.html">{{ ch.title }}</a></li>
       {% endfor %}
     </ol>
-  </aside>
+  </details>
   <main class="chapter" id="main">
     <p class="kicker">Chapter {{ chapter.number }} of {{ chapters|length - 1 }}</p>
     <h1>{{ chapter.title }}</h1>

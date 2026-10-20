@@ -59,4 +59,6 @@ renderMath();
 initTooltips(cfg.root || "./");
 initLazy("[data-fig]", FIGURES, "fig");
 initLazy("[data-widget]", WIDGETS, "widget");
+// The chapter list is a <details>: open beside the text on wide screens, collapsed above it on phones (same breakpoint as main.css).
+document.querySelectorAll("details.toc").forEach((d) => { d.open = matchMedia("(min-width: 52.01rem)").matches; });
 if (document.body.classList.contains("dashboard-page")) import("./dashboard.js").then((m) => m.initDashboard());

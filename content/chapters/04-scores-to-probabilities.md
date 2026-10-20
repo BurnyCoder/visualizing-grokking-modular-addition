@@ -24,7 +24,7 @@ The predicted answer is the [[dfn:argmax]] — the position of the largest logit
 
 ## Measuring wrongness: the cross-entropy loss
 
-A [[dfn:loss]] is a single number saying how wrong the outputs are. The network is trained with the [[dfn:cross-entropy]] loss: for one example it is $-\ln(\text{probability given to the correct answer})$, and for a set of examples we average {{cite:wiki_crossentropy}} {{cite:torch_ce}}:
+A [[dfn:loss]] is a single number saying how wrong the outputs are. The network is trained with the [[dfn:cross-entropy]] loss: for one example it is $-\ln p$, where $p$ is the probability given to the correct answer, and for a set of examples we average {{cite:wiki_crossentropy}} {{cite:torch_ce}}:
 
 $$\mathcal L = -\frac{1}{N}\sum_{\text{examples}} \ln \softmax(\Logits)_{c^*}.$$
 

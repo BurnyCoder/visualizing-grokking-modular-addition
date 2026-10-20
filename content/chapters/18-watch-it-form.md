@@ -18,7 +18,7 @@ Project each number's embedding onto the plane that carries cos(w_k a) and sin(w
 
 {{fig:embed-circles}}
 
-At initialisation the 113 points are a random cloud. As the circuit forms they spread into a ring, ordered around the colour wheel — **the number a has become the angle w_k·a**, the clock of chapter 9. The same happens for the answer: the MLP's average activation for each answer c = (a + b) mod 113, read along $W_L$'s cos/sin directions, also traces circles:
+At initialisation the 113 points are a random cloud. As the circuit forms they spread into a ring whose colours (each number coloured by its predicted clock position k·a mod 113) run smoothly around it — **the number a has become the angle w_k·a**, the clock of chapter 9. The same happens for the answer: the MLP's average activation for each answer c = (a + b) mod 113, read along $W_L$'s cos/sin directions, also traces circles:
 
 {{fig:mlp-circles}}
 

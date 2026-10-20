@@ -17,6 +17,7 @@ from grokviz.checkpoint_metrics import compute_checkpoint_metrics  # curves over
 from grokviz.context import PipelineContext  # uniform phase argument
 from grokviz.envcheck import check_environment  # phase 1: environment and device check
 from grokviz.export import export_site_data  # binary arrays + manifest for the website
+from grokviz.figures import render_report_figures  # site figures → report PNGs
 from grokviz.geometry import compute_geometry  # activation / output geometry frames
 from grokviz.gradients import compute_gradient_dynamics  # exact full-batch gradients per checkpoint
 from grokviz.hf_publish import publish_runs_to_hub, publish_site_data  # Hugging Face uploads
@@ -48,6 +49,7 @@ PHASES: dict[str, Callable[[PipelineContext], None]] = {
     "export_site_data": export_site_data,  # site/data/manifest.json + arrays
     "publish_site_data": publish_site_data,  # site data → HF dataset, pinned in site-data.lock
     "build_site": build_site,  # content/ + templates/ + web/ → site/
+    "render_report_figures": render_report_figures,  # PNGs for reports, paper and README
 }
 
 

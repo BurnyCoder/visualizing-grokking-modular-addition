@@ -223,7 +223,7 @@ cluster-sizes:
 embed-circles:
   title: "Numbers on circles: the embedding in each key plane"
   what: "Every number's embedding projected onto the 2D plane that carries cos(w_k a) and sin(w_k a), one panel per key frequency."
-  read: "Colours go round the colour wheel from 0 to 112. A circle means the embedding represents the number as an angle — the clock picture."
+  read: "Each number n is coloured by the clock position the algorithm predicts for it at frequency k, namely k·n mod 113. A ring whose colours run smoothly around it means the embedding places n at angle w_k·n — the clock picture."
   expect: "A cloud early in training that becomes a clean circle during circuit formation."
   chapter: "18-watch-it-form.html"
   cite: "{{cite:nanda2023}} Sec. 3.1; {{cite:video_welch}} “Linear Probes”"

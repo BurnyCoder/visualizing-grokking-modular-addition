@@ -16,12 +16,19 @@ import { el, note, runOf, set, watch } from "./common.js";
 const P = 113;
 const hue = (i, n = P) => `hsl(${Math.round((360 * i) / n)}, 70%, 50%)`; // cyclic colour for number i
 
-/** Points [p, 2] (or [p, 3] using the first two columns) as a coloured scatter trace. */
-function points(xy, dims, name, idx = 0) {
+/**
+ * Points [p, 2] (or [p, 3] using the first two columns) as a coloured scatter trace. With frequency k, number i is
+ * coloured by its predicted clock position (k·i mod p): if the network places i at angle w_k·i, the circle is a rainbow.
+ */
+function points(xy, dims, name, k = 1) {
   const x = [], y = [];
-  for (let i = 0; i < P; i++) { x.push(xy[idx + i * dims]); y.push(xy[idx + i * dims + 1]); }
-  return { x, y, mode: "markers", type: "scatter", name, text: x.map((_, i) => `number ${i}`), marker: { size: 6, color: x.map((_, i) => hue(i)) }, showlegend: false };
+  for (let i = 0; i < P; i++) { x.push(xy[i * dims]); y.push(xy[i * dims + 1]); }
+  return { x, y, mode: "markers", type: "scatter", name, text: x.map((_, i) => `number ${i} (clock position ${(k * i) % P})`),
+    marker: { size: 6, color: x.map((_, i) => hue((k * i) % P)) }, showlegend: false };
 }
+
+/** Symmetric axis range covering all points of a scatter trace, so equal-aspect plots never clip. */
+const span = (tr) => { const r = 1.12 * Math.max(...tr.x.map(Math.abs), ...tr.y.map(Math.abs)); return [-r, r]; };
 
 /** Small multiples: one scatter per key frequency from an array [F, K, p, 2]. */
 function planes(arrayName, what) {
@@ -45,9 +52,13 @@ function planes(arrayName, what) {
           plots = r.key_freqs.map((k) => { const fig = el(wrap, "figure"); el(fig, "figcaption", "", `k = ${k}`); return new Plot(fig, { height: 200 }); });
         }
         const v = row(a, f);
-        await Promise.all(plots.map((pl, j) => pl.draw([points(v.subarray(j * P * 2, (j + 1) * P * 2), 2, `k=${r.key_freqs[j]}`)],
-          { margin: { l: 30, r: 6, t: 4, b: 24 }, xaxis: { zeroline: false, showticklabels: false }, yaxis: { zeroline: false, showticklabels: false, scaleanchor: "x" }, hovermode: "closest" })));
-        info.textContent = `step ${r.geometry_steps[f]}: ${what} — colour runs around the colour wheel from 0 to 112 (K = ${K} key frequencies).`;
+        await Promise.all(plots.map((pl, j) => {
+          const tr = points(v.subarray(j * P * 2, (j + 1) * P * 2), 2, `k=${r.key_freqs[j]}`, r.key_freqs[j]);
+          const rng = span(tr);
+          return pl.draw([tr], { margin: { l: 10, r: 10, t: 4, b: 10 }, xaxis: { zeroline: false, showticklabels: false, range: rng },
+            yaxis: { zeroline: false, showticklabels: false, range: rng, scaleanchor: "x" }, hovermode: "closest" });
+        }));
+        info.textContent = `step ${r.geometry_steps[f]}: ${what}. Colour = predicted clock position k·n mod 113; a smooth rainbow around the circle means number n sits at angle w_k·n (K = ${K} key frequencies).`;
       });
     },
   };
@@ -65,7 +76,8 @@ function pcaScatter(arrayName, varName, what) {
         if (!r.geometry_steps) return;
         const f = nearestIndex(r.geometry_steps, s.step);
         const v = row(await array(id, arrayName), f), ev = row(await array(id, varName), f);
-        await plot.draw([points(v, 3, what)], { xaxis: { title: { text: `PC1 (${(100 * ev[0]).toFixed(0)} %)` }, zeroline: false },
+        const tr = points(v, 3, what);
+        await plot.draw([tr], { xaxis: { title: { text: `PC1 (${(100 * ev[0]).toFixed(0)} %)` }, zeroline: false },
           yaxis: { title: { text: `PC2 (${(100 * ev[1]).toFixed(0)} %)` }, zeroline: false, scaleanchor: "x" }, hovermode: "closest" });
         info.textContent = `step ${r.geometry_steps[f]}: ${what}; first two principal components.`;
       });

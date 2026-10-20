@@ -90,6 +90,9 @@ dfn.term { font-style: normal; font-weight: 650; background: var(--accent-soft);
 .callout > :last-child { margin-bottom: 0; }
 .callout-title { font-weight: 650; display: block; margin-bottom: 0.3rem; }
 blockquote.quote { margin: 1.4rem 0; padding: 0.6rem 1rem; border-left: 3px solid var(--ink-soft); color: var(--ink); background: var(--card); font-style: italic; }
+q.quote-inline { font-style: italic; }
+q.quote-inline::before { content: "“"; } q.quote-inline::after { content: "”"; }
+.quote-cite { font-size: 0.82em; color: var(--ink-soft); }
 blockquote.quote cite { display: block; font-style: normal; font-size: 0.82rem; color: var(--ink-soft); margin-top: 0.3rem; }
 .objectbox { border: 1px solid var(--line); background: var(--card); border-radius: 10px; padding: 1rem 1.2rem; margin: 1.5rem 0; overflow-x: auto; }
 .symtable { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
@@ -115,7 +118,7 @@ th { background: var(--bg-soft); }
 .fig-controls input[type=range] { width: 10rem; }
 .fig-note { font-size: 0.8rem; color: var(--ink-soft); margin: 0.2rem 0 0; }
 .heatmap-wrap { display: flex; gap: 0.6rem; align-items: flex-start; flex-wrap: wrap; }
-.heatmap-wrap canvas { image-rendering: pixelated; border: 1px solid var(--line); max-width: 100%; height: auto; cursor: crosshair; }
+.heatmap-wrap canvas { image-rendering: pixelated; border: 1px solid var(--line); max-width: 100%; cursor: crosshair; }
 .small-multiples { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0.6rem; }
 .small-multiples figure { margin: 0; font-size: 0.75rem; color: var(--ink-soft); }
 .small-multiples canvas { width: 100%; height: auto; image-rendering: pixelated; border: 1px solid var(--line); }
@@ -183,3 +186,6 @@ th { background: var(--bg-soft); }
   body { font-size: 16px; }
   .topbar { gap: 0.8rem; }
 }
+
+/* in-chapter training scrubber (widget) */
+.widget.chapter-scrubber { position: sticky; top: 3.1rem; z-index: 20; padding: 0.4rem 0.8rem; box-shadow: 0 4px 14px rgba(0,0,0,0.05); }

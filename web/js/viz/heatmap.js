@@ -24,7 +24,8 @@ export class Heatmap {
     this.canvas.width = this.o.cols; // one canvas pixel per cell
     this.canvas.height = this.o.rows;
     this.canvas.style.width = `${this.o.size}px`;
-    this.canvas.style.height = `${(this.o.size * this.o.rows) / this.o.cols}px`;
+    if (this.o.height) this.canvas.style.height = `${this.o.height}px`; // very wide matrices (steps × frequencies): fixed height
+    else this.canvas.style.aspectRatio = `${this.o.cols} / ${this.o.rows}`; // otherwise keep cells square when the width shrinks
     this.bar = document.createElement("div");
     this.bar.className = "colorbar";
     wrap.append(this.canvas, this.bar);

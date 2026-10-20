@@ -1,0 +1,353 @@
+# figures.yaml — metadata of every figure (title, one-sentence description, how to read it, equation,
+# expected pattern, chapter deep link, citation, producing code). The JS implementation is registered under
+# the same id in web/js/figures/index.js; chapters place a figure with {{fig:id}}, the dashboard via
+# dashboard.yaml. Text may use [[term:..]] macros (terms must be defined in some chapter).
+# ---------------- A. training curves ----------------
+loss-curves:
+  title: "Loss during training (log scale)"
+  what: "Training loss (blue) and test loss (red) at every 10th step; shaded bands are the three phases."
+  eq: "\\mathcal{L} = -\\frac{1}{N}\\sum_{(a,b)} \\ln \\softmax(\\Logits(a,b))_{c^*}"
+  read: "Each curve is the average [[term:cross-entropy]] over its set of inputs. The vertical axis is a [[term:log-scale]], so each grid line is a factor of 10. Click anywhere to move the whole page to that step."
+  expect: "Train loss falls within ~1,000 steps while test loss rises (memorisation), then, thousands of steps later, test loss collapses (grokking)."
+  chapter: "08-grokking.html"
+  cite: "{{cite:nanda2023}} Fig. 2"
+  producer: "train.py / paper logs"
+  size: l
+loss-curves-linear:
+  title: "The same losses on a linear scale"
+  what: "Identical data with an ordinary (linear) vertical axis."
+  read: "On a linear axis the long plateau and the sudden drop look much more dramatic; the log plot shows that train loss keeps improving by orders of magnitude after it looks flat here."
+  expect: "A sharp cliff in test loss, much harder to see the slow changes before it."
+  chapter: "08-grokking.html"
+  cite: "{{cite:video_replication}} (discussion of log vs linear axes)"
+  producer: "train.py / paper logs"
+acc-curves:
+  title: "Accuracy during training"
+  what: "Fraction of training (blue) and test (red) pairs answered correctly, at every checkpoint."
+  eq: "\\text{accuracy} = \\frac{1}{N}\\sum_{(a,b)} \\mathbb{1}\\big[\\argmax_c \\Logits(a,b)_c = c^*\\big]"
+  expect: "Training accuracy reaches 100 % after a few hundred steps; test accuracy stays near chance (1/113 ≈ 0.9 %) for thousands of steps, then jumps to ~100 %."
+  chapter: "08-grokking.html"
+  cite: "{{cite:nanda2023}} Fig. 2"
+  producer: "checkpoint_metrics.py"
+progress-measures:
+  title: "Progress measures: restricted and excluded loss"
+  what: "Train and test loss with the paper's two progress measures computed at every checkpoint."
+  eq: "\\text{restricted: keep only } \\cos(w_k(a{+}b)),\\ \\sin(w_k(a{+}b)),\\ k\\in\\mathcal K;\\quad \\text{excluded: remove them}"
+  read: "[[term:restricted-loss]] (green) uses only the key-frequency parts of the logits; [[term:excluded-loss]] (purple) is the training loss after removing them."
+  expect: "Restricted loss falls long before test loss does; excluded loss rises during circuit formation — the generalising circuit is built while the test loss still looks hopeless."
+  chapter: "17-progress-measures.html"
+  cite: "{{cite:nanda2023}} Sec. 5.1, Fig. 7"
+  producer: "metrics.restricted_loss / excluded_loss"
+  size: l
+excluded-per-freq:
+  title: "Excluded loss, one key frequency at a time"
+  what: "Training loss after removing a single key frequency's cos/sin(w_k(a+b)) components from the logits."
+  expect: "Each curve rises above the training loss during circuit formation: more and more of the training performance flows through that frequency."
+  chapter: "17-progress-measures.html"
+  cite: "{{cite:nanda2023}} Fig. 15; {{cite:arena152}} section 3, Excluded loss"
+  producer: "metrics.excluded_loss_per_freq"
+gini-curves:
+  title: "Sparsity of the weights in the Fourier basis (Gini)"
+  what: "[[term:gini]] of the 113 Fourier-component norms of W_E and of W_L at every checkpoint."
+  eq: "G(c) = 1 - 2\\sum_{k=1}^{N}\\frac{c_{(k)}}{\\lVert c\\rVert_1}\\cdot\\frac{N-k+\\tfrac12}{N}"
+  expect: "Low and flat during memorisation, rising during circuit formation and sharply during cleanup."
+  chapter: "17-progress-measures.html"
+  cite: "{{cite:nanda2023}} Fig. 7; {{cite:hurley2009}}"
+  producer: "fourier.gini"
+ssw-curves:
+  title: "Sum of squared weights"
+  what: "Σθ² over all parameters (bold) and per parameter matrix (toggle in the legend)."
+  expect: "Rises during memorisation, falls steadily during circuit formation and steeply during cleanup — the fingerprints of weight decay."
+  chapter: "17-progress-measures.html"
+  cite: "{{cite:nanda2023}} Fig. 7; {{cite:arena152}} section 3"
+  producer: "metrics.sum_sq_weights"
+trig-loss-ratio:
+  title: "Test loss ÷ restricted loss"
+  what: "How much worse the full model is on the test set than its key-frequency part alone."
+  expect: "Huge (10⁴–10⁵) during circuit formation: the generalising circuit exists but is drowned out by memorisation noise until cleanup."
+  chapter: "17-progress-measures.html"
+  cite: "{{cite:arena152}} section 3, “Small lag to clean up noise”"
+  producer: "checkpoint_metrics.py"
+trig-fraction:
+  title: "Variance explained by cos/sin(w_k(a+b))"
+  what: "Fraction of the (centred) variance of neuron pre-activations, neuron activations and logits lying in the key cos/sin(w_k(a+b)) directions."
+  expect: "Logits pick up the trig structure early and smoothly; neurons later and more abruptly."
+  chapter: "18-watch-it-form.html"
+  cite: "{{cite:arena152}} section 3, “Development of computing trig components”"
+  producer: "metrics.trig_fraction"
+cos-coeffs:
+  title: "Strength of each key frequency in the logits"
+  what: "Coefficient of the unit-normalised cube cos(w_k(a+b−c)) in the logits for each key frequency, over training."
+  expect: "Each coefficient grows smoothly from zero long before the test loss drops."
+  chapter: "18-watch-it-form.html"
+  cite: "{{cite:nanda2023}} Fig. 14"
+  producer: "metrics.cos_coefficients"
+fve-curves:
+  title: "How well the Fourier story explains the network, over training"
+  what: "Fraction of logit variance explained by Σα_k cos(w_k(a+b−c)), and fraction of neurons dominated by one frequency."
+  chapter: "18-watch-it-form.html"
+  cite: "{{cite:nanda2023}} Sec. 4.2–4.3"
+  producer: "metrics.logit_cos_fit / neuron_frequencies"
+# ---------------- B. weights ----------------
+we-fourier-bars:
+  title: "The embedding in the Fourier basis"
+  what: "Length of each Fourier component of the embedding matrix W_E at the selected step (blue cos k, red sin k)."
+  eq: "\\big\\lVert (W_E F^\\top)_{:,i}\\big\\rVert_2,\\quad i = \\text{Const}, \\cos 1, \\sin 1, \\ldots, \\sin 56"
+  read: "W_E maps each number to a 128-dimensional vector. Reading those vectors as 113 functions of the number and taking their [[term:dft]] tells us which waves the embedding contains. Click a bar to select that frequency."
+  expect: "After training only a handful of frequencies have non-zero bars: the [[term:key-frequencies]]."
+  chapter: "13-evidence-periodicity.html"
+  cite: "{{cite:nanda2023}} Fig. 3 (left); {{cite:arena152}} “Understanding the embedding”"
+  producer: "metrics.we_fourier_norms"
+  size: l
+wl-fourier-bars:
+  title: "The neuron–logit map in the Fourier basis"
+  what: "Length of each Fourier component (over the output c) of W_L = W_U W_out at the selected step."
+  eq: "\\big\\lVert (F W_L)_{i,:}\\big\\rVert_2"
+  expect: "Only the key frequencies survive, ~10 non-zero bars: W_L is approximately rank 10."
+  chapter: "15-evidence-readoff.html"
+  cite: "{{cite:nanda2023}} Fig. 3 (right)"
+  producer: "metrics.wl_fourier_norms"
+  size: l
+we-fourier-heatmap:
+  title: "The embedding's spectrum over the whole of training"
+  what: "Rows: frequency k (1 bottom, 56 top). Columns: checkpoints. Colour: √(cos² + sin²) norm in W_E."
+  read: "This compresses the animation of the bar chart above into one picture; click a cell to jump there."
+  expect: "Early on all frequencies carry some weight; during circuit formation and cleanup everything except a few rows fades out."
+  chapter: "18-watch-it-form.html"
+  cite: "{{cite:arena152}} section 3, “Embedding in Fourier basis”"
+  producer: "checkpoint_metrics.py"
+  size: xl
+wl-fourier-heatmap:
+  title: "The neuron–logit map's spectrum over training"
+  what: "Same as above for W_L."
+  chapter: "18-watch-it-form.html"
+  producer: "checkpoint_metrics.py"
+  size: xl
+we-svals:
+  title: "Singular values of the embedding"
+  what: "The 113 singular values of W_E (largest first) at the selected step."
+  read: "A [[term:svd]] shows how many independent directions the embedding really uses."
+  expect: "Starts as a smooth random-matrix profile; ends with about two singular values per key frequency standing out."
+  chapter: "11-measuring-fit.html"
+  cite: "{{cite:arena152}} section 3, “Examine the SVD of W_E”"
+  producer: "checkpoint_metrics.py"
+attn-C-fourier:
+  title: "Attention lookup tables in the Fourier basis"
+  what: "For each head, the per-frequency norm of C_j, the pre-softmax score the '=' position gives each token."
+  eq: "C_j[t] = \\big(W_Q^j x_2^{(0)}\\big)^{\\!\\top} W_K^j W_E[:,t] / \\sqrt{d_{head}}"
+  expect: "Each head's table is dominated by a single frequency."
+  chapter: "14-evidence-neurons-heads.html"
+  cite: "{{cite:nanda2023}} App. C.1.3, Fig. 10"
+  producer: "metrics.attention_lookup"
+ov-fourier:
+  title: "What each head writes (OV circuit) in the Fourier basis"
+  what: "Per-frequency norm of W_O^j W_V^j W_E for each head."
+  expect: "Heads write mostly key frequencies; two heads write all of them (they amplify the embedding)."
+  chapter: "14-evidence-neurons-heads.html"
+  cite: "{{cite:nanda2023}} Fig. 11"
+  producer: "metrics.ov_fourier_norms"
+wlogit-sorted:
+  title: "W_logit in the Fourier basis, neurons sorted by cluster"
+  what: "Each row is one neuron's column of the neuron–logit map, written in the Fourier basis over answers c."
+  read: "Rows are sorted by the neuron's frequency cluster (unclustered neurons at the bottom). Click a row to select that neuron."
+  expect: "Block structure: a neuron of cluster k writes only cos k and sin k."
+  chapter: "15-evidence-readoff.html"
+  cite: "{{cite:arena152}} “W_logit in Fourier basis”; {{cite:nanda2023}} Fig. 5 (right)"
+  producer: "browser (GrokModel)"
+  size: l
+pos-embed:
+  title: "Positional embeddings"
+  what: "The three learned vectors added at positions 0 (a), 1 (b) and 2 (=)."
+  expect: "Rows 0 and 1 end up nearly identical — consistent with a + b = b + a."
+  chapter: "06-simplifying-the-model.html"
+  cite: "{{cite:arena152}} “Answer some initial questions”"
+  producer: "browser (GrokModel)"
+# ---------------- C. activations ----------------
+attn-grid:
+  title: "Attention to a, for every input"
+  what: "Fraction of the selected head's attention that '=' pays to the first number a, for all (a, b)."
+  eq: "A^j_0(a,b) = \\sigma\\big(C_j[a] - C_j[b]\\big)\\ \\text{(attention to '=' itself is negligible)}"
+  expect: "A periodic stripe pattern at the head's frequency; a + b symmetry."
+  chapter: "13-evidence-periodicity.html"
+  cite: "{{cite:nanda2023}} Fig. 4 (left), Fig. 9"
+  producer: "browser (GrokModel)"
+attn-grids-all:
+  title: "All four heads"
+  what: "Attention from '=' to a for every head, side by side (click one to select it)."
+  chapter: "13-evidence-periodicity.html"
+  cite: "{{cite:nanda2023}} Fig. 9"
+  producer: "browser (GrokModel)"
+avg-attn:
+  title: "Average attention per head"
+  what: "Mean over all inputs of how much '=' attends to a, b and itself."
+  expect: "About half to a and half to b; almost nothing to '='."
+  chapter: "06-simplifying-the-model.html"
+  cite: "{{cite:nanda2023}} App. A.1; {{cite:arena152}} section 3, “Development of commutativity”"
+  producer: "checkpoint_metrics.py"
+neuron-grid:
+  title: "One neuron, every input"
+  what: "Left: the selected neuron's activation for all (a, b). Right: the same grid in the 2D Fourier basis."
+  read: "Hover the right panel to see which [[term:linear-term]] or [[term:quadratic-term]] a coefficient belongs to; click it to select that frequency."
+  expect: "A periodic pattern whose transform has only the 3×3 block of one frequency: constant, linear and quadratic terms."
+  chapter: "14-evidence-neurons-heads.html"
+  cite: "{{cite:nanda2023}} Fig. 4 (centre); {{cite:arena152}} “Neurons produce quadratic terms”"
+  producer: "browser (GrokModel)"
+  size: l
+neuron-small-multiples:
+  title: "Neurons from every frequency cluster"
+  what: "Three example neurons per key-frequency cluster at the selected step."
+  chapter: "14-evidence-neurons-heads.html"
+  cite: "{{cite:nanda2023}} Fig. 12"
+  producer: "browser (GrokModel)"
+  size: l
+neuron-freq-scatter:
+  title: "Neuron clusters"
+  what: "Each dot is a neuron: its best frequency (x) and the fraction of its variance that frequency explains (y); colour = how often it fires."
+  expect: "Tight columns above 0.85 at the key frequencies, plus a diffuse group of always-firing neurons."
+  chapter: "14-evidence-neurons-heads.html"
+  cite: "{{cite:arena152}} “Neurons cluster by frequency”; {{cite:nanda2023}} Fig. 5"
+  producer: "metrics.neuron_frequencies"
+quad-scatter:
+  title: "Quadratic terms before and after the ReLU"
+  what: "Share of each neuron's variance in quadratic (product) terms, before vs after the ReLU."
+  expect: "After training, many neurons have far more quadratic content after the ReLU than before — the ReLU is doing the multiplication."
+  chapter: "14-evidence-neurons-heads.html"
+  cite: "{{cite:arena152}} section 3, “Development of neuron activations”"
+  producer: "metrics.neuron_frequencies"
+cluster-sizes:
+  title: "How many neurons belong to each frequency, over training"
+  what: "Number of neurons with more than 85 % of their variance at each key frequency, stacked."
+  chapter: "18-watch-it-form.html"
+  producer: "checkpoint_metrics.py"
+# ---------------- D. geometry ----------------
+embed-circles:
+  title: "Numbers on circles: the embedding in each key plane"
+  what: "Every number's embedding projected onto the 2D plane that carries cos(w_k a) and sin(w_k a), one panel per key frequency."
+  read: "Colours go round the colour wheel from 0 to 112. A circle means the embedding represents the number as an angle — the clock picture."
+  expect: "A cloud early in training that becomes a clean circle during circuit formation."
+  chapter: "18-watch-it-form.html"
+  cite: "{{cite:nanda2023}} Sec. 3.1; {{cite:video_welch}} “Linear Probes”"
+  producer: "geometry.key_plane_coords"
+  size: xl
+mlp-circles:
+  title: "The answer on a circle: MLP activations by answer"
+  what: "Average neuron activation for each answer c = a+b mod p, read along W_L's cos/sin(w_k c) directions."
+  expect: "Circles: the MLP represents (a+b) mod p as an angle at each key frequency."
+  chapter: "18-watch-it-form.html"
+  producer: "geometry.frame"
+  size: xl
+embed-pca:
+  title: "Embedding geometry (PCA)"
+  what: "The 113 number embeddings in their two main [[term:pca]] directions."
+  chapter: "11-measuring-fit.html"
+  producer: "geometry.pca"
+logit-pca:
+  title: "Output geometry: logits"
+  what: "Mean logit vector of all inputs sharing the same answer, in two PCA directions."
+  chapter: "18-watch-it-form.html"
+  producer: "geometry.frame"
+prob-pca:
+  title: "Output geometry: predicted distributions"
+  what: "Mean softmax output of all inputs sharing the same answer, in two PCA directions."
+  expect: "Collapses to the corners of a simplex as the model becomes certain; during memorisation the test inputs are far from their corners."
+  chapter: "18-watch-it-form.html"
+  producer: "geometry.frame"
+pcorrect-grid:
+  title: "Confidence on every input"
+  what: "Probability the model assigns to the correct answer, for all (a, b) at the selected step."
+  expect: "During memorisation the training pairs are bright and the test pairs dark (a speckle pattern = the random split); after grokking everything is bright."
+  chapter: "18-watch-it-form.html"
+  producer: "geometry.frame"
+entropy-grid:
+  title: "Uncertainty on every input"
+  what: "Normalised entropy of the prediction (0 = certain, 1 = uniform guess) for all (a, b)."
+  chapter: "18-watch-it-form.html"
+  producer: "geometry.frame"
+split-grid:
+  title: "Which inputs are used for training"
+  what: "All 113 × 113 inputs (a = row, b = column): yellow = training pair, purple = test pair."
+  chapter: "02-task-as-data.html"
+  cite: "{{cite:paperrepo}} gen_train_test"
+  producer: "task.paper_split"
+# ---------------- E. output ----------------
+output-dist:
+  title: "The model's answer for the selected input"
+  what: "Top: the 113 logits (bars; the correct answer highlighted) and their fit by a sum of cosines. Bottom: the softmax probabilities."
+  eq: "\\Logits(a,b)_c \\approx \\beta + \\sum_{k\\in\\mathcal K} \\alpha_k \\cos\\big(w_k(a+b-c)\\big)"
+  chapter: "12-fourier-multiplication.html"
+  cite: "{{cite:nanda2023}} Sec. 3.1, eq. (1)"
+  producer: "browser (GrokModel) + least squares"
+  size: l
+interference:
+  title: "Constructive interference"
+  what: "Each key frequency's cosine wave α_k cos(w_k(a+b−c)) over all candidate answers c, and their sum."
+  expect: "Every wave peaks at c = a+b, but each also has other near-peaks; only at c = a+b do they all agree."
+  chapter: "12-fourier-multiplication.html"
+  cite: "{{cite:nanda2023}} App. B, Fig. 8"
+  producer: "browser (GrokModel) + least squares"
+  size: l
+# ---------------- F. gradients ----------------
+grad-norms:
+  title: "Size of the gradient, per parameter"
+  what: "Norm of the exact full-batch gradient of the training loss for each weight matrix, at every checkpoint."
+  chapter: "19-gradients-weight-decay.html"
+  producer: "gradients.py"
+grad-alignment:
+  title: "Where the gradient points"
+  what: "Cosine between the training-loss gradient and the weights, and between the training- and test-loss gradients."
+  read: "A gradient-descent step moves along −gradient. cos(gradient, weights) ≈ −1 means the loss wants the weights to grow, exactly against weight decay's pull."
+  expect: "After grokking the gradient is almost exactly anti-parallel to the weights (an equilibrium with weight decay); during memorisation the train and test gradients are nearly unrelated."
+  chapter: "19-gradients-weight-decay.html"
+  producer: "gradients.py"
+grad-vs-decay:
+  title: "Loss pull vs weight-decay pull"
+  what: "‖∇L‖ divided by λ‖θ‖ at every checkpoint."
+  chapter: "19-gradients-weight-decay.html"
+  producer: "gradients.py"
+grad-we-fourier-heatmap:
+  title: "Which frequencies the embedding gradient pushes"
+  what: "Share of the embedding gradient's energy in each frequency (rows) at every checkpoint (columns)."
+  chapter: "19-gradients-weight-decay.html"
+  producer: "gradients.py"
+  size: xl
+# ---------------- G. interventions ----------------
+freq-ablation-bars:
+  title: "Removing one frequency from the logits"
+  what: "Loss after zeroing all 2D Fourier components of one frequency in every logit grid (log scale)."
+  expect: "Removing a key frequency (red) raises the loss by orders of magnitude; removing any other frequency changes almost nothing."
+  chapter: "16-evidence-interventions.html"
+  cite: "{{cite:nanda2023}} Sec. 4.4, Fig. 6"
+  producer: "interventions.freq_ablation_table"
+  size: l
+patching-result:
+  title: "Counterfactual patching: swapping the key-frequency part of a"
+  what: "Fraction of the logit difference L[a′+b] − L[a+b] recovered when part of a's embedding is replaced by a′'s (1,000 random triples, 95 % bootstrap interval)."
+  expect: "≈ 1 for the key-frequency subspace, ≈ 0 for the rest of the embedding and for a random subspace of the same size."
+  chapter: "16-evidence-interventions.html"
+  cite: "{{cite:geiger2021}}"
+  producer: "patching.patch_recovery"
+patching-live:
+  title: "Try it: swap the key-frequency part of a"
+  what: "Prediction for (a, b) before and after replacing the key-frequency component of a's embedding with that of a′."
+  expect: "The probability mass jumps from a+b to a′+b."
+  chapter: "16-evidence-interventions.html"
+  producer: "browser (GrokModel)"
+# ---------------- H. seeds and controls ----------------
+seed-test-loss:
+  title: "Every run's test loss"
+  what: "Test loss of the paper's run and all our runs (seeds and controls) on one log axis; the selected run is highlighted."
+  expect: "All weight-decay runs grok, at different times; no-weight-decay and random-label runs never do."
+  chapter: "20-robustness.html"
+  producer: "train.py"
+  size: xl
+seed-key-freqs:
+  title: "Which frequencies each run chose"
+  what: "Key frequencies of every run (click a run to select it everywhere)."
+  chapter: "20-robustness.html"
+  producer: "metrics.key_frequencies"
+  size: l
+hypothesis-table:
+  title: "Preregistered hypotheses"
+  what: "Results of the five tests written down before training (docs/preregistration.md)."
+  chapter: "20-robustness.html"
+  producer: "hypotheses.py"

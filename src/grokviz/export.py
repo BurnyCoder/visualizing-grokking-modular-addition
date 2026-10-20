@@ -27,6 +27,7 @@ from grokviz import fourier, task  # basis names, split masks
 from grokviz.checkpoint_metrics import run_dirs  # selected runs
 from grokviz.context import PipelineContext  # phase argument
 from grokviz.runstore import RunStore  # run access
+from grokviz.summary import build_summary  # prose numbers
 
 log = logging.getLogger("grokviz.export")
 SCHEMA_VERSION = 1
@@ -168,5 +169,7 @@ def export_site_data(ctx: PipelineContext) -> None:
     manifest = {"schema_version": SCHEMA_VERSION, "p": ctx.cfg.p, "basis_names": names, "train_masks": masks,
                 "scalar_columns": SCALAR_COLUMNS, "runs": runs}
     (root / "manifest.json").write_text(json.dumps(manifest, separators=(",", ":"), default=float), encoding="utf-8")
+    summary = build_summary(ctx.cfg.runs_dir, ctx.cfg.reports_dir, ctx.cfg.p, ctx.cfg.frac_train)  # numbers quoted in the prose
+    (root / "summary.json").write_text(json.dumps(summary, indent=1, default=float), encoding="utf-8")
     total = sum(f.stat().st_size for f in root.rglob("*") if f.is_file())
     log.info("site data: %d runs, %.1f MB in %s", len(runs), total / 1e6, root)

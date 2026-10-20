@@ -60,7 +60,7 @@ export function array(runId, name) {
     decoded.set(key, run(runId).then(async (r) => {
       const entry = r.arrays[name];
       if (!entry) throw new Error(`run ${runId} has no array ${name}`);
-      const buf = await once(entry.file, "bin");
+      const buf = await once(`data/${entry.file}`, "bin"); // manifest paths are relative to data/
       return { data: decode(buf, entry), shape: entry.shape, entry };
     }));
   }
@@ -108,5 +108,5 @@ export async function model(runId, step) {
 /** Train mask (1 = training pair) for a split seed, as a Uint8Array over a*p+b. */
 export async function trainMask(splitSeed) {
   const m = await manifest();
-  return new Uint8Array(await once(m.train_masks[String(splitSeed)], "bin"));
+  return new Uint8Array(await once(`data/${m.train_masks[String(splitSeed)]}`, "bin"));
 }

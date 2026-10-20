@@ -88,8 +88,8 @@ export const figures = {
       const left = el(row1, "div"), right = el(row1, "div");
       el(left, "p", "fig-note", "activation over all inputs (rows a, columns b)");
       el(right, "p", "fig-note", "same grid in the 2D Fourier basis (rows: component in a, columns: component in b)");
-      const hm = new Heatmap(left, { rows: 113, cols: 113, size: 260, diverging: false, format: (v) => v.toFixed(3), onClick: (a, b) => set({ a, b }) });
-      const hf = new Heatmap(right, { rows: 113, cols: 113, size: 260, diverging: true, format: (v) => v.toFixed(3),
+      const hm = new Heatmap(left, { rows: 113, cols: 113, size: 300, diverging: false, format: (v) => v.toFixed(3), onClick: (a, b) => set({ a, b }) });
+      const hf = new Heatmap(right, { rows: 113, cols: 113, size: 300, diverging: true, format: (v) => v.toFixed(3),
         label: (i, j) => `${basisLabel(i)} (in a) × ${basisLabel(j)} (in b)`, onClick: (i) => { if (i > 0) set({ freq: Math.ceil(i / 2) }); } });
       const info = note(body);
       watch(["run", "step", "neuron"], async (s) => {

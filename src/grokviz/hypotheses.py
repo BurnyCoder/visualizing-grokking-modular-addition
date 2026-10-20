@@ -22,7 +22,7 @@ import numpy as np  # arrays
 import torch  # tensors
 
 from grokviz import fourier, interventions, metrics, stats  # measurements, tests
-from grokviz.checkpoint_metrics import grid_for, run_dirs  # shared helpers
+from grokviz.checkpoint_metrics import grid_for, reference_index, run_dirs  # shared helpers
 from grokviz.context import PipelineContext  # phase argument
 from grokviz.envcheck import resolve_device  # device
 from grokviz.patching import patch_recovery  # counterfactual swaps
@@ -47,8 +47,9 @@ def random_basis_gini(model, F: torch.Tensor, n: int = 100, seed: int = 0) -> di
 
 @torch.no_grad()
 def analyse_final(store: RunStore, p: int, device) -> dict:
-    """Final-checkpoint analysis used by H3/H4 and the secondary statistics."""
-    model = store.load_model(-1, device)
+    """Final-checkpoint analysis used by H3/H4 and the secondary statistics (paper run: its epoch-40k model)."""
+    ref = reference_index(store)  # last checkpoint, or the paper's analysis checkpoint for the paper run
+    model = store.load_model(ref, device)
     init = store.load_model(0, device)
     grid = grid_for(store, p, device)
     acts = metrics.evaluate(model, grid)
@@ -60,7 +61,7 @@ def analyse_final(store: RunStore, p: int, device) -> dict:
     null = random_basis_gini(model, grid.F)
     return {
         "key_freqs": K,
-        "final_step": store.ckpt_steps[-1],
+        "final_step": store.ckpt_steps[ref],
         "ablation": abl,
         "gini_we": fourier.gini(metrics.we_fourier_norms(model, grid.F)),
         "gini_wl": fourier.gini(metrics.wl_fourier_norms(model, grid.F)),
@@ -82,6 +83,9 @@ def analyse_final_models(ctx: PipelineContext) -> None:
     for run_dir in run_dirs(ctx):
         out = run_dir / "analysis" / "final.json"
         if out.exists() and not ctx.force:
+            continue
+        if not (run_dir / "analysis" / "ckpt_metrics.npz").exists() and run_dir.name != "paper":
+            log.warning("%s: not analysed yet, skipping", run_dir.name)
             continue
         store = RunStore(run_dir)
         result = analyse_final(store, ctx.cfg.p, device)

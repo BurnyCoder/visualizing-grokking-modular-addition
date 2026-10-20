@@ -38,7 +38,7 @@ from grokviz.config import REPO_ROOT, load_config  # paths
 log = logging.getLogger("grokviz.site_build")
 CONTENT, TEMPLATES, WEB = REPO_ROOT / "content", REPO_ROOT / "templates", REPO_ROOT / "web"
 MACRO = re.compile(r"\[\[(dfn|term|sym|symdef):([\w.-]+)(?:\|([^\]]+))?\]\]|\{\{(quote|num|fig|widget|cite):([\w./-]+)\}\}")
-CALLOUTS = {"example": "Worked example", "nuance": "Nuance", "note": "Note", "object": "", "definition": "Definition", "check": "Check yourself"}
+CALLOUTS = {"example": "Worked example", "nuance": "Nuance", "note": "Note", "object": "", "definition": "Definition", "check": "Control"}
 QUOTE_MAX_WORDS, QUOTE_CHAPTER_MAX = 25, 100  # copyright policy (NOTICE.md, docs/content-style.md)
 
 
@@ -149,8 +149,12 @@ def expand(text: str, b: Build, page: str) -> str:
                 b.errors.append(f"{page}: quote '{key}' has {words} words (> {QUOTE_MAX_WORDS})")
             ref = b.refs[q["source"]]
             where = f", {q['where']}" if q.get("where") else ""
-            return (f'<blockquote class="quote">“{q["text"]}”<cite>— {ref["short"]}{where} · '
-                    f'<a href="{q.get("url", ref["url"])}">source</a></cite></blockquote>')
+            cite = f'{ref["short"]}{where} · <a href="{q.get("url", ref["url"])}">source</a>'
+            line_start = m.start() == 0 or m.string[m.start() - 1] == "\n"  # macro begins a line
+            line_end = m.end() == len(m.string) or m.string[m.end()] == "\n"  # macro ends a line
+            if line_start and line_end:  # alone on its line → a block quotation
+                return f'<blockquote class="quote">“{q["text"]}”<cite>— {cite}</cite></blockquote>'
+            return f'<q class="quote-inline">{q["text"]}</q> <span class="quote-cite">({cite})</span>'  # inside a sentence
         if kind == "num":
             if key not in b.summary:
                 b.errors.append(f"{page}: number '{key}' missing from summary.json")
@@ -281,9 +285,7 @@ def build_site(ctx=None) -> None:
                                                       page_config={"root": "./", "page": name, "macros": macros}, **common)
         (out / f"{name}.html").write_text(html, encoding="utf-8")
     assets = out / "assets"
-    if assets.exists():
-        shutil.rmtree(assets)
-    shutil.copytree(WEB, assets)
+    shutil.copytree(WEB, assets, dirs_exist_ok=True)  # overwrite in place (a preview server may hold files open on Windows)
     glossary_json = {"terms": {k: {"name": v["name"], "def": _md.renderInline(v["def"]), "src": source_links(v)} for k, v in b.glossary.items()},
                      "symbols": {k: {"name": f'<span class="math inline">{_esc(v["tex"])}</span> — {v["name"]}', "def": _md.renderInline(v["def"])} for k, v in b.symbols.items()}}
     (assets / "glossary.json").write_text(json.dumps(glossary_json), encoding="utf-8")
@@ -318,7 +320,25 @@ def page_body(name: str, b: Build) -> str:
         notice = _md.render((REPO_ROOT / "NOTICE.md").read_text(encoding="utf-8").replace("# NOTICE —", "## Licenses —"))
         return f"<h1>Sources</h1><ol class=\"refs\">{items}</ol><div id=\"licenses\">{notice}</div>"
     path = CONTENT / "pages" / f"{name}.md"
-    return _md.render(expand(path.read_text(encoding="utf-8"), b, name)) if path.exists() else f"<h1>{name}</h1>"
+    html = _md.render(expand(path.read_text(encoding="utf-8"), b, name)) if path.exists() else f"<h1>{name}</h1>"
+    if "<!-- RCHECK_TABLE -->" in html:  # reproduce page: generated paper-vs-ours table (src/grokviz/rchecks.py)
+        html = html.replace("<!-- RCHECK_TABLE -->", rcheck_table(b.summary.get("rchecks.rows", {}).get("value", [])))
+    return html
+
+
+def rcheck_table(rows: list[dict]) -> str:
+    """HTML table of the reproduction checks (paper / ARENA value, ours, match, note)."""
+    def f(v):
+        if isinstance(v, float):
+            return f"{v:.4g}"
+        if isinstance(v, list):
+            return "[" + ", ".join(f(x) for x in v) + "]"
+        return str(v)
+    mark = {True: "yes", False: "<strong>no</strong>", None: "—"}
+    body = "".join(f"<tr><td>{r['id']}</td><td>{r['quantity']}</td><td>{f(r['paper'])}</td><td>{f(r['ours'])}</td><td>{mark[r['match']]}</td>"
+                   f"<td>{r['source']}</td><td>{r['note']}</td></tr>" for r in rows)
+    return ("<table><tr><th>ID</th><th>Quantity</th><th>Paper / ARENA</th><th>Ours</th><th>Match</th><th>Where</th><th>Note</th></tr>"
+            f"{body}</table>")
 
 
 def chapter_link(slug: str) -> str:

@@ -70,7 +70,7 @@ export const figures = {
             for (let k = 1; k <= K; k++) grid[(K - k) * T + t] = (v[2 * k - 1] ** 2 + v[2 * k] ** 2) / (tot || 1); // share of gradient energy
           }
           body.querySelector(".heatmap-wrap")?.remove();
-          hm = new Heatmap(body, { rows: K, cols: T, size: 520, diverging: false, format: (v) => `${(100 * v).toFixed(1)} %`,
+          hm = new Heatmap(body, { rows: K, cols: T, size: 640, height: 240, diverging: false, format: (v) => `${(100 * v).toFixed(1)} %`,
             label: (rr, cc) => `k = ${K - rr}, step ${r.ckpt_steps[cc]}`, onClick: (rr, cc) => set({ step: r.ckpt_steps[cc], freq: K - rr }) });
           body.append(info);
           hm.draw(grid);

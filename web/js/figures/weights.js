@@ -59,7 +59,7 @@ function spectrumOverTraining(arrayName) {
         if (id !== shown) {
           shown = id;
           body.querySelector(".heatmap-wrap")?.remove();
-          hm = new Heatmap(body, { rows: K, cols: T, size: 520, diverging: false, format: (v) => v.toFixed(3),
+          hm = new Heatmap(body, { rows: K, cols: T, size: 640, height: 240, diverging: false, format: (v) => v.toFixed(3),
             label: (rr, cc) => `k = ${K - rr}, step ${r.ckpt_steps[cc]}`, onClick: (rr, cc) => set({ step: r.ckpt_steps[cc], freq: K - rr }) });
           body.append(info);
           const grid = new Float32Array(K * T);

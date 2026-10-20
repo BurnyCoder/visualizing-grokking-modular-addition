@@ -19,6 +19,7 @@ export async function initDashboard() {
   sel.onchange = () => set({ run: sel.value });
   const slider = $("ctl-step"), label = $("ctl-step-label");
   let steps = [];
+  let showStep = () => {};
   subscribe(["run"], async (s) => {
     sel.value = s.run;
     const r = await run(s.run);
@@ -28,13 +29,15 @@ export async function initDashboard() {
     $("ctl-freq").value = String(s.freq);
     setStatus(`run ${r.id}: key frequencies ${r.key_freqs.join(", ")}; phases ${fmtPhases(r.phases)}`);
     set({ step: steps[nearest(steps, s.step)] });
+    showStep(s); // also when the step value itself did not change
   });
-  subscribe(["step"], (s) => {
+  showStep = (s) => { // move the slider/label to the stored checkpoint nearest to s.step
     if (!steps.length) return;
     const i = nearest(steps, s.step);
     slider.value = String(i);
     label.textContent = `step ${steps[i].toLocaleString()}`;
-  });
+  };
+  subscribe(["step"], showStep);
   slider.oninput = () => set({ step: steps[Number(slider.value)] });
   for (const [id, key, max] of [["ctl-a", "a", 112], ["ctl-b", "b", 112], ["ctl-ap", "ap", 112], ["ctl-neuron", "neuron", 511], ["ctl-freq", "freq", 56]]) {
     const input = $(id);

@@ -24,7 +24,7 @@ export function baseLayout(extra = {}) {
   const axis = { color: soft, gridcolor: line, zerolinecolor: line, linecolor: line, tickfont: { size: 11 } };
   return {
     paper_bgcolor: "rgba(0,0,0,0)", plot_bgcolor: "rgba(0,0,0,0)", font: { family: "Inter, sans-serif", size: 12, color: ink },
-    margin: { l: 56, r: 12, t: 10, b: 42 }, legend: { orientation: "h", y: -0.22, font: { size: 11 } }, hovermode: "x unified",
+    margin: { l: 56, r: 12, t: 34, b: 42 }, legend: { orientation: "h", x: 0, y: 1.02, yanchor: "bottom", font: { size: 10.5 } }, hovermode: "x unified", // legend above the plot area so it never covers the x-axis title
     ...extra, xaxis: { ...axis, ...(extra.xaxis || {}) }, yaxis: { ...axis, ...(extra.yaxis || {}) },
   };
 }

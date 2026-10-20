@@ -1,0 +1,99 @@
+# quotes.yaml — exact quotations used on the site (≤ 25 words each; see NOTICE.md and docs/content-style.md).
+# Global context: {{quote:id}} renders one of these with its source; tests/test_quotes.py verifies each text
+# verbatim (after whitespace/hyphenation/quote-mark normalisation) against the cited PDF page.
+# Fields: text (exact), source (key in references.yaml), page (PDF page number), where (shown to the reader).
+nanda-algorithm:
+  text: "uses discrete Fourier transforms and trigonometric identities to convert addition to rotation about a circle"
+  source: nanda2023
+  page: 1
+  where: "abstract, p. 1"
+nanda-grokking:
+  text: "models abruptly transition to a generalizing solution after a large number of training steps, despite initially overfitting"
+  source: nanda2023
+  page: 1
+  where: "Sec. 1, p. 1"
+nanda-hidden-progress:
+  text: "metrics that precede and are causally linked to the phase transition, and which vary more smoothly"
+  source: nanda2023
+  page: 1
+  where: "Sec. 1, p. 1 (defining hidden progress measures, after Barak et al. 2022)"
+nanda-three-phases:
+  text: "split training into three continuous phases: memorization, circuit formation, and cleanup"
+  source: nanda2023
+  page: 1
+  where: "abstract, p. 1"
+nanda-gradual:
+  text: "grokking, rather than being a sudden shift, arises from the gradual amplification of structured mechanisms encoded in the weights"
+  source: nanda2023
+  page: 1
+  where: "abstract, p. 1"
+nanda-key-frequencies:
+  text: "We dub these the key frequencies of the model."
+  source: nanda2023
+  page: 4
+  where: "Sec. 4.1, p. 4"
+nanda-skip:
+  text: "our networks do not significantly use the skip connection around the MLP"
+  source: nanda2023
+  page: 3
+  where: "Sec. 3, p. 3"
+nanda-circuit-before:
+  text: "Notably, the circuit is formed well before grokking occurs."
+  source: nanda2023
+  page: 9
+  where: "Sec. 5.2, p. 9"
+nanda-cleanup:
+  text: "weight decay encourages the network to shed the memorized solution in favor of focusing on the Fourier multiplication circuit"
+  source: nanda2023
+  page: 9
+  where: "Sec. 5.2, p. 9"
+nanda-excluded-idea:
+  text: "the memorizing solution should be spread out in the Fourier domain"
+  source: nanda2023
+  page: 8
+  where: "Sec. 5.1, p. 8"
+nanda-zero-loss:
+  text: "Zero loss does not exist with cross-entropy loss."
+  source: nanda2023
+  page: 33
+  where: "footnote 4, p. 33"
+nanda-neurons:
+  text: "out of 512 total neurons, 433 (84.6%) have over 85% of their variance explained with a single frequency"
+  source: nanda2023
+  page: 6
+  where: "Sec. 4.3, p. 6"
+nanda-ablate-others:
+  text: "ablating the other 95% of frequencies slightly improves performance"
+  source: nanda2023
+  page: 2
+  where: "Sec. 1, p. 2"
+nanda-specific:
+  text: "our progress metrics are specific to small networks on one particular algorithmic task"
+  source: nanda2023
+  page: 9
+  where: "Sec. 6, p. 9"
+nanda-no-wd:
+  text: "our networks do not grok on the modular arithmetic task without weight decay or some other form of regularization"
+  source: nanda2023
+  page: 9
+  where: "Sec. 5.3, p. 9"
+nanda-criticality:
+  text: "we lack a general notion of criticality that would allow us to predict when the phase transition will happen ex ante"
+  source: nanda2023
+  page: 9
+  where: "Sec. 6, p. 9"
+nanda-claim:
+  text: "We claim that the learned networks use the following algorithm"
+  source: nanda2023
+  page: 3
+  where: "Sec. 3.1, p. 3"
+power-chance:
+  text: "improving generalization performance from random chance level to perfect generalization"
+  source: power2022
+  page: 1
+  where: "abstract, p. 1"
+power-overfitting:
+  text: "this improvement in generalization can happen well past the point of overfitting"
+  source: power2022
+  page: 1
+  where: "abstract, p. 1"

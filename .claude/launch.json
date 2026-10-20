@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "site",
+      "runtimeExecutable": "C:/Users/Happy/Documents/projects/visalizing-grokking-modular-addition/.venv/Scripts/python.exe",
+      "runtimeArgs": ["-m", "grokviz.serve", "--dir", "site", "--port", "8766"],
+      "port": 8766
+    }
+  ]
+}

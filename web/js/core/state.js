@@ -7,7 +7,7 @@
 // chapter figures all read and write this one object, which keeps every panel in sync.
 // Source: URLSearchParams (https://developer.mozilla.org/docs/Web/API/URLSearchParams).
 
-const DEFAULTS = { run: "paper", step: 40001, a: 5, b: 71, ap: 40, head: 0, neuron: 0, freq: 14 };
+const DEFAULTS = { run: "paper", step: 40001, a: 100, b: 50, ap: 40, head: 0, neuron: 0, freq: 14 };
 const NUMERIC = new Set(["step", "a", "b", "ap", "head", "neuron", "freq"]); // keys parsed as integers from the URL
 
 export const state = { ...DEFAULTS, ...readHash() }; // current selection

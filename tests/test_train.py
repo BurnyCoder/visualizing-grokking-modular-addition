@@ -71,8 +71,8 @@ def test_batched_training_matches_unbatched_adamw(cfg, device, tmp_path, spec):
     """A batched run (R = 1) matches an independent torch.optim.AdamW run, with strong and with zero weight decay.
 
     Compared after 4 steps only: early full-batch Adam training is chaotic — rounding differences between
-    mathematically identical kernels grow roughly ×3 per step (measured: 3e-7 at step 2 → 1e-2 at step 20,
-    see reports/exp-02), so long horizons would test floating-point noise, not correctness. λ = 100 makes a
+    mathematically identical kernels are amplified by orders of magnitude within tens of steps (measured: 3e-7 at
+    step 2 → 1e-2 at step 20, see reports/exp-02), so long horizons would test floating-point noise, not correctness. λ = 100 makes a
     wrong decay visible: each step shrinks weights by lr·λ = up to 3 %, far above rounding noise.
     """
     train_runs(cfg, [spec], device, tmp_path, num_steps=4)

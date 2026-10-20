@@ -75,6 +75,7 @@ def render_report_figures(ctx: PipelineContext) -> None:
             page = browser.new_page(viewport={"width": 1400, "height": 1000}, color_scheme="light", device_scale_factor=2)
             for fid, state in REPORT_FIGURES:
                 page.goto(f"{base}/dashboard.html#{state}")
+                page.add_style_tag(content=".fig details { display: none; }")  # interactive "How to read it" toggles are noise on paper
                 fig = page.locator(f"#fig-{fid}")
                 fig.scroll_into_view_if_needed()
                 page.wait_for_function(f"!document.querySelector('#fig-{fid} .loading')", timeout=60_000)  # figure drawn

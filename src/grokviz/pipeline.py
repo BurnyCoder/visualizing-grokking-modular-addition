@@ -23,6 +23,7 @@ from grokviz.gradients import compute_gradient_dynamics  # exact full-batch grad
 from grokviz.hf_publish import publish_runs_to_hub, publish_site_data  # Hugging Face uploads
 from grokviz.hypotheses import analyse_final_models, test_hypotheses  # preregistered tests
 from grokviz.logs import phase_timer  # start/done/elapsed logging around each phase
+from grokviz.paper import build_paper_pdf  # Typst paper → reports/paper.pdf
 from grokviz.phases import detect_phases  # objective phase boundaries
 from grokviz.rchecks import validate_against_paper  # reproduce paper/ARENA numbers
 from grokviz.site_build import build_site  # static website
@@ -50,6 +51,7 @@ PHASES: dict[str, Callable[[PipelineContext], None]] = {
     "publish_site_data": publish_site_data,  # site data → HF dataset, pinned in site-data.lock
     "build_site": build_site,  # content/ + templates/ + web/ → site/
     "render_report_figures": render_report_figures,  # PNGs for reports, paper and README
+    "build_paper_pdf": build_paper_pdf,  # reports/paper.pdf with numbers bound from summary.json
 }
 
 

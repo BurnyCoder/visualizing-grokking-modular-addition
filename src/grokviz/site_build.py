@@ -88,6 +88,9 @@ def _esc(s: str) -> str:
     return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
+SUPERSCRIPT = str.maketrans("-0123456789", "⁻⁰¹²³⁴⁵⁶⁷⁸⁹")  # str.translate table for exponents
+
+
 def fmt_number(entry) -> str:
     """Format a summary entry {value, fmt} for prose."""
     if not isinstance(entry, dict):
@@ -101,8 +104,9 @@ def fmt_number(entry) -> str:
         return f"{int(round(v)):,}"
     if f == "pct":
         return f"{100 * v:.1f} %"
-    if f == "sci":
-        return f"{v:.2e}".replace("e-0", "×10⁻").replace("e-", "×10⁻").replace("e+0", "×10^").replace("e+", "×10^")
+    if f == "sci":  # 2.41e-07 → "2.41×10⁻⁷" (mantissa from Python's e-format, exponent in Unicode superscripts)
+        mant, exp = f"{v:.2e}".split("e")
+        return mant if int(exp) == 0 else f"{mant}×10{str(int(exp)).translate(SUPERSCRIPT)}"
     return f"{v:{f}}" if not isinstance(v, str) else v
 
 
@@ -326,14 +330,18 @@ def page_body(name: str, b: Build) -> str:
     return html
 
 
+def fmt_value(v) -> str:
+    """Compact text for an R-check value: 4 significant digits, lists in brackets, strings as given."""
+    if isinstance(v, float):
+        return f"{v:.4g}"
+    if isinstance(v, list):
+        return "[" + ", ".join(fmt_value(x) for x in v) + "]"
+    return str(v)
+
+
 def rcheck_table(rows: list[dict]) -> str:
     """HTML table of the reproduction checks (paper / ARENA value, ours, match, note)."""
-    def f(v):
-        if isinstance(v, float):
-            return f"{v:.4g}"
-        if isinstance(v, list):
-            return "[" + ", ".join(f(x) for x in v) + "]"
-        return str(v)
+    f = fmt_value
     mark = {True: "yes", False: "<strong>no</strong>", None: "—"}
     body = "".join(f"<tr><td>{r['id']}</td><td>{r['quantity']}</td><td>{f(r['paper'])}</td><td>{f(r['ours'])}</td><td>{mark[r['match']]}</td>"
                    f"<td>{r['source']}</td><td>{r['note']}</td></tr>" for r in rows)

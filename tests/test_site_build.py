@@ -31,3 +31,13 @@ def test_site_builds_and_content_rules_hold(tmp_path, monkeypatch):
     assert 'data-term="modulo"' in ch1 and "<dfn" in ch1
     glossary = json.loads((tmp_path / "assets" / "glossary.json").read_text(encoding="utf-8"))
     assert "grokking" in glossary["terms"] and "WE" in glossary["symbols"]
+
+
+def test_scientific_numbers_use_superscript_exponents():
+    """Prose numbers like the paper's 2.41e-7 loss read as 2.41×10⁻⁷; exponent 0 shows the bare mantissa."""
+    from grokviz.site_build import fmt_number
+
+    assert fmt_number({"value": 2.41e-7, "fmt": "sci"}) == "2.41×10⁻⁷"
+    assert fmt_number({"value": 3.2e5, "fmt": "sci"}) == "3.20×10⁵"
+    assert fmt_number({"value": 5.27, "fmt": "sci"}) == "5.27"
+    assert fmt_number({"value": 0.9624, "fmt": "pct"}) == "96.2 %"

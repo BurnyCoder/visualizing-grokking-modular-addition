@@ -58,8 +58,12 @@ export const figures = {
       const summary = await fetch(`${window.GROKVIZ.root}data/summary.json`).then((r) => r.json());
       const h = summary["hypotheses.verdict"]?.value;
       if (!h) { body.innerHTML = '<p class="fig-note">Hypothesis tests not computed yet.</p>'; return; }
-      const rows = Object.entries(h).map(([k, v]) => `<tr><td>${k}</td><td>${v.successes !== undefined ? `${v.successes}/${v.n} seeds` : `groked: ${v.wd1_grokked}/${v.wd1_n} (λ=1) vs ${v.wd0_grokked}/${v.wd0_n} (λ=0)`}</td><td>${v.p.toPrecision(2)}</td><td>${v.p_holm.toPrecision(2)}</td><td>${v.supported ? "supported" : "<strong>not supported</strong>"}</td></tr>`).join("");
-      body.innerHTML = `<table><tr><th>Hypothesis</th><th>Result</th><th>p</th><th>Holm p</th><th>Verdict</th></tr>${rows}</table>`;
+      // one-line statements of the preregistered hypotheses (docs/preregistration.md)
+      const claim = { H1: "restricted loss falls before test loss", H2: "excluded loss rises ≥ 10× during circuit formation",
+        H3: "Fourier sparsity is learned and specific to the Fourier basis", H4: "key frequencies necessary, all others dispensable",
+        H5: "weight decay is necessary for grokking" };
+      const rows = Object.entries(h).map(([k, v]) => `<tr><td>${k}: ${claim[k] ?? ""}</td><td>${v.successes !== undefined ? `${v.successes}/${v.n} seeds` : `grokked: ${v.wd1_grokked}/${v.wd1_n} (λ=1) vs ${v.wd0_grokked}/${v.wd0_n} (λ=0)`}</td><td>${v.p.toPrecision(2)}</td><td>${v.p_holm.toPrecision(2)}</td><td>${v.supported ? "supported" : "<strong>not supported</strong>"}</td></tr>`).join("");
+      body.innerHTML = `<table><tr><th>Hypothesis</th><th>Result</th><th>p (one-sided)</th><th>Holm p</th><th>Verdict</th></tr>${rows}</table>`;
     },
   },
 };

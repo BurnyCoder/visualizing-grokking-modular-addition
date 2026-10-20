@@ -35,7 +35,7 @@ log = logging.getLogger("grokviz.pipeline")  # logger for the wrapper itself
 # Ordered registry: execution order is the order of this dict (dicts preserve insertion order).
 PHASES: dict[str, Callable[[PipelineContext], None]] = {
     "check_environment": check_environment,  # versions, GPU, determinism settings
-    "acquire_paper_sources": acquire_paper_sources,  # pinned HF checkpoint + arXiv PDFs (sha-checked)
+    "acquire_paper_sources": acquire_paper_sources,  # pinned HF checkpoint (sha256-checked) + arXiv PDFs (quote checks)
     "convert_paper_run": convert_paper_run,  # → runs/paper/ in our run format
     "validate_paper_run": validate_paper_run,  # recomputed losses must match the logged ones
     "validate_against_paper": validate_against_paper,  # R-checks on the epoch-40k model

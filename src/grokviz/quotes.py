@@ -44,7 +44,9 @@ def verify(quotes: dict, pdfs: dict[str, Path]) -> list[str]:
         if pdf is None or not pdf.exists():
             problems.append(f"{qid}: no PDF available for source {q['source']}")
             continue
-        pages = cache.setdefault(q["source"], page_texts(pdf))
+        if q["source"] not in cache:  # parse each PDF once (setdefault would re-parse it for every quote)
+            cache[q["source"]] = page_texts(pdf)
+        pages = cache[q["source"]]
         needle = normalise(q["text"])
         found = [i + 1 for i, page in enumerate(pages) if needle in page]
         if not found:

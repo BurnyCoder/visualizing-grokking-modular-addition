@@ -18,7 +18,7 @@ import typst  # Typst compiler (Rust, via Python bindings)
 
 from grokviz.config import REPO_ROOT  # paper/ location and Typst root
 from grokviz.context import PipelineContext  # phase argument
-from grokviz.site_build import fmt_number, fmt_value  # same number formatting as the website
+from grokviz.formatting import fmt_number, fmt_value  # same number formatting as the website
 
 log = logging.getLogger("grokviz.paper")
 
@@ -26,7 +26,8 @@ log = logging.getLogger("grokviz.paper")
 def paper_inputs(summary: dict, hypotheses: dict | None) -> dict[str, str]:
     """Typst sys.inputs (strings only): every prose number formatted as on the website, plus two JSON strings the
     paper decodes into tables — the R-check rows (as display strings) and the hypothesis verdicts."""
-    out = {k: fmt_number(v).replace("**", "") for k, v in summary.items() if k != "rchecks.rows"}  # drop Markdown bold
+    # prose numbers (structured entries — the R-check rows, the verdict dict — are passed as JSON below)
+    out = {k: fmt_number(v).replace("**", "") for k, v in summary.items() if not isinstance(v.get("value"), dict) and k != "rchecks.rows"}
     rows = summary.get("rchecks.rows", {}).get("value", [])
     mark = {True: "yes", False: "no", None: "—"}
     out["rchecks.json"] = json.dumps([[r["id"], r["quantity"], fmt_value(r["paper"]), fmt_value(r["ours"]), mark[r["match"]]] for r in rows])

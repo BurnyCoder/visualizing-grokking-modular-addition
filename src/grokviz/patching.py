@@ -17,6 +17,7 @@ from __future__ import annotations  # postponed annotations
 
 import torch  # tensors
 
+from grokviz import fourier  # key cos/sin rows
 from grokviz.metrics import Grid  # inputs, Fourier basis
 from grokviz.model import GrokTransformer  # network
 from grokviz.stats import bootstrap_interval  # CI over sampled triples
@@ -25,7 +26,7 @@ from grokviz.stats import bootstrap_interval  # CI over sampled triples
 def key_embedding_subspace(model: GrokTransformer, grid: Grid, key_freqs: list[int]) -> torch.Tensor:
     """Orthonormal basis [d_model, 2|K|] of embedding directions that carry cos/sin(w_k a) for the key k."""
     W_E = model.embed.W_E[:, : grid.p].double()  # [d, p]
-    rows = torch.stack([grid.F[i] for k in key_freqs for i in (2 * k - 1, 2 * k)]).to(W_E.dtype)  # [2|K|, p]
+    rows = fourier.key_rows(grid.F, key_freqs).to(W_E.dtype)  # [2|K|, p]
     Q, _ = torch.linalg.qr(W_E @ rows.T)  # columns: residual-space images of the key Fourier components
     return Q
 

@@ -34,6 +34,7 @@ from mdit_py_plugins.container import container_plugin  # ::: callouts
 from mdit_py_plugins.dollarmath import dollarmath_plugin  # $math$
 
 from grokviz.config import REPO_ROOT, load_config  # paths
+from grokviz.formatting import fmt_number, fmt_value  # prose numbers and R-check values (shared with paper/rchecks)
 
 log = logging.getLogger("grokviz.site_build")
 CONTENT, TEMPLATES, WEB = REPO_ROOT / "content", REPO_ROOT / "templates", REPO_ROOT / "web"
@@ -86,28 +87,6 @@ def markdown() -> MarkdownIt:
 def _esc(s: str) -> str:
     """Minimal HTML escaping for math source (KaTeX reads textContent)."""
     return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-
-
-SUPERSCRIPT = str.maketrans("-0123456789", "⁻⁰¹²³⁴⁵⁶⁷⁸⁹")  # str.translate table for exponents
-
-
-def fmt_number(entry) -> str:
-    """Format a summary entry {value, fmt} for prose."""
-    if not isinstance(entry, dict):
-        entry = {"value": entry}
-    v, f = entry["value"], entry.get("fmt", "g")
-    if isinstance(v, list):
-        return ", ".join(str(x) for x in v)
-    if v is None:
-        return "—"
-    if f == "int":
-        return f"{int(round(v)):,}"
-    if f == "pct":
-        return f"{100 * v:.1f} %"
-    if f == "sci":  # 2.41e-07 → "2.41×10⁻⁷" (mantissa from Python's e-format, exponent in Unicode superscripts)
-        mant, exp = f"{v:.2e}".split("e")
-        return mant if int(exp) == 0 else f"{mant}×10{str(int(exp)).translate(SUPERSCRIPT)}"
-    return f"{v:{f}}" if not isinstance(v, str) else v
 
 
 def expand(text: str, b: Build, page: str) -> str:
@@ -328,15 +307,6 @@ def page_body(name: str, b: Build) -> str:
     if "<!-- RCHECK_TABLE -->" in html:  # reproduce page: generated paper-vs-ours table (src/grokviz/rchecks.py)
         html = html.replace("<!-- RCHECK_TABLE -->", rcheck_table(b.summary.get("rchecks.rows", {}).get("value", [])))
     return html
-
-
-def fmt_value(v) -> str:
-    """Compact text for an R-check value: 4 significant digits, lists in brackets, strings as given."""
-    if isinstance(v, float):
-        return f"{v:.4g}"
-    if isinstance(v, list):
-        return "[" + ", ".join(fmt_value(x) for x in v) + "]"
-    return str(v)
 
 
 def rcheck_table(rows: list[dict]) -> str:

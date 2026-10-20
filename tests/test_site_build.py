@@ -35,7 +35,7 @@ def test_site_builds_and_content_rules_hold(tmp_path, monkeypatch):
 
 def test_scientific_numbers_use_superscript_exponents():
     """Prose numbers like the paper's 2.41e-7 loss read as 2.41×10⁻⁷; exponent 0 shows the bare mantissa."""
-    from grokviz.site_build import fmt_number
+    from grokviz.formatting import fmt_number
 
     assert fmt_number({"value": 2.41e-7, "fmt": "sci"}) == "2.41×10⁻⁷"
     assert fmt_number({"value": 3.2e5, "fmt": "sci"}) == "3.20×10⁵"

@@ -21,6 +21,7 @@ def test_paper_compiles_with_bound_numbers(tmp_path):
     keys = set(re.findall(r'#?n\("([\w.]+)"\)', source))
     summary = {k: {"value": 0.5, "fmt": ".2f"} for k in keys}
     summary["rchecks.rows"] = {"value": [{"id": "R1", "quantity": "loss", "paper": 2.41e-7, "ours": 2.412e-7, "match": True}], "fmt": "str"}
+    summary["hypotheses.verdict"] = {"value": {"H1": {"supported": True}}, "fmt": "str"}  # structured entry from summary.py
     verdict = {"H1": {"successes": 11, "n": 11, "p_holm": 0.002, "supported": True},
                "H5": {"wd1_grokked": 11, "wd1_n": 11, "wd0_grokked": 0, "wd0_n": 5, "p_holm": 0.0002, "supported": True}}
     out = tmp_path / "paper.pdf"

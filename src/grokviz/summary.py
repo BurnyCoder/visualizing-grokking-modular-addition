@@ -19,6 +19,7 @@ import torch  # weights
 
 from grokviz import task  # split sizes
 from grokviz.runstore import RunStore  # paper run
+from grokviz.sources import PAPER_ANALYSIS_INDEX  # index of the paper's epoch-40k checkpoint
 
 
 def _v(value, fmt="g") -> dict:
@@ -60,7 +61,7 @@ def paper_numbers(runs_dir: Path, p: int, frac: float) -> dict:
     val = _load(a / "validation.json")
     g = dict(np.load(a / "gradients.npz"))
     store = RunStore(pr)
-    model = store.load_model(400)
+    model = store.load_model(PAPER_ANALYSIS_INDEX)  # the epoch-40k model the paper analyses
     out["model.n_params"] = _v(sum(q.numel() for q in model.parameters()), "int")
     out["paper.key_freqs"] = _v(rc["details"]["key_freqs"])
     for t in ("t1", "t2", "t3", "t_grok"):

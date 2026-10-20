@@ -6,8 +6,7 @@ we compute the training-loss gradient g_train and the test-loss gradient g_test 
   per-parameter ‖g_train‖ and ‖θ‖ (the weight-decay pull is λθ, so ‖g‖ vs λ‖θ‖ shows which force dominates);
   cos(g_train, θ)  — positive means the loss gradient also pushes weights toward zero (descent moves along −g);
   cos(g_train, g_test) — do steps that reduce training loss also reduce test loss? (generalising vs memorising);
-  the Fourier spectrum of the embedding gradient (which frequencies the loss is currently pushing W_E toward);
-  for our runs, the actual AdamW update from the saved Adam moments versus the raw gradient and decay terms.
+  the Fourier spectrum of the embedding gradient (which frequencies the loss is currently pushing W_E toward).
 Global context: chapter 19 ("Gradients and weight decay") and dashboard group F; tests ARENA's speculation that
 memorising gradients cancel while pattern gradients reinforce, and the paper's claim that circuit formation
 and cleanup are driven by weight decay (Sec. 5.2–5.3).
@@ -27,7 +26,7 @@ from grokviz import losses, metrics  # loss + grid
 from grokviz.checkpoint_metrics import grid_for, run_dirs  # shared run helpers
 from grokviz.context import PipelineContext  # phase argument
 from grokviz.envcheck import resolve_device  # device
-from grokviz.runstore import RunStore  # run access
+from grokviz.runstore import RunStore, save_analysis  # run access; atomic analysis writes
 
 log = logging.getLogger("grokviz.gradients")
 
@@ -54,7 +53,6 @@ def grads_on(model, grid: metrics.Grid, mask: torch.Tensor) -> list[torch.Tensor
 def compute_gradient_dynamics(ctx: PipelineContext) -> None:
     """Phase entry point: write analysis/gradients.npz per run."""
     device = resolve_device(ctx.cfg.device)
-    wd = None
     for run_dir in run_dirs(ctx):
         out_path = run_dir / "analysis" / "gradients.npz"
         if out_path.exists() and not ctx.force:
@@ -76,12 +74,13 @@ def compute_gradient_dynamics(ctx: PipelineContext) -> None:
             rows.setdefault("cos_grad_weight", []).append(cosine(flat(g_tr), flat(params)))
             rows.setdefault("cos_train_test", []).append(cosine(flat(g_tr), flat(g_te)))
             rows.setdefault("grad_we_fourier", []).append((gw @ grid.F.T).norm(dim=0).cpu().numpy())
-            rows.setdefault("grad_ratio_decay", []).append(float(flat(g_tr).norm() / (wd * flat(params).norm() + 1e-300)))
+            # ‖g‖ / (λ‖θ‖); undefined (NaN) without weight decay instead of a meaningless 1e297
+            rows.setdefault("grad_ratio_decay", []).append(float(flat(g_tr).norm() / (wd * flat(params).norm())) if wd else float("nan"))
             if t % 100 == 0:
                 log.info("%s: ckpt %d step %d |g|=%.3e cos(g,θ)=%.3f cos(g_tr,g_te)=%.3f", store.run_id, t, step,
                          flat(g_tr).norm(), rows["cos_grad_weight"][-1], rows["cos_train_test"][-1])
         arrays = {k: np.asarray(v) for k, v in rows.items()}
         arrays["steps"] = np.asarray(store.ckpt_steps)
         arrays["param_names"] = np.asarray([n for n, _ in store.load_model(0).named_parameters()])
-        np.savez_compressed(out_path, **arrays)
+        save_analysis(out_path, **arrays)
         log.info("%s: wrote %s", store.run_id, out_path)

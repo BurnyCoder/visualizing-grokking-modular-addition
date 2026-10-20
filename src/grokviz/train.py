@@ -26,7 +26,7 @@ import gc  # release memmaps before deleting their files
 import logging  # module logger
 import shutil  # remove temporary memmaps
 import time  # timing / ETA
-from dataclasses import dataclass  # run specification
+from dataclasses import asdict, dataclass  # run specification (asdict: resume fingerprint)
 from pathlib import Path  # paths
 
 import numpy as np  # memmaps and curves
@@ -133,9 +133,13 @@ def train_runs(cfg: Config, specs: list[RunSpec], device, runs_dir: Path, num_st
     state_names = list(full)
 
     resume_file = runs_dir / "_resume" / "state.pt"  # saved training state for crash recovery
-    saved = torch.load(resume_file, weights_only=False) if resume_file.exists() else None
-    if saved is not None and (saved["run_ids"] != [s.run_id for s in specs] or saved["n_steps"] != n_steps):
-        log.warning("ignoring %s: it belongs to a different run set", resume_file)
+    # everything that shapes the trajectory or the saved arrays; a resume state is only reused if it matches exactly
+    fingerprint = repr(([asdict(s) for s in specs], n_steps, cfg.lr, cfg.beta1, cfg.beta2, cfg.warmup_steps, cfg.p,
+                        cfg.frac_train, cfg.ckpt_every, cfg.test_every, cfg.norms_every, cfg.optim_every))
+    # weights_only=True: only tensors and plain containers are unpickled (https://pytorch.org/docs/stable/generated/torch.load.html)
+    saved = torch.load(resume_file, weights_only=True) if resume_file.exists() else None
+    if saved is not None and saved.get("fingerprint") != fingerprint:
+        log.warning("ignoring %s: it was saved for different runs or settings", resume_file)
         saved = None
 
     def mm(run_id: str, key: str, n: int, item_shape) -> np.memmap:
@@ -169,7 +173,7 @@ def train_runs(cfg: Config, specs: list[RunSpec], device, runs_dir: Path, num_st
             g[k].copy_(saved["g"][k].to(device))
         for k in gn:
             gn[k].copy_(saved["gn"][k].to(device))
-        lrs[:] = saved["lrs"]
+        lrs[:] = saved["lrs"].numpy()
         first = saved["step"]
         log.info("resuming %d runs from step %d (%s)", R, first, resume_file)
     else:
@@ -181,9 +185,9 @@ def train_runs(cfg: Config, specs: list[RunSpec], device, runs_dir: Path, num_st
             for a in arrays.values():
                 a.flush()
         resume_file.parent.mkdir(parents=True, exist_ok=True)
-        blob = {"run_ids": [s.run_id for s in specs], "n_steps": n_steps, "step": done,
+        blob = {"fingerprint": fingerprint, "step": done,
                 "params": {k: v.detach().cpu() for k, v in params.items()}, "opt": opt.state_dict(), "sched": sched.state_dict(),
-                "g": {k: v.cpu() for k, v in g.items()}, "gn": {k: v.cpu() for k, v in gn.items()}, "lrs": lrs.copy()}
+                "g": {k: v.cpu() for k, v in g.items()}, "gn": {k: v.cpu() for k, v in gn.items()}, "lrs": torch.from_numpy(lrs.copy())}
         torch.save(blob, resume_file.with_suffix(".tmp"))
         resume_file.with_suffix(".tmp").replace(resume_file)  # atomic rename: never leaves a half-written state
 
@@ -256,8 +260,9 @@ def train_runs(cfg: Config, specs: list[RunSpec], device, runs_dir: Path, num_st
             "param_names": names, "model_shape": shape.__dict__, "deterministic": True,
             "trained_with": [x.run_id for x in specs], "train_seconds_all_runs": seconds, "environment": env,
         }
-        write_run(runs_dir / s.run_id, meta, stacked, curves)
+        # Adam moments first: meta.json (written last by write_run) is the "run finished" marker other phases check
         save_file({k: torch.from_numpy(np.array(v)).contiguous() for k, v in om[s.run_id].items()}, str(runs_dir / s.run_id / "optim.safetensors"))
+        write_run(runs_dir / s.run_id, meta, stacked, curves)
         del stacked
     ck.clear()  # drop memmap references so Windows releases the files
     om.clear()
@@ -274,6 +279,8 @@ def train_all_runs(ctx: PipelineContext) -> None:
     if not todo:
         log.info("all selected runs already exist")
         return
+    if ctx.force:  # --force means "train from scratch", never "continue an old interrupted training"
+        shutil.rmtree(ctx.cfg.runs_dir / "_resume", ignore_errors=True)
     log.info("training %d runs together: %s", len(todo), ", ".join(s.run_id for s in todo))
     train_runs(ctx.cfg, todo, device, ctx.cfg.runs_dir)
     log.info("finished %d runs", len(todo))

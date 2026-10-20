@@ -26,7 +26,7 @@ from grokviz import metrics  # grid, evaluate, matrices
 from grokviz.checkpoint_metrics import grid_for, reference_index, run_dirs  # shared helpers
 from grokviz.context import PipelineContext  # phase argument
 from grokviz.envcheck import resolve_device  # device
-from grokviz.runstore import RunStore  # run access
+from grokviz.runstore import RunStore, save_analysis  # run access; atomic analysis writes
 
 log = logging.getLogger("grokviz.geometry")
 
@@ -101,5 +101,5 @@ def compute_geometry(ctx: PipelineContext, every: int = 2) -> None:
         arrays = {k: np.stack(v) for k, v in rows.items()}
         arrays["steps"] = np.asarray(steps)
         arrays["key_freqs"] = np.asarray(K)
-        np.savez_compressed(out_path, **arrays)
+        save_analysis(out_path, **arrays)
         log.info("%s: wrote %s (%d frames)", store.run_id, out_path, len(steps))

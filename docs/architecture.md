@@ -2,37 +2,7 @@
 
 ## Data flow
 
-```mermaid
-flowchart LR
-  subgraph Sources
-    HF[(HF: paper checkpoints<br/>callummcdougall/grokking_full_run_data)]
-    ARX[(arXiv PDFs<br/>quote checking only)]
-  end
-  subgraph Pipeline["src/grokviz — uv run grokviz --phases …"]
-    ENV[check_environment] --> ACQ[acquire_paper_sources] --> CONV[convert_paper_run] --> VAL[validate_paper_run]
-    VAL --> RC[validate_against_paper<br/>R-checks]
-    VAL --> TR[train_all_runs<br/>22 runs, vmap-batched]
-    TR --> CM[compute_checkpoint_metrics]
-    CM --> GR[compute_gradient_dynamics]
-    GR --> GEO[compute_geometry]
-    GEO --> PH[detect_phases]
-    PH --> FIN[analyse_final_models]
-    FIN --> HYP[test_hypotheses]
-    HYP --> PUB[publish_runs_to_hub]
-    PUB --> EXP[export_site_data<br/>+ summary.json]
-    EXP --> PSD[publish_site_data] --> BUILD[build_site]
-  end
-  HF --> ACQ
-  ARX --> ACQ
-  RUNS[(runs/&lt;id&gt;/<br/>checkpoints, curves, analysis)]
-  CONV --> RUNS
-  TR --> RUNS
-  RUNS --> CM
-  BUILD --> SITE[(site/<br/>static HTML + data)]
-  SITE --> PAGES[GitHub Pages]
-  PSD --> HFD[(HF dataset: site data)]
-  PUB --> HFM[(HF model repo: our runs)]
-```
+The phase-by-phase diagram is in the README ([What happens when you run it](../README.md#what-happens-when-you-run-it)).
 
 ## Layers
 

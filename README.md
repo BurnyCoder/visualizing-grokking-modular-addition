@@ -76,8 +76,10 @@ All 22 runs train together on one GPU, vectorised with `torch.func.vmap`. This i
 **Website.**
 - **Build.** Static HTML generated from `content/` (Markdown with macros) by `src/grokviz/site_build.py`. The build fails if:
   - a term is used before it is defined;
-  - a quote does not match its PDF page;
+  - a quote is longer than the quote policy allows;
   - a number in the prose is not bound to the analysis output (`site/data/summary.json`).
+- **Quote check.** Separately, `tests/test_quotes.py` checks every quote word for word against its PDF page. It runs
+  locally, once `acquire_paper_sources` has downloaded the PDFs.
 - **Figures.** Every figure is one JavaScript module, used by both the chapters and the dashboard.
 - **In-browser model.** Any per-input view (choose a, b, a neuron or a head) is computed by a JavaScript copy of the
   model from float16 weights. It is tested against PyTorch.
@@ -113,7 +115,7 @@ flowchart LR
     TR --> CM[compute_checkpoint_metrics] --> GR[compute_gradient_dynamics] --> GEO[compute_geometry]
     GEO --> PH[detect_phases] --> FIN[analyse_final_models] --> HYP[test_hypotheses]
     HYP --> PUB[publish_runs_to_hub] --> EXP[export_site_data] --> PSD[publish_site_data]
-    PSD --> BUILD[build_site] --> FIG[render_report_figures]
+    PSD --> BUILD[build_site] --> FIG[render_report_figures] --> PDF[build_paper_pdf]
   end
   HF --> ACQ
   ARX --> ACQ
@@ -124,6 +126,7 @@ flowchart LR
   EXP --> DATA[(site/data)]
   BUILD --> SITE[(site/)]
   FIG --> PNG[(reports/figures)]
+  PDF --> PAPER[(reports/paper.pdf)]
   PUB --> HFM[(HF model repo)]
   PSD --> HFD[(HF dataset)]
   SITE --> PAGES[GitHub Pages]
@@ -147,6 +150,7 @@ flowchart LR
    - Export the site data: about 250 MB of binary arrays and float16 weights, plus `summary.json`.
    - Upload the site data and pin it in `site-data.lock`.
    - Build `site/` and render the report figures from the site itself (Playwright).
+   - Compile the paper (`paper/main.typ` → `reports/paper.pdf`, Typst). Its numbers come from the same `summary.json`.
 
 Data formats are documented in [`docs/data-formats.md`](docs/data-formats.md); module responsibilities are in
 [`docs/architecture.md`](docs/architecture.md).
@@ -174,13 +178,14 @@ uv run grokviz --phases all
 ```
 
 ```bash
-uv run grokviz --phases compute_checkpoint_metrics,test_hypotheses --runs wd1_s0
+uv run grokviz --phases compute_checkpoint_metrics,compute_geometry --runs wd1_s0 --force
 ```
 
 The CLI flags:
 - `--phases`: phases to run;
 - `--skip`: phases to leave out;
-- `--runs`: run-id prefixes to process;
+- `--runs`: runs to process, as exact ids (`wd1_s1`) or groups (`wd1`). Phases that aggregate all runs ignore it:
+  `test_hypotheses` and `export_site_data`;
 - `--force`: recompute existing outputs;
 - `--verbose`: also log DEBUG messages.
 

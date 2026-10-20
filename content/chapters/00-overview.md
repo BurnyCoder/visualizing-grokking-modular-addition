@@ -31,7 +31,7 @@ where each term is built from the inputs with two angle-addition identities,
 
 $$\cos(w_k(a{+}b{-}c)) = \cos(w_k(a{+}b))\cos(w_k c) + \sin(w_k(a{+}b))\sin(w_k c),$$
 
-$$\cos(w_k(a{+}b)) = \cos(w_k a)\cos(w_k b) - \sin(w_k a)\sin(w_k b), \quad \sin(w_k(a{+}b)) = \sin(w_k a)\cos(w_k b) + \cos(w_k a)\sin(w_k b),$$
+$$\begin{aligned}\cos(w_k(a{+}b)) &= \cos(w_k a)\cos(w_k b) - \sin(w_k a)\sin(w_k b),\\ \sin(w_k(a{+}b)) &= \sin(w_k a)\cos(w_k b) + \cos(w_k a)\sin(w_k b),\end{aligned}$$
 
 and the sum over the set 𝒦 of a few “key” frequencies is largest exactly when c = (a + b) mod p.
 :::

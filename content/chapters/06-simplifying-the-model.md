@@ -35,7 +35,7 @@ Attention to “=” is negligible, so each head's softmax is effectively over t
 
 $$A^j_0 \approx \sigma\big(s_0 - s_1\big), \qquad A^j_1 \approx 1 - A^j_0 .$$
 
-Moreover the query comes from the “=” position, whose vector $x^{(0)}_2$ is the same for every input. So the score of position 0 depends only on the token there: it is a fixed lookup table [[symdef:Cj]] over the 113 numbers, $s_0 = C_j[a]$, and likewise $s_1 pprox C_j[b]$ (up to the small difference between the positional embeddings of positions 0 and 1, see below). Hence
+Moreover the query comes from the “=” position, whose vector $x^{(0)}_2$ is the same for every input. So the score of position 0 depends only on the token there: it is a fixed lookup table [[symdef:Cj]] over the 113 numbers, $s_0 = C_j[a]$, and likewise $s_1 \approx C_j[b]$ (up to the small difference between the positional embeddings of positions 0 and 1, see below). Hence
 
 $$A^j_0(a, b) \approx \sigma\big(C_j[a] - C_j[b]\big).$$
 
@@ -53,7 +53,7 @@ The problem has [[dfn:commutativity]]: a + b = b + a. A network that has learned
 
 Putting it together, the trained network behaves like
 
-$$\Logits(a,b) \approx W_L\,\ReLU\Big(W_{in}\big[x_2 + \textstyle\sum_j W_O^j W_V^j\big(\sigma(C_j[a]{-}C_j[b])\,E_a + (1-\sigma(\cdot))\,E_b\big)\big] + b_{in}\Big),$$
+$$\begin{aligned}\Logits(a,b) \approx W_L\,\ReLU\Big(W_{in}\big[\,&x_2 + \textstyle\sum_j W_O^j W_V^j\big(\sigma(C_j[a]{-}C_j[b])\,E_a\\ &+ (1-\sigma(\cdot))\,E_b\big)\big] + b_{in}\Big),\end{aligned}$$
 
 where $E_t$ is token t's embedding plus its positional vector. Everything that depends on the input enters through the embeddings $E_a$, $E_b$, the lookup tables $C_j$, a ReLU, and the neuron–logit map $W_L$. The rest of the site explains what each of these does.
 

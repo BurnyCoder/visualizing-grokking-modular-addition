@@ -25,7 +25,8 @@ export const figures = {
           const traces = [];
           for (const r of m.runs) {
             const te = await array(r.id, "curve_test_loss");
-            const x = Array.from({ length: te.data.length }, (_, i) => i * 10);
+            const every = te.entry.step_every ?? 10; // spacing recorded by export.py
+            const x = Array.from({ length: te.data.length }, (_, i) => i * every);
             const sel = r.id === runOf(ds);
             traces.push({ x, y: Array.from(te.data), type: "scatter", mode: "lines", name: r.id,
               line: { color: sel ? cssVar("--accent") : runColor(r.id), width: sel ? 3 : 1, dash: style(r.group) }, opacity: sel ? 1 : 0.6 });

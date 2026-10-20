@@ -15,7 +15,7 @@ $$\underbrace{\Logits(a,b) \approx W_L\,\mathrm{MLP}(a,b)}_{\text{skip connectio
 ::: object
 **2. What the numbers mean** (chapters 9–16).
 
-$$\underbrace{a \mapsto \cos(w_ka),\ \sin(w_ka)}_{\text{step 1: } W_E \text{ (sparse in Fourier, ch. 13)}} \;\;\Rightarrow\;\; \underbrace{\cos(w_k(a{+}b)),\ \sin(w_k(a{+}b))}_{\text{step 2: products via attention + ReLU (ch. 14)}} \;\;\Rightarrow\;\; \underbrace{\sum_{k\in\mathcal K}\alpha_k\cos(w_k(a{+}b{-}c))}_{\text{steps 3–4: } W_L \text{ reads off (ch. 15)}}$$
+$$\begin{aligned}&\underbrace{a \mapsto \cos(w_ka),\ \sin(w_ka)}_{\text{step 1: } W_E \text{ (sparse in Fourier, ch. 13)}}\\ \Rightarrow\;&\underbrace{\cos(w_k(a{+}b)),\ \sin(w_k(a{+}b))}_{\text{step 2: products via attention + ReLU (ch. 14)}}\\ \Rightarrow\;&\underbrace{\sum_{k\in\mathcal K}\alpha_k\cos(w_k(a{+}b{-}c))}_{\text{steps 3–4: } W_L \text{ reads off (ch. 15)}}\end{aligned}$$
 
 For the paper's network 𝒦 = {{num:paper.key_freqs}}; the cosine formula explains {{num:paper.logit_fve}} of the logits; removing one key frequency multiplies the loss by {{num:paper.key_ablation_ratio_range}}; swapping only the 10 key-frequency directions of a's embedding moves the answer {{num:paper.patch_key}} of the way to a′ + b.
 :::
@@ -23,7 +23,7 @@ For the paper's network 𝒦 = {{num:paper.key_freqs}}; the cosine formula expla
 ::: object
 **3. How it got there** (chapters 7, 8, 17–20).
 
-$$\theta \leftarrow \theta(1-\gamma\lambda) - \gamma\,\text{AdamStep}(\nabla_\theta\mathcal L): \quad \underbrace{\text{memorisation}}_{0\,-\,{\sim}1.5\text{k}} \;\to\; \underbrace{\text{circuit formation}}_{\text{restricted loss}\downarrow,\ \text{excluded loss}\uparrow} \;\to\; \underbrace{\text{cleanup}}_{\text{weights}\downarrow,\ \text{test loss}\downarrow\downarrow}$$
+$$\begin{aligned}&\theta \leftarrow \theta(1-\gamma\lambda) - \gamma\,\text{AdamStep}(\nabla_\theta\mathcal L):\\ &\underbrace{\text{memorisation}}_{0\,-\,{\sim}1.5\text{k}} \;\to\; \underbrace{\text{circuit formation}}_{\text{restricted loss}\downarrow,\ \text{excluded loss}\uparrow} \;\to\; \underbrace{\text{cleanup}}_{\text{weights}\downarrow,\ \text{test loss}\downarrow\downarrow}\end{aligned}$$
 
 The generalising circuit forms during the plateau, *before* the test loss drops; weight decay then removes the memorisation.
 :::

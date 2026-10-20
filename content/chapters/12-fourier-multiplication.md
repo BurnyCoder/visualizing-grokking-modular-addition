@@ -12,7 +12,7 @@ Fix one frequency k and write $w = w_k = 2\pi k/113$.
 
 **Step 2 — combine: add the angles with the identities of chapter 9.**
 
-$$\cos(w(a+b)) = \cos(wa)\cos(wb) - \sin(wa)\sin(wb), \qquad \sin(w(a+b)) = \sin(wa)\cos(wb) + \cos(wa)\sin(wb).$$
+$$\begin{aligned}\cos(w(a+b)) &= \cos(wa)\cos(wb) - \sin(wa)\sin(wb),\\ \sin(w(a+b)) &= \sin(wa)\cos(wb) + \cos(wa)\sin(wb).\end{aligned}$$
 
 These need *products* of two numbers; in the network they are computed by the attention layer and the MLP (chapter 14 shows how a ReLU multiplies).
 

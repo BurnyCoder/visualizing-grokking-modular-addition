@@ -19,10 +19,14 @@ function overTraining(traces, layout) {
     async render(body, ds) {
       body.innerHTML = "";
       const plot = new Plot(body, { height: 260, stepAxis: true });
+      const info = note(body);
       let shown = null;
       watch(["run", "step"], async (s, changed) => {
         const id = runOf(ds), r = await run(id);
-        if (!r.arrays.grad_scalars) { body.innerHTML = '<p class="fig-note">No gradient data for this run.</p>'; return; }
+        // hide (not destroy) the plot when a run has no gradients, so switching back to one that has them redraws it
+        plot.el.hidden = !r.arrays.grad_scalars;
+        info.textContent = r.arrays.grad_scalars ? "" : "No gradient data for this run.";
+        if (!r.arrays.grad_scalars) { shown = null; return; }
         if (shown !== id || changed.includes("theme")) {
           shown = id;
           await plot.draw(await traces(id, r), { ...layout, shapes: phaseShapes(r.phases, r.ckpt_steps.at(-1)), xaxis: { title: { text: "training step" } } });

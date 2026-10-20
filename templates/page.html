@@ -1,0 +1,8 @@
+{#- page.html — simple content page (landing page, glossary, sources, errata, reproduce).
+    Local: renders `body_html` inside the standard layout. Global: used for every non-chapter, non-dashboard page. -#}
+{% extends "base.html" %}
+{% block content %}
+<main class="page" id="main">
+  {{ body_html | safe }}
+</main>
+{% endblock %}

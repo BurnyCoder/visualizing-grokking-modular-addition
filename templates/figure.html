@@ -1,0 +1,22 @@
+{#- figure.html — one figure/panel: title, one-sentence description, live render area, expandable explanation.
+    Local: `fig` comes from content/figures.yaml; the JS registry (assets/js/figures/) fills `.fig-body`.
+    Global: identical markup inside chapters and dashboard panels; Playwright screenshots of figure.html?id=...
+    become the report figures, so every figure has exactly one implementation. -#}
+<figure class="fig {{ fig.size or 'm' }}" id="fig-{{ fig.id }}" data-fig="{{ fig.id }}" {% if fig.run %}data-run="{{ fig.run }}"{% endif %}>
+  <figcaption>
+    <h3 class="fig-title">{{ fig.title }}</h3>
+    <p class="fig-what">{{ fig.what_html | safe }}</p>
+  </figcaption>
+  <div class="fig-body" aria-live="polite"><p class="loading">Loading…</p></div>
+  <details class="fig-more">
+    <summary>How to read it{% if fig.eq %} · the math{% endif %}</summary>
+    {% if fig.eq %}<div class="fig-eq">{{ fig.eq_html | safe }}</div>{% endif %}
+    {% if fig.read_html %}<div class="fig-read">{{ fig.read_html | safe }}</div>{% endif %}
+    {% if fig.expect_html %}<p class="fig-expect"><strong>What to expect:</strong> {{ fig.expect_html | safe }}</p>{% endif %}
+    <p class="fig-meta">
+      {% if fig.chapter %}<a href="{{ root }}chapters/{{ fig.chapter }}">Learn step by step →</a>{% endif %}
+      {% if fig.cite_html %} · Source: {{ fig.cite_html | safe }}{% endif %}
+      · Computed by <code>{{ fig.producer or 'grokviz' }}</code> (<a href="https://github.com/BurnyCoder/visualizing-grokking-modular-addition">code</a>)
+    </p>
+  </details>
+</figure>

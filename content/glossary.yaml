@@ -1,0 +1,578 @@
+# glossary.yaml — every term the site defines: display name, ONE sentence (≤ 35 words), source URL(s).
+# Global context: chapters define each term exactly once with [[dfn:id]] (in reading order) and use it later
+# with [[term:id]]; the build fails if a term is used before its definition or if an entry breaks the policy.
+# ---------------- Chapter 1: arithmetic ----------------
+integer:
+  name: integer
+  def: "A whole number such as 0, 1, 2 or −3, with no fractional part."
+  src: ["https://en.wikipedia.org/wiki/Integer"]
+remainder:
+  name: remainder
+  def: "What is left over when one whole number is divided by another as many whole times as possible, e.g. 14 divided by 12 leaves remainder 2."
+  src: ["https://en.wikipedia.org/wiki/Remainder"]
+modulo:
+  name: modulo (mod)
+  def: "The operation “x mod p” returns the remainder of x divided by p, a number between 0 and p − 1."
+  src: ["https://en.wikipedia.org/wiki/Modulo"]
+modular-addition:
+  name: modular addition
+  def: "Adding two numbers and then taking the remainder modulo p, so results wrap around like the hours on a clock."
+  src: ["https://en.wikipedia.org/wiki/Modular_arithmetic"]
+modulus:
+  name: modulus
+  def: "The number p at which modular arithmetic wraps around; in this experiment p = 113."
+  src: ["https://en.wikipedia.org/wiki/Modular_arithmetic"]
+prime:
+  name: prime number
+  def: "A whole number greater than 1 whose only divisors are 1 and itself, such as 2, 3, 5, 7 or 113."
+  src: ["https://en.wikipedia.org/wiki/Prime_number"]
+# ---------------- Chapter 2: the task as data ----------------
+function:
+  name: function
+  def: "A rule that assigns exactly one output to every allowed input, like f(a, b) = (a + b) mod 113."
+  src: ["https://en.wikipedia.org/wiki/Function_(mathematics)"]
+dataset:
+  name: dataset
+  def: "A collection of examples, each an input together with its correct output (its label)."
+  src: ["https://developers.google.com/machine-learning/glossary#dataset"]
+label:
+  name: label
+  def: "The correct answer attached to an example in a dataset; here the label of input (a, b) is (a + b) mod 113."
+  src: ["https://developers.google.com/machine-learning/glossary#label"]
+training-set:
+  name: training set
+  def: "The examples a model is allowed to learn from; in the paper's setup, a random 30 % of all 12,769 input pairs."
+  src: ["https://developers.google.com/machine-learning/glossary#training-set", "https://arxiv.org/abs/2301.05217"]
+test-set:
+  name: test set
+  def: "Examples held back from training and used only to measure how well the model handles inputs it has never seen."
+  src: ["https://developers.google.com/machine-learning/glossary#test-set"]
+memorization:
+  name: memorization
+  def: "Getting training examples right by storing them individually, which gives no ability to answer unseen inputs."
+  src: ["https://arxiv.org/abs/2301.05217"]
+generalization:
+  name: generalization
+  def: "Correctly answering inputs that were not in the training set, which requires having captured the underlying rule."
+  src: ["https://developers.google.com/machine-learning/glossary#generalization"]
+token:
+  name: token
+  def: "One symbol of a model's input sequence, represented by an integer id; here the ids 0–112 are numbers and 113 is “=”."
+  src: ["https://arxiv.org/abs/2301.05217", "https://www.neelnanda.io/mechanistic-interpretability/glossary"]
+vocabulary:
+  name: vocabulary
+  def: "The set of all tokens a model knows; here 114 tokens (113 numbers plus “=”)."
+  src: ["https://www.neelnanda.io/mechanistic-interpretability/glossary"]
+position:
+  name: position
+  def: "The place of a token in the input sequence, counted from 0; the inputs here always have positions 0 (a), 1 (b) and 2 (=)."
+  src: ["https://arxiv.org/abs/2301.05217"]
+# ---------------- Chapter 3: vectors and matrices ----------------
+vector:
+  name: vector
+  def: "An ordered list of numbers, e.g. (3, −1, 2), which can be pictured as an arrow in a space with one axis per entry."
+  src: ["https://en.wikipedia.org/wiki/Vector_(mathematics_and_physics)"]
+dimension:
+  name: dimension
+  def: "The number of entries of a vector, i.e. the number of independent directions of the space it lives in."
+  src: ["https://en.wikipedia.org/wiki/Dimension_(vector_space)"]
+dot-product:
+  name: dot product
+  def: "The sum of the products of matching entries of two equal-length vectors, e.g. (1, 2)·(3, 4) = 1·3 + 2·4 = 11."
+  src: ["https://en.wikipedia.org/wiki/Dot_product"]
+norm:
+  name: norm (length)
+  def: "The length of a vector, the square root of the sum of its squared entries, e.g. ‖(3, 4)‖ = 5."
+  src: ["https://en.wikipedia.org/wiki/Norm_(mathematics)#Euclidean_norm"]
+matrix:
+  name: matrix
+  def: "A rectangular table of numbers with rows and columns, used to transform vectors into other vectors."
+  src: ["https://en.wikipedia.org/wiki/Matrix_(mathematics)"]
+matrix-vector-product:
+  name: matrix–vector product
+  def: "The vector whose i-th entry is the dot product of the matrix's i-th row with the vector."
+  src: ["https://en.wikipedia.org/wiki/Matrix_multiplication#Matrix_times_vector"]
+matrix-product:
+  name: matrix product
+  def: "Combining two matrices into one whose entry (i, j) is the dot product of row i of the first with column j of the second."
+  src: ["https://en.wikipedia.org/wiki/Matrix_multiplication"]
+transpose:
+  name: transpose
+  def: "The matrix obtained by turning rows into columns, written with a superscript T."
+  src: ["https://en.wikipedia.org/wiki/Transpose"]
+one-hot:
+  name: one-hot vector
+  def: "A vector of zeros with a single 1, used to encode a choice among options, e.g. token 2 of 4 → (0, 0, 1, 0)."
+  src: ["https://en.wikipedia.org/wiki/One-hot"]
+basis:
+  name: basis
+  def: "A set of vectors from which every vector of the space can be built as a unique weighted sum."
+  src: ["https://en.wikipedia.org/wiki/Basis_(linear_algebra)"]
+orthonormal-basis:
+  name: orthonormal basis
+  def: "A basis whose vectors all have length 1 and are perpendicular (dot product 0) to each other, so coordinates are just dot products."
+  src: ["https://en.wikipedia.org/wiki/Orthonormal_basis"]
+projection:
+  name: projection
+  def: "The part of a vector lying along a given direction or subspace, found with dot products onto an orthonormal basis of it."
+  src: ["https://en.wikipedia.org/wiki/Projection_(linear_algebra)"]
+subspace:
+  name: subspace
+  def: "All weighted sums of a chosen set of vectors, e.g. a plane through the origin inside 3D space."
+  src: ["https://en.wikipedia.org/wiki/Linear_subspace"]
+rank:
+  name: rank
+  def: "The number of independent directions a matrix can output, i.e. the dimension of the space spanned by its columns."
+  src: ["https://en.wikipedia.org/wiki/Rank_(linear_algebra)"]
+# ---------------- Chapter 4: scores to probabilities ----------------
+exponential:
+  name: exponential function
+  def: "The function exp(x) = eˣ with e ≈ 2.718, which turns any number into a positive one and grows fast."
+  src: ["https://en.wikipedia.org/wiki/Exponential_function"]
+logarithm:
+  name: natural logarithm
+  def: "The inverse of the exponential: ln(y) is the x with eˣ = y, e.g. ln(113) ≈ 4.727."
+  src: ["https://en.wikipedia.org/wiki/Natural_logarithm"]
+probability-distribution:
+  name: probability distribution
+  def: "Non-negative numbers, one per possible outcome, that add up to 1."
+  src: ["https://en.wikipedia.org/wiki/Probability_distribution"]
+logit:
+  name: logit
+  def: "An unnormalised score a model outputs for one possible answer; higher means more likely after the softmax."
+  src: ["https://developers.google.com/machine-learning/glossary#logits", "https://www.neelnanda.io/mechanistic-interpretability/glossary"]
+softmax:
+  name: softmax
+  def: "The function turning scores x₁…x_n into probabilities exp(xᵢ)/Σⱼ exp(xⱼ)."
+  src: ["https://en.wikipedia.org/wiki/Softmax_function"]
+argmax:
+  name: argmax
+  def: "The position of the largest entry of a list; the model's predicted answer is the argmax of its logits."
+  src: ["https://en.wikipedia.org/wiki/Arg_max"]
+sigmoid:
+  name: sigmoid
+  def: "The S-shaped function σ(x) = 1/(1 + e^(−x)); a softmax over two scores equals σ of their difference."
+  src: ["https://en.wikipedia.org/wiki/Sigmoid_function"]
+cross-entropy:
+  name: cross-entropy loss
+  def: "Minus the logarithm of the probability a model gives to the correct answer, averaged over examples; 0 is perfect."
+  src: ["https://en.wikipedia.org/wiki/Cross-entropy", "https://pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html"]
+accuracy:
+  name: accuracy
+  def: "The fraction of examples whose highest-scoring answer (argmax) is the correct one."
+  src: ["https://developers.google.com/machine-learning/glossary#accuracy"]
+loss:
+  name: loss
+  def: "A single number measuring how wrong a model's outputs are on a set of examples; training tries to make it small."
+  src: ["https://developers.google.com/machine-learning/glossary#loss"]
+# ---------------- Chapter 5: the model ----------------
+neural-network:
+  name: neural network
+  def: "A function built from many simple, adjustable steps (mostly matrix products and simple nonlinear functions) whose numbers are tuned from data."
+  src: ["https://en.wikipedia.org/wiki/Neural_network_(machine_learning)"]
+parameter:
+  name: parameter (weight)
+  def: "One adjustable number inside a model; training changes the parameters to reduce the loss."
+  src: ["https://developers.google.com/machine-learning/glossary#parameter"]
+bias:
+  name: bias (term)
+  def: "A learned number added to an output regardless of the input, letting a unit shift its result up or down."
+  src: ["https://developers.google.com/machine-learning/glossary#bias-math-or-bias-term"]
+transformer:
+  name: transformer
+  def: "A neural network architecture that processes a sequence of tokens with attention and MLP layers acting on a shared residual stream."
+  src: ["https://arxiv.org/abs/1706.03762", "https://transformer-circuits.pub/2021/framework/index.html"]
+layer:
+  name: layer
+  def: "One block of computation in a network; this model has a single transformer layer (attention followed by an MLP)."
+  src: ["https://developers.google.com/machine-learning/glossary#layer"]
+embedding:
+  name: embedding
+  def: "The vector a model uses to represent a token, read as one column of the embedding matrix W_E."
+  src: ["https://en.wikipedia.org/wiki/Embedding_(machine_learning)", "https://www.neelnanda.io/mechanistic-interpretability/glossary"]
+positional-embedding:
+  name: positional embedding
+  def: "A learned vector added to a token's embedding that tells the model at which position the token sits."
+  src: ["https://arxiv.org/abs/2301.05217", "https://transformer-circuits.pub/2021/framework/index.html"]
+residual-stream:
+  name: residual stream
+  def: "The running vector at each position that every layer reads from and adds its output to."
+  src: ["https://transformer-circuits.pub/2021/framework/index.html"]
+attention:
+  name: attention
+  def: "A layer that lets each position gather information from (earlier) positions, weighting them by learned relevance scores."
+  src: ["https://arxiv.org/abs/1706.03762", "https://www.3blue1brown.com/lessons/attention"]
+attention-head:
+  name: attention head
+  def: "One independent attention mechanism with its own query, key, value and output matrices; this model has 4."
+  src: ["https://transformer-circuits.pub/2021/framework/index.html"]
+query:
+  name: query
+  def: "The vector W_Q·x a position emits to ask which other positions are relevant to it."
+  src: ["https://arxiv.org/abs/1706.03762"]
+key:
+  name: key
+  def: "The vector W_K·x a position emits to be matched against queries; query·key measures relevance."
+  src: ["https://arxiv.org/abs/1706.03762"]
+value:
+  name: value
+  def: "The vector W_V·x a position contributes when attended to, before the head's output matrix W_O."
+  src: ["https://arxiv.org/abs/1706.03762"]
+attention-score:
+  name: attention score
+  def: "The scaled dot product query·key/√d_head between two positions, before the softmax."
+  src: ["https://arxiv.org/abs/1706.03762"]
+attention-pattern:
+  name: attention pattern
+  def: "The softmax of attention scores: how much each position reads from each earlier position (each row sums to 1)."
+  src: ["https://transformer-circuits.pub/2021/framework/index.html"]
+causal-mask:
+  name: causal mask
+  def: "A rule forbidding a position to attend to later positions, implemented by setting those scores to −∞ (in practice a huge negative number)."
+  src: ["https://arxiv.org/abs/1706.03762"]
+ov-circuit:
+  name: OV circuit
+  def: "The product W_O W_V: what a head writes into the residual stream for each token it attends to."
+  src: ["https://transformer-circuits.pub/2021/framework/index.html", "https://arxiv.org/abs/2301.05217"]
+qk-circuit:
+  name: QK circuit
+  def: "The product W_Qᵀ W_K: which pairs of tokens get high attention scores."
+  src: ["https://transformer-circuits.pub/2021/framework/index.html"]
+mlp:
+  name: MLP (multilayer perceptron)
+  def: "A layer that multiplies by a matrix, applies a simple nonlinear function to each entry, and multiplies by another matrix."
+  src: ["https://en.wikipedia.org/wiki/Multilayer_perceptron"]
+neuron:
+  name: neuron
+  def: "One of the 512 hidden units of the MLP: an entry computed as ReLU(row of W_in · x + bias)."
+  src: ["https://www.neelnanda.io/mechanistic-interpretability/glossary"]
+relu:
+  name: ReLU
+  def: "The function ReLU(x) = max(0, x), which keeps positive numbers and replaces negative ones with 0."
+  src: ["https://en.wikipedia.org/wiki/Rectified_linear_unit"]
+activation:
+  name: activation
+  def: "The value an internal unit (e.g. a neuron after its ReLU) takes on a particular input."
+  src: ["https://www.neelnanda.io/mechanistic-interpretability/glossary"]
+pre-activation:
+  name: pre-activation
+  def: "A neuron's value before the ReLU is applied, which can be negative."
+  src: ["https://www.neelnanda.io/mechanistic-interpretability/glossary"]
+unembedding:
+  name: unembedding
+  def: "The final matrix W_U that turns the residual stream into one logit per possible answer."
+  src: ["https://transformer-circuits.pub/2021/framework/index.html"]
+forward-pass:
+  name: forward pass
+  def: "Running a model on an input from the first layer to the last to produce its output."
+  src: ["https://developers.google.com/machine-learning/glossary#forward-pass"]
+# ---------------- Chapter 6: simplifying the model ----------------
+ablation:
+  name: ablation
+  def: "Removing or replacing one part of a model's computation to see how much the output depends on it."
+  src: ["https://www.neelnanda.io/mechanistic-interpretability/glossary"]
+zero-ablation:
+  name: zero ablation
+  def: "An ablation that replaces a component's output with zeros."
+  src: ["https://www.neelnanda.io/mechanistic-interpretability/glossary"]
+mean-ablation:
+  name: mean ablation
+  def: "An ablation that replaces a component's output with its average over all inputs, removing only the input-dependent part."
+  src: ["https://www.neelnanda.io/mechanistic-interpretability/glossary"]
+skip-connection:
+  name: skip connection
+  def: "The path that carries a layer's input around the layer and adds it to the layer's output."
+  src: ["https://en.wikipedia.org/wiki/Residual_neural_network"]
+effective-weights:
+  name: effective weights
+  def: "A product of weight matrices that together map one meaningful quantity to another, e.g. W_logit = W_out W_U from neurons to logits."
+  src: ["https://learn.arena.education/chapter1_transformer_interp/32_grokking/1-periodicity-fourier-basis/"]
+neuron-logit-map:
+  name: neuron–logit map
+  def: "The matrix W_L = W_U W_out saying how much each neuron's activation adds to each answer's logit."
+  src: ["https://arxiv.org/abs/2301.05217"]
+commutativity:
+  name: commutativity
+  def: "The property a + b = b + a; a model that respects it treats the inputs a and b symmetrically."
+  src: ["https://en.wikipedia.org/wiki/Commutative_property"]
+# ---------------- Chapter 7: learning ----------------
+training:
+  name: training
+  def: "Repeatedly adjusting a model's parameters so that its loss on the training set decreases."
+  src: ["https://developers.google.com/machine-learning/glossary#training"]
+derivative:
+  name: derivative
+  def: "The rate at which a function's output changes when its input changes slightly; the slope of its graph."
+  src: ["https://en.wikipedia.org/wiki/Derivative"]
+gradient:
+  name: gradient
+  def: "The vector of derivatives of the loss with respect to every parameter; it points in the direction of steepest increase."
+  src: ["https://en.wikipedia.org/wiki/Gradient"]
+gradient-descent:
+  name: gradient descent
+  def: "Training by repeatedly moving the parameters a small step against the gradient, so the loss goes down."
+  src: ["https://en.wikipedia.org/wiki/Gradient_descent"]
+learning-rate:
+  name: learning rate
+  def: "The step size of each parameter update; here 0.001 after a 10-step warm-up."
+  src: ["https://developers.google.com/machine-learning/glossary#learning-rate", "https://arxiv.org/abs/2301.05217"]
+full-batch:
+  name: full-batch training
+  def: "Computing each update from all training examples at once, so every step sees exactly the same data."
+  src: ["https://arxiv.org/abs/2301.05217"]
+step:
+  name: step (epoch)
+  def: "One parameter update; with full-batch training one step is also one pass over the training set (an epoch)."
+  src: ["https://developers.google.com/machine-learning/glossary#epoch"]
+optimizer:
+  name: optimizer
+  def: "The rule that turns gradients into parameter updates, e.g. plain gradient descent or Adam."
+  src: ["https://pytorch.org/docs/stable/optim.html"]
+adam:
+  name: Adam
+  def: "An optimizer that scales each parameter's step by running averages of its recent gradients and squared gradients."
+  src: ["https://arxiv.org/abs/1412.6980"]
+weight-decay:
+  name: weight decay
+  def: "Shrinking every parameter by a small fraction at each step, which prefers solutions with smaller weights."
+  src: ["https://arxiv.org/abs/1711.05101", "https://pytorch.org/docs/stable/generated/torch.optim.AdamW.html"]
+adamw:
+  name: AdamW
+  def: "Adam with weight decay applied directly to the parameters (“decoupled”) rather than through the gradient."
+  src: ["https://arxiv.org/abs/1711.05101"]
+regularization:
+  name: regularization
+  def: "Any training pressure toward simpler solutions, such as weight decay, beyond just fitting the training data."
+  src: ["https://developers.google.com/machine-learning/glossary#regularization"]
+hyperparameter:
+  name: hyperparameter
+  def: "A setting chosen before training (learning rate, weight decay, model size), as opposed to a learned parameter."
+  src: ["https://developers.google.com/machine-learning/glossary#hyperparameter"]
+seed:
+  name: random seed
+  def: "A number that fixes the sequence of random choices (initial weights, data split) so a run can be repeated exactly."
+  src: ["https://pytorch.org/docs/stable/notes/randomness.html"]
+initialization:
+  name: initialization
+  def: "The random values parameters start from before training."
+  src: ["https://developers.google.com/machine-learning/glossary#initialization"]
+overfitting:
+  name: overfitting
+  def: "Doing much better on the training set than on unseen data because the model fitted the training examples' specifics."
+  src: ["https://developers.google.com/machine-learning/glossary#overfitting"]
+# ---------------- Chapter 8: grokking ----------------
+grokking:
+  name: grokking
+  def: "A model first fits its training data while failing on unseen data, then — much later in training — suddenly generalizes."
+  src: ["https://arxiv.org/abs/2201.02177", "https://arxiv.org/abs/2301.05217"]
+phase-transition:
+  name: phase transition
+  def: "A sudden, qualitative change in behaviour during training, such as test loss collapsing after a long plateau."
+  src: ["https://arxiv.org/abs/2301.05217"]
+log-scale:
+  name: logarithmic scale
+  def: "An axis on which equal distances mean equal ratios (1, 10, 100…), so tiny and huge values fit on one plot."
+  src: ["https://en.wikipedia.org/wiki/Logarithmic_scale"]
+# ---------------- Chapter 9: angles and waves ----------------
+angle:
+  name: angle
+  def: "The amount of turning between two directions."
+  src: ["https://en.wikipedia.org/wiki/Angle"]
+radian:
+  name: radian
+  def: "The unit of angle in which a full turn is 2π ≈ 6.283, so a quarter turn is π/2."
+  src: ["https://en.wikipedia.org/wiki/Radian"]
+unit-circle:
+  name: unit circle
+  def: "The circle of radius 1 around the origin; the point at angle θ on it is (cos θ, sin θ)."
+  src: ["https://en.wikipedia.org/wiki/Unit_circle"]
+cosine:
+  name: cosine
+  def: "cos θ is the horizontal coordinate of the point at angle θ on the unit circle."
+  src: ["https://en.wikipedia.org/wiki/Sine_and_cosine"]
+sine:
+  name: sine
+  def: "sin θ is the vertical coordinate of the point at angle θ on the unit circle."
+  src: ["https://en.wikipedia.org/wiki/Sine_and_cosine"]
+periodic:
+  name: periodic function
+  def: "A function that repeats itself after a fixed shift, its period, like cos θ repeating every 2π."
+  src: ["https://en.wikipedia.org/wiki/Periodic_function"]
+frequency:
+  name: frequency
+  def: "How many full repetitions a wave makes over a fixed range; cos(2πk·x/p) makes k repetitions as x goes from 0 to p."
+  src: ["https://en.wikipedia.org/wiki/Frequency"]
+rotation:
+  name: rotation
+  def: "Turning every point around the origin by the same angle; rotating by θ₁ then by θ₂ equals rotating by θ₁ + θ₂."
+  src: ["https://en.wikipedia.org/wiki/Rotation_matrix"]
+angle-addition:
+  name: angle-addition identities
+  def: "cos(x+y) = cos x cos y − sin x sin y and sin(x+y) = sin x cos y + cos x sin y."
+  src: ["https://en.wikipedia.org/wiki/List_of_trigonometric_identities#Angle_sum_and_difference_identities"]
+# ---------------- Chapter 10: Fourier ----------------
+fourier-basis:
+  name: Fourier basis
+  def: "The orthonormal basis of p-dimensional space made of a constant vector and cosine and sine waves of frequencies 1 … (p−1)/2."
+  src: ["https://en.wikipedia.org/wiki/Discrete_Fourier_transform#The_unitary_DFT", "https://arxiv.org/abs/2301.05217"]
+dft:
+  name: discrete Fourier transform (DFT)
+  def: "Re-expressing a list of p numbers as amounts of each Fourier-basis wave, by taking dot products with the waves."
+  src: ["https://en.wikipedia.org/wiki/Discrete_Fourier_transform"]
+fourier-coefficient:
+  name: Fourier coefficient
+  def: "The amount of one basis wave contained in a vector: its dot product with that (unit-length) wave."
+  src: ["https://en.wikipedia.org/wiki/Fourier_series"]
+sparse:
+  name: sparse
+  def: "Having only a few large entries and the rest (near) zero."
+  src: ["https://en.wikipedia.org/wiki/Sparse_matrix"]
+fourier-2d:
+  name: 2D Fourier basis
+  def: "The basis of functions of two inputs (a, b) formed by multiplying a 1D basis wave in a with a 1D basis wave in b."
+  src: ["https://learn.arena.education/chapter1_transformer_interp/32_grokking/1-periodicity-fourier-basis/"]
+linear-term:
+  name: linear term
+  def: "A 2D Fourier term that depends on only one input, such as cos(w a) times the constant in b."
+  src: ["https://learn.arena.education/chapter1_transformer_interp/32_grokking/2-circuit-and-feature-analysis/"]
+quadratic-term:
+  name: quadratic term
+  def: "A 2D Fourier term that multiplies a wave in a with a wave in b, such as cos(w a)·cos(w b)."
+  src: ["https://learn.arena.education/chapter1_transformer_interp/32_grokking/2-circuit-and-feature-analysis/"]
+# ---------------- Chapter 11: measuring fit ----------------
+mean:
+  name: mean
+  def: "The average of a list of numbers: their sum divided by how many there are."
+  src: ["https://en.wikipedia.org/wiki/Mean"]
+variance:
+  name: variance
+  def: "The average squared distance of numbers from their mean; a measure of how spread out they are."
+  src: ["https://en.wikipedia.org/wiki/Variance"]
+fve:
+  name: fraction of variance explained (FVE)
+  def: "1 minus (variance of what an approximation misses ÷ variance of the data); 1 means a perfect fit, 0 no better than the mean."
+  src: ["https://en.wikipedia.org/wiki/Fraction_of_variance_unexplained", "https://arxiv.org/abs/2301.05217"]
+least-squares:
+  name: least squares
+  def: "Choosing a model's coefficients to minimise the sum of squared differences between its predictions and the data."
+  src: ["https://en.wikipedia.org/wiki/Ordinary_least_squares"]
+residual:
+  name: residual
+  def: "What an approximation leaves unexplained: the data minus the approximation."
+  src: ["https://en.wikipedia.org/wiki/Errors_and_residuals"]
+svd:
+  name: singular value decomposition (SVD)
+  def: "Writing a matrix as rotation × stretching × rotation; the stretch factors (singular values) show how many directions matter."
+  src: ["https://en.wikipedia.org/wiki/Singular_value_decomposition"]
+pca:
+  name: principal component analysis (PCA)
+  def: "Finding the directions along which a cloud of points varies the most, to draw it faithfully in two or three dimensions."
+  src: ["https://en.wikipedia.org/wiki/Principal_component_analysis"]
+gini:
+  name: Gini coefficient
+  def: "A number from 0 (all entries equal) to almost 1 (one entry holds everything) measuring how concentrated, i.e. sparse, a vector is."
+  src: ["https://arxiv.org/abs/0811.4706", "https://en.wikipedia.org/wiki/Gini_coefficient"]
+# ---------------- Chapter 12: the algorithm ----------------
+key-frequencies:
+  name: key frequencies
+  def: "The few Fourier frequencies a trained network actually uses; the paper's model uses k ∈ {14, 35, 41, 42, 52}."
+  src: ["https://arxiv.org/abs/2301.05217"]
+fourier-multiplication:
+  name: Fourier multiplication algorithm
+  def: "The paper's name for the network's method: represent a, b as angles, combine them with angle-addition identities, and score each answer c by cos(w(a+b−c))."
+  src: ["https://arxiv.org/abs/2301.05217"]
+constructive-interference:
+  name: constructive interference
+  def: "Several waves peaking at the same place so their sum is large there; destructive interference is waves cancelling elsewhere."
+  src: ["https://en.wikipedia.org/wiki/Wave_interference"]
+# ---------------- Chapters 13–16: evidence ----------------
+mechanistic-interpretability:
+  name: mechanistic interpretability
+  def: "Reverse-engineering the algorithm a trained network implements from its weights and activations."
+  src: ["https://arxiv.org/abs/2301.05217", "https://www.neelnanda.io/mechanistic-interpretability/glossary"]
+control:
+  name: control (experiment)
+  def: "A comparison case designed so that the effect being tested should not appear, to show the effect is not an artefact."
+  src: ["https://en.wikipedia.org/wiki/Scientific_control"]
+neuron-cluster:
+  name: frequency cluster
+  def: "The group of neurons whose activations are dominated (over 85 % of variance) by the same frequency."
+  src: ["https://arxiv.org/abs/2301.05217", "https://learn.arena.education/chapter1_transformer_interp/32_grokking/2-circuit-and-feature-analysis/"]
+degree-2-polynomial:
+  name: degree-2 polynomial (of waves)
+  def: "A weighted sum of a constant, single waves and products of two waves, e.g. α + β cos(w a) + γ cos(w a) cos(w b)."
+  src: ["https://arxiv.org/abs/2301.05217"]
+frobenius-norm:
+  name: Frobenius norm
+  def: "The length of a matrix viewed as one long vector: the square root of the sum of all its squared entries."
+  src: ["https://en.wikipedia.org/wiki/Matrix_norm#Frobenius_norm"]
+causal-intervention:
+  name: causal intervention
+  def: "Deliberately changing an internal value of the model and observing the effect on its output, to test what causes what."
+  src: ["https://arxiv.org/abs/2106.02997"]
+activation-patching:
+  name: activation patching
+  def: "Replacing part of an internal activation with its value from a different input and checking whether the output changes accordingly."
+  src: ["https://arxiv.org/abs/2106.02997", "https://www.neelnanda.io/mechanistic-interpretability/glossary"]
+logit-difference:
+  name: logit difference
+  def: "The logit of one answer minus the logit of another; positive means the model prefers the first."
+  src: ["https://www.neelnanda.io/mechanistic-interpretability/glossary"]
+# ---------------- Chapter 17: progress measures ----------------
+progress-measure:
+  name: progress measure
+  def: "A quantity that changes smoothly during training and precedes, and helps explain, a sudden change in behaviour."
+  src: ["https://arxiv.org/abs/2301.05217", "https://arxiv.org/abs/2207.08799"]
+restricted-loss:
+  name: restricted loss
+  def: "The loss after keeping only the cos/sin(w_k(a+b)) parts of the logits for the key frequencies (plus a constant)."
+  src: ["https://arxiv.org/abs/2301.05217"]
+excluded-loss:
+  name: excluded loss
+  def: "The training loss after removing only the cos/sin(w_k(a+b)) parts of the logits for the key frequencies."
+  src: ["https://arxiv.org/abs/2301.05217"]
+sum-squared-weights:
+  name: sum of squared weights
+  def: "The sum of every parameter squared — the quantity weight decay pushes down."
+  src: ["https://arxiv.org/abs/2301.05217"]
+phase-memorization:
+  name: memorization phase
+  def: "The first phase of training: the model fits the training set without using the key frequencies."
+  src: ["https://arxiv.org/abs/2301.05217"]
+phase-circuit-formation:
+  name: circuit formation phase
+  def: "The middle phase: the Fourier circuit grows and replaces memorization on the training set while test loss stays high."
+  src: ["https://arxiv.org/abs/2301.05217"]
+phase-cleanup:
+  name: cleanup phase
+  def: "The last phase: weight decay removes the memorizing components, and test loss suddenly drops."
+  src: ["https://arxiv.org/abs/2301.05217"]
+# ---------------- Chapter 20: statistics ----------------
+hypothesis-test:
+  name: hypothesis test
+  def: "A procedure that computes how surprising the observed data would be if a stated effect did not exist."
+  src: ["https://en.wikipedia.org/wiki/Statistical_hypothesis_test"]
+p-value:
+  name: p-value
+  def: "The probability of seeing data at least this extreme if there were no real effect; small values are evidence for the effect."
+  src: ["https://en.wikipedia.org/wiki/P-value"]
+confidence-interval:
+  name: confidence interval
+  def: "A range computed from data that, over many repetitions of the experiment, would contain the true value 95 % of the time."
+  src: ["https://en.wikipedia.org/wiki/Confidence_interval"]
+sign-test:
+  name: sign test
+  def: "A test that counts in how many independent repeats an effect goes the predicted way and compares the count with coin flips."
+  src: ["https://en.wikipedia.org/wiki/Sign_test"]
+multiple-comparisons:
+  name: multiple-comparison correction
+  def: "Making each test stricter when several hypotheses are tested, so the chance of any false alarm stays at 5 % (here Holm's method)."
+  src: ["https://en.wikipedia.org/wiki/Holm%E2%80%93Bonferroni_method"]
+preregistration:
+  name: preregistration
+  def: "Writing down hypotheses, tests and pass/fail criteria before seeing the data, so results cannot be cherry-picked."
+  src: ["https://en.wikipedia.org/wiki/Preregistration_(science)"]
+statistical-power:
+  name: statistical power
+  def: "The probability that a test detects an effect that really exists; more independent repeats give more power."
+  src: ["https://en.wikipedia.org/wiki/Power_(statistics)"]

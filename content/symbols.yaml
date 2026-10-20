@@ -1,0 +1,159 @@
+# symbols.yaml — every mathematical symbol: KaTeX source, name, one-sentence meaning (the hover card).
+# Global context: [[symdef:id]] marks where a symbol is first introduced (chapter 0's "full object" introduces
+# most of them with these cards); [[sym:id]] uses it later. The paper's column-vector notation is used.
+p:
+  tex: "p"
+  name: "modulus"
+  def: "The prime the numbers wrap around at; p = 113, so the possible answers are 0, 1, …, 112."
+a:
+  tex: "a"
+  name: "first input"
+  def: "The first number of the question “a + b = ?”, an integer from 0 to p − 1."
+b:
+  tex: "b"
+  name: "second input"
+  def: "The second number of the question, also from 0 to p − 1."
+c:
+  tex: "c"
+  name: "candidate answer"
+  def: "Any of the p possible answers 0 … p − 1 that the model scores; the right one is c* = (a + b) mod p."
+cstar:
+  tex: "c^*"
+  name: "correct answer"
+  def: "c* = (a + b) mod p, the answer the model should give."
+eq:
+  tex: "\\texttt{=}"
+  name: "equals token"
+  def: "The third input token, id 113; the model's answer is read off at its position."
+d:
+  tex: "d"
+  name: "residual width"
+  def: "The length of every vector in the residual stream; d = 128."
+n:
+  tex: "n"
+  name: "number of neurons"
+  def: "The number of hidden units in the MLP; n = 512."
+H:
+  tex: "H"
+  name: "number of heads"
+  def: "The number of attention heads; H = 4, each working with vectors of length d_head = 32."
+WE:
+  tex: "W_E"
+  name: "embedding matrix"
+  def: "d × 114 matrix whose column t is the vector that represents token t (the '=' column is dropped when the paper writes W_E as d × p)."
+Wpos:
+  tex: "W_{pos}"
+  name: "positional embeddings"
+  def: "3 × d matrix; row i is added to the token vector at position i."
+x0:
+  tex: "x^{(0)}_i"
+  name: "initial residual vector"
+  def: "The vector at position i before any layer: embedding of the token there plus the positional embedding of i."
+WQ:
+  tex: "W_Q^j"
+  name: "query matrix of head j"
+  def: "32 × d matrix turning a residual vector into head j's query."
+WK:
+  tex: "W_K^j"
+  name: "key matrix of head j"
+  def: "32 × d matrix turning a residual vector into head j's key."
+WV:
+  tex: "W_V^j"
+  name: "value matrix of head j"
+  def: "32 × d matrix turning a residual vector into head j's value."
+WO:
+  tex: "W_O^j"
+  name: "output matrix of head j"
+  def: "d × 32 matrix writing head j's result back into the residual stream."
+A:
+  tex: "A^j"
+  name: "attention pattern of head j"
+  def: "How strongly the '=' position reads from positions 0 (a), 1 (b) and 2 (=); the three numbers sum to 1."
+x1:
+  tex: "x^{(1)}"
+  name: "residual after attention"
+  def: "The '=' position's vector after the attention layer: x₂⁽⁰⁾ plus every head's output."
+Win:
+  tex: "W_{in}"
+  name: "MLP input matrix"
+  def: "n × d matrix; row m holds neuron m's input weights."
+bin:
+  tex: "b_{in}"
+  name: "MLP input bias"
+  def: "One learned offset per neuron, added before the ReLU."
+MLP:
+  tex: "\\mathrm{MLP}(a,b)"
+  name: "neuron activations"
+  def: "The vector of the 512 neuron values at the '=' position for input (a, b): ReLU(W_in x⁽¹⁾ + b_in)."
+Wout:
+  tex: "W_{out}"
+  name: "MLP output matrix"
+  def: "d × n matrix; column m is what neuron m writes into the residual stream per unit of activation."
+bout:
+  tex: "b_{out}"
+  name: "MLP output bias"
+  def: "A learned vector added to the MLP's output."
+x2:
+  tex: "x^{(2)}"
+  name: "final residual vector"
+  def: "The '=' position's vector after the MLP: x⁽¹⁾ + W_out MLP + b_out."
+WU:
+  tex: "W_U"
+  name: "unembedding matrix"
+  def: "p × d matrix (114 rows in the code; the '=' row is dropped) turning the final residual vector into one logit per answer."
+logits:
+  tex: "\\mathrm{Logits}(a,b)"
+  name: "logits"
+  def: "The vector of p scores the model gives the possible answers c for input (a, b)."
+WL:
+  tex: "W_L"
+  name: "neuron–logit map"
+  def: "W_L = W_U W_out, the p × n matrix saying how much each neuron adds to each answer's logit."
+wk:
+  tex: "w_k"
+  name: "angular frequency"
+  def: "w_k = 2πk/p: the angle (in radians) per unit step for frequency k."
+k:
+  tex: "k"
+  name: "frequency index"
+  def: "A whole number 1 … 56; cos(w_k x) completes k full cycles as x runs over 0 … p − 1."
+K:
+  tex: "\\mathcal{K}"
+  name: "key frequencies"
+  def: "The set of frequencies the network uses; {14, 35, 41, 42, 52} for the paper's model."
+alpha:
+  tex: "\\alpha_k"
+  name: "weight of frequency k"
+  def: "How strongly frequency k's cosine wave contributes to the logits; fitted by least squares."
+F:
+  tex: "F"
+  name: "Fourier basis matrix"
+  def: "p × p orthonormal matrix whose rows are the constant, cos k and sin k waves (k = 1 … 56)."
+uk:
+  tex: "u_k, v_k"
+  name: "read-off directions"
+  def: "Directions in neuron space (length n) along which the logits read cos(w_k c) and sin(w_k c); u_k = W_Lᵀ cos(w_k) up to scale."
+Cj:
+  tex: "C_j"
+  name: "attention lookup of head j"
+  def: "C_j[t]: the score head j's '=' query gives token t; attention to a is σ(C_j[a] − C_j[b])."
+sigma:
+  tex: "\\sigma"
+  name: "sigmoid"
+  def: "σ(x) = 1/(1 + e^(−x)), the S-shaped curve from 0 to 1."
+lam:
+  tex: "\\lambda"
+  name: "weight decay"
+  def: "The weight-decay strength; λ = 1 in the paper (each step multiplies weights by 1 − γλ)."
+gamma:
+  tex: "\\gamma"
+  name: "learning rate"
+  def: "The learning rate; γ = 0.001 in the paper."
+theta:
+  tex: "\\theta"
+  name: "all parameters"
+  def: "Shorthand for the list of every learned number of the model (226,816 of them)."
+L:
+  tex: "\\mathcal{L}"
+  name: "loss"
+  def: "The cross-entropy loss: average of −ln(probability of the correct answer)."

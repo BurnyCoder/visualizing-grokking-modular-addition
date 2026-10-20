@@ -1,0 +1,50 @@
+{#- dashboard.html — the Big Dashboard: one page with every visualization, grouped, all linked to one state.
+    Local: sticky control bar (run, epoch scrubber, a/b/a′, head, neuron, frequency), guided tour, and panel
+    groups rendered from content/dashboard.yaml; each panel is a figure from the shared registry with its
+    explanation, equation, citation and a deep link into the chapters.
+    Global: the same figure modules appear inside chapters, so the dashboard and the step-by-step story never
+    disagree (docs/architecture.md). -#}
+{% extends "base.html" %}
+{% block content %}
+<section class="controlbar" id="controlbar" aria-label="Dashboard controls">
+  <div class="cb-row">
+    <label>Run <select id="ctl-run"></select></label>
+    <button id="ctl-play" type="button" class="btn" aria-label="Play training">▶</button>
+    <div class="scrubber-wrap">
+      <input id="ctl-step" type="range" min="0" max="0" value="0" aria-label="Training step">
+      <div id="ctl-phases" class="phase-strip" aria-hidden="true"></div>
+    </div>
+    <output id="ctl-step-label" class="mono">step 0</output>
+  </div>
+  <div class="cb-row small">
+    <label>a <input id="ctl-a" type="number" min="0" max="112" value="5"></label>
+    <label>b <input id="ctl-b" type="number" min="0" max="112" value="71"></label>
+    <label>a′ <input id="ctl-ap" type="number" min="0" max="112" value="40"></label>
+    <label>head <select id="ctl-head"><option>0</option><option>1</option><option>2</option><option>3</option></select></label>
+    <label>neuron <input id="ctl-neuron" type="number" min="0" max="511" value="0"></label>
+    <label>frequency k <input id="ctl-freq" type="number" min="1" max="56" value="14"></label>
+    <button id="ctl-tour" type="button" class="btn">Guided tour</button>
+    <span id="ctl-status" class="status"></span>
+  </div>
+</section>
+<main class="dashboard" id="main">
+  <header class="dash-intro">
+    <h1>The dashboard</h1>
+    <p>{{ intro | safe }}</p>
+  </header>
+  {% for group in groups %}
+  <section class="dash-group" id="group-{{ group.id }}">
+    <h2>{{ group.title }}</h2>
+    <p class="group-blurb">{{ group.blurb | safe }}</p>
+    <div class="panel-grid">
+      {% for panel in group.panels %}{{ panel | safe }}{% endfor %}
+    </div>
+  </section>
+  {% endfor %}
+</main>
+<div id="tour" class="tour" hidden>
+  <div class="tour-card"><p class="tour-step mono"></p><h3 class="tour-title"></h3><div class="tour-text"></div>
+    <div class="tour-buttons"><button type="button" class="btn tour-prev">←</button><button type="button" class="btn tour-next">→</button><button type="button" class="btn tour-close">Close</button></div>
+  </div>
+</div>
+{% endblock %}

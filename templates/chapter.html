@@ -1,0 +1,31 @@
+{#- chapter.html — one "Learn step by step" chapter: table of contents, rendered markdown body, prev/next links.
+    Local: `body_html` is produced by site_build.py from content/chapters/<slug>.md (macros already expanded).
+    Global: chapters are read in order; the build checks every term is defined before first use across this order. -#}
+{% extends "base.html" %}
+{% block content %}
+<div class="chapter-layout">
+  <aside class="toc">
+    <p class="toc-title">Chapters</p>
+    <ol start="0">
+      {% for ch in chapters %}
+      <li {% if ch.slug == chapter.slug %}class="current"{% endif %}><a href="{{ ch.slug }}.html">{{ ch.title }}</a></li>
+      {% endfor %}
+    </ol>
+  </aside>
+  <main class="chapter" id="main">
+    <p class="kicker">Chapter {{ chapter.number }} of {{ chapters|length - 1 }}</p>
+    <h1>{{ chapter.title }}</h1>
+    <p class="lede">{{ chapter.summary }}</p>
+    {% if chapter.sources %}
+    <details class="chapter-sources"><summary>Sources for this chapter</summary>
+      <ul>{% for s in chapter.sources %}<li>{{ s | safe }}</li>{% endfor %}</ul>
+    </details>
+    {% endif %}
+    {{ body_html | safe }}
+    <nav class="prevnext">
+      {% if prev %}<a class="prev" href="{{ prev.slug }}.html">← {{ prev.title }}</a>{% else %}<span></span>{% endif %}
+      {% if next %}<a class="next" href="{{ next.slug }}.html">{{ next.title }} →</a>{% endif %}
+    </nav>
+  </main>
+</div>
+{% endblock %}

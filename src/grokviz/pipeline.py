@@ -16,8 +16,10 @@ from typing import Callable  # type of phase functions
 from grokviz.checkpoint_metrics import compute_checkpoint_metrics  # curves over training
 from grokviz.context import PipelineContext  # uniform phase argument
 from grokviz.envcheck import check_environment  # phase 1: environment and device check
+from grokviz.export import export_site_data  # binary arrays + manifest for the website
 from grokviz.geometry import compute_geometry  # activation / output geometry frames
 from grokviz.gradients import compute_gradient_dynamics  # exact full-batch gradients per checkpoint
+from grokviz.hypotheses import analyse_final_models, test_hypotheses  # preregistered tests
 from grokviz.logs import phase_timer  # start/done/elapsed logging around each phase
 from grokviz.phases import detect_phases  # objective phase boundaries
 from grokviz.rchecks import validate_against_paper  # reproduce paper/ARENA numbers
@@ -38,6 +40,9 @@ PHASES: dict[str, Callable[[PipelineContext], None]] = {
     "compute_gradient_dynamics": compute_gradient_dynamics,  # what the gradients point at, over training
     "compute_geometry": compute_geometry,  # circles, PCA, output-distribution geometry
     "detect_phases": detect_phases,  # memorisation / circuit formation / cleanup boundaries
+    "analyse_final_models": analyse_final_models,  # ablations, Gini nulls, patching on final checkpoints
+    "test_hypotheses": test_hypotheses,  # H1–H5 + secondary statistics
+    "export_site_data": export_site_data,  # site/data/manifest.json + arrays
 }
 
 

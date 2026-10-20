@@ -1,0 +1,26 @@
+# Data formats
+
+## Run folder (`runs/<run_id>/`, written by `runstore.write_run`)
+
+| File | Content |
+|---|---|
+| `meta.json` | `kind` (paper/trained), `group`, seeds, task, hyper-parameters, `ckpt_steps` (optimizer steps of each checkpoint), `model_shape`, provenance (`environment`, source revision/sha) |
+| `checkpoints.safetensors` | one tensor per state_dict key (paper names: `embed.W_E`, `blocks.0.attn.W_Q`, …), stacked over checkpoints: shape `[T, ...]` |
+| `curves.npz` | `train_loss` (per step), `train_acc`, `test_loss`/`test_acc` (every `test_every`), `*_steps`, `lr`, per-parameter `grad_norm`/`weight_norm`/`update_norm` (every `norms_every`) |
+| `optim.safetensors` | (our runs) Adam `exp_avg.<param>` / `exp_avg_sq.<param>` stacked every `optim_every` steps |
+| `analysis/` | `ckpt_metrics.npz`, `gradients.npz`, `geometry.npz`, `phases.json`, `final.json`, `key_freqs.json`, (paper) `validation.json`, `rchecks.json` |
+
+Step semantics: checkpoint t holds the parameters after `ckpt_steps[t]` optimizer updates. For the paper's file,
+“epoch e” = step e + 1 (verified, see reports/exp-01).
+
+## Site data (`site/data/`, written by `export.py`)
+
+- `manifest.json`: `{schema_version, p, basis_names, train_masks, scalar_columns, runs: [...]}`; each run has `id`, `title`,
+  `group`, `key_freqs`, `ckpt_steps`, `geometry_steps`, `weight_steps`, `param_layout` (name + shape in flat order),
+  `phases`, `final` (final-checkpoint analysis) and `arrays: {name: {file, dtype, shape, desc, bytes, sha256, [min, max], [columns]}}`.
+- Array files `runs/<id>/<name>.bin`: little-endian; `dtype` ∈ `f32`, `f16`, `i16`, `u8q` (uint8, value = min + q/255·(max − min)).
+  Shapes are row-major; e.g. `we_fourier` is `[T, 113]` (Const, cos 1, sin 1, …, sin 56).
+- Weights `w_<step>.bin`: float16 flat vector of the state_dict in `param_layout` order (in-browser model);
+  `w_ref_f32.bin`: float32 reference checkpoint.
+- `train_mask_seed<s>.bin`: 12,769 bytes, 1 = training pair (row a·113 + b).
+- `summary.json`: `{key: {value, fmt}}`, every number quoted in the prose (`src/grokviz/summary.py`).

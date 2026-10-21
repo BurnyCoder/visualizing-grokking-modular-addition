@@ -66,5 +66,5 @@ On the real network, for the selected input and step (try different a, b in the 
 | 4 | sum over key frequencies | unembedding (adding into the logits) | ch. 15–16: logits ≈ Σ α_k cos(w_k(a+b−c)); ablations |
 
 ::: nuance
-**Other algorithms exist.** Fourier multiplication is what *this* architecture with *these* settings learned, consistently across seeds in the paper and in our runs. Zhong et al. (2023) show that slightly different architectures can learn a different, “pizza” algorithm that also uses circles but combines them differently {{cite:zhong2023}}; Chughtai et al. (2023) generalise the Fourier story to other finite groups using representation theory {{cite:chughtai2023}}.
+**Other algorithms exist.** Fourier multiplication is what *this* architecture with *these* settings learned, consistently across seeds in the paper and in all 11 of our weight-decay seeds (chapter 20). Zhong et al. (2023) show that slightly different architectures can learn a different, “pizza” algorithm that also uses circles but combines them differently {{cite:zhong2023}}; Chughtai et al. (2023) generalise the Fourier story to other finite groups using representation theory {{cite:chughtai2023}}.
 :::

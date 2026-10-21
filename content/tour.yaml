@@ -48,4 +48,4 @@
 - title: "Not a fluke"
   panel: seed-test-loss
   state: {step: 40000}
-  text: "Our own runs with different random seeds all grok (at different times, with different key frequencies); without weight decay, none do."
+  text: "All 11 of our weight-decay seeds grok (at different times, with different key frequencies); none of the 5 runs without weight decay do."

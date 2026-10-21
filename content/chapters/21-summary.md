@@ -34,7 +34,7 @@ The generalising circuit forms during the plateau, *before* the test loss drops;
 2. Four independent lines of evidence — Fourier sparsity, single-frequency neurons, a rank-10 read-out, and interventions including counterfactual patching — support this description of the trained network (ch. 13–16).
 3. Knowing the mechanism lets us measure hidden progress: the restricted loss falls and the excluded loss rises long before the test loss drops (ch. 17).
 4. During memorisation the gradients of the training and test losses point in opposite directions; after grokking the network sits in a balance between the loss and weight decay (ch. 19).
-5. In our 22 retrained networks the same mechanism appears for every seed with weight decay, with different key frequencies; without weight decay, none grokked (ch. 20).
+5. In all 11 of our retrained seeds with weight decay, the Fourier signatures appear — sparse spectra, single-frequency neurons, cosine-shaped logits, and the patching test — each seed with its own key frequencies; the strictest preregistered ablation criterion (H4) held in only 6 of 11, because our rule for naming the key frequencies sometimes includes a weak one or leaves out a little used one. Without weight decay, none of 5 networks grokked (ch. 20).
 
 ## Limitations and nuances
 

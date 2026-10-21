@@ -160,6 +160,14 @@ def run_numbers(reports_dir: Path) -> dict:
         res = f"{d['successes']}/{d['n']} seeds" if "successes" in d else f"{d['wd1_grokked']}/{d['wd1_n']} weight-decay runs vs {d['wd0_grokked']}/{d['wd0_n']} without grokked"
         parts.append(f"**{h}** {'supported' if d['supported'] else 'not supported'} ({res}; Holm-adjusted p = {d['p_holm']:.2g})")
     out["hyp.summary"] = _v("; ".join(parts) + ".", "str")
+    # post-hoc decomposition of H4 into its three preregistered sub-conditions (counts only, no new test)
+    pr = hyp["per_run"].values()
+    out["hyp.h4_key_ok"] = _v(f"{sum(r['H4_key_min_ratio'] >= 100 for r in pr)}/{len(pr)}", "str")
+    out["hyp.h4_nonkey_ok"] = _v(f"{sum(r['H4_nonkey_max_ratio'] <= 2 for r in pr)}/{len(pr)}", "str")
+    out["hyp.h4_keep_ok"] = _v(f"{sum(r['H4_keep_ratio'] <= 1.5 for r in pr)}/{len(pr)}", "str")
+    out["hyp.h4_key_min"] = _v(min(r["H4_key_min_ratio"] for r in pr), ".1f")
+    out["hyp.h4_nonkey_max"] = _v(max(r["H4_nonkey_max_ratio"] for r in pr), ".2f")
+    out["hyp.h4_keep_max"] = _v(max(r["H4_keep_ratio"] for r in pr), ".2f")
     ctl = hyp["controls"]
     for group, text in (("wd0", "no weight decay"), ("rand", "random labels"), ("split0", "paper split")):
         rows = [(k, c) for k, c in ctl.items() if c["group"] == group]
@@ -176,6 +184,47 @@ def run_numbers(reports_dir: Path) -> dict:
     return out
 
 
+def same_init_numbers(runs_dir: Path) -> dict:
+    """seeds.same_init.*: our wd1_s0 starts from the paper's exact initial weights and split (exploratory comparison).
+
+    The paper's first checkpoint is taken after one update with learning rate 0 (warm-up), i.e. it is the
+    initialisation; comparing it with our step-0 checkpoint shows whether the two runs start identically.
+    """
+    p_dir, o_dir = runs_dir / "paper", runs_dir / "wd1_s0"
+    if not (o_dir / "analysis" / "key_freqs.json").exists() or not (p_dir / "meta.json").exists():
+        return {}
+    paper, ours = RunStore(p_dir), RunStore(o_dir)
+    flat = lambda d: torch.cat([d[k].double().flatten() for k in sorted(d) if k != "blocks.0.attn.mask"])  # noqa: E731
+    init_diff = float((flat(paper.state_dict(0)) - flat(ours.state_dict(0))).abs().max())
+    a, b = flat(paper.state_dict(PAPER_ANALYSIS_INDEX)), flat(ours.state_dict(-1))  # paper step 40,001 vs ours 40,000
+    k_paper = _load(p_dir / "analysis" / "key_freqs.json")["key_freqs"]
+    k_ours = _load(o_dir / "analysis" / "key_freqs.json")["key_freqs"]
+    c_paper, c_ours = paper.curves(), ours.curves()
+    same_upto = int(np.nonzero(~np.isclose(c_paper["train_loss"][:1000], c_ours["train_loss"][:1000], rtol=1e-5))[0][0])
+    return {"seeds.same_init_diff": _v(init_diff, "sci"), "seeds.same_init_cos40k": _v(float(a @ b / a.norm() / b.norm()), ".2f"),
+            "seeds.same_init_keys": _v(k_ours), "seeds.same_init_keys_equal": _v("the same" if k_ours == k_paper else "different", "str"),
+            "seeds.same_init_loss_steps": _v(same_upto, "int")}
+
+
+def late_spike_numbers(runs_dir: Path, factor: float = 100.0, gap: int = 2000) -> dict:
+    """seeds.spikes: runs whose test loss, ≥ `gap` steps after grokking, jumps above `factor` × its running minimum
+    (exploratory description of the loss spikes visible in the seed figure; cf. the "slingshot" of Thilak et al. 2022,
+    https://arxiv.org/abs/2206.04817). An event = a spike more than 500 steps after the previous one."""
+    found = []
+    for d in sorted(runs_dir.iterdir()):
+        ph = _load(d / "analysis" / "phases.json")
+        if d.name == "paper" or ph is None or ph.get("t_grok") is None:
+            continue
+        c = RunStore(d).curves()
+        sel = c["test_loss_steps"] >= ph["t_grok"] + gap
+        loss, steps, acc = c["test_loss"][sel], c["test_loss_steps"][sel], c["test_acc"][sel]
+        hits = steps[loss > factor * np.minimum.accumulate(loss)]
+        events = [s for i, s in enumerate(hits) if i == 0 or s - hits[i - 1] > 500]
+        if events:
+            found.append(f"{d.name} ({len(events)} spikes; test loss up to {loss.max():.2f}, test accuracy down to {100 * acc.min():.0f} %)")
+    return {"seeds.spikes": _v("; ".join(found) if found else "none", "str"), "seeds.spike_n": _v(len(found), "int")}
+
+
 def build_summary(runs_dir: Path, reports_dir: Path, p: int, frac: float) -> dict:
     """All prose numbers."""
-    return {**paper_numbers(runs_dir, p, frac), **run_numbers(reports_dir)}
+    return {**paper_numbers(runs_dir, p, frac), **run_numbers(reports_dir), **same_init_numbers(runs_dir), **late_spike_numbers(runs_dir)}

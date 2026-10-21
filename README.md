@@ -161,7 +161,7 @@ flowchart LR
 4. **Hypotheses.** Evaluate H1–H5 exactly as preregistered, and write `reports/tables/hypotheses.{json,md}`.
 5. **Publishing.**
    - Upload the runs to Hugging Face.
-   - Export the site data: about 450 MB of binary arrays and float16 weights, plus `summary.json`.
+   - Export the site data: about 500 MB of binary arrays and float16 weights, plus `summary.json`.
    - Upload the site data and pin it in `site-data.lock`.
    - Build `site/` and render the report figures from the site itself (Playwright).
    - Compile the paper (`paper/main.typ` → `reports/paper.pdf`, Typst). Its numbers come from the same `summary.json`.

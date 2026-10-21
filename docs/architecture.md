@@ -13,7 +13,7 @@ The phase-by-phase diagram is in the README ([What happens when you run it](../R
 | Core math | `task.py`, `model.py`, `losses.py`, `fourier.py` | dataset/split, paper-layout transformer with hooks, float64 losses, Fourier basis, Gini |
 | Runs | `runstore.py`, `sources.py`, `train.py` | on-disk run format; paper checkpoints; resumable vmap-batched training |
 | Analysis | `metrics.py`, `interventions.py`, `patching.py`, `checkpoint_metrics.py`, `gradients.py`, `geometry.py`, `phases.py`, `rchecks.py`, `hypotheses.py`, `stats.py` | every measurement on the site and in the reports |
-| Output | `export.py`, `summary.py`, `site_build.py`, `quotes.py`, `hf_publish.py`, `serve.py` | binary site data, prose numbers, HTML build with content checks, quote verification, Hub uploads, preview server |
+| Output | `export.py`, `summary.py`, `formatting.py`, `site_build.py`, `quotes.py`, `hf_publish.py`, `serve.py`, `figures.py`, `paper.py` | binary site data, prose numbers and their formatting, HTML build with content/link/forward-use checks, quote verification, Hub uploads, preview server, report figures rendered from the site, Typst paper |
 | Website | `content/`, `templates/`, `web/` | chapters/glossary/symbols/quotes/figures metadata; Jinja templates; ES-module figures, widgets, in-browser model |
 
 ## Design choices (and why)

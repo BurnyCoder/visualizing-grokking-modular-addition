@@ -3,8 +3,9 @@
 - **Website:** `.github/workflows/pages.yml` runs on every push to `main`: installs the project without torch,
   downloads the site data pinned in `site-data.lock` from the Hugging Face dataset, runs
   `python -m grokviz.site_build`, and publishes `site/` to GitHub Pages (source: GitHub Actions).
-- **Site data:** too large for git. It is 453 MB for the paper run and 22 runs, above the 300 MB planned at the
-  start. Most of it is float16 weights (181 MB) and per-input/key-plane geometry (213 MB). Every array is fetched lazily,
+- **Site data:** too large for git. It is about 500 MB for the paper run and 22 runs, above the 300 MB planned at the
+  start. Most of it is float16 weights (181 MB) and per-input/key-plane geometry (223 MB); the 2D Fourier maps add 26 MB.
+  `tests/test_site_data.py` keeps the total below the 1 GB Pages limit. Every array is fetched lazily,
   so a page only loads what its figures need. The GitHub Pages limit is 1 GB. `uv run grokviz --phases export_site_data,publish_site_data` uploads
   `site/data/` to `GROKVIZ_HF_SITE_DATA_REPO` and rewrites `site-data.lock` with the new commit; commit the lock file to
   deploy the new data.

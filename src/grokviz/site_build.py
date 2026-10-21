@@ -38,7 +38,7 @@ from grokviz.formatting import fmt_number, fmt_value  # prose numbers and R-chec
 
 log = logging.getLogger("grokviz.site_build")
 CONTENT, TEMPLATES, WEB = REPO_ROOT / "content", REPO_ROOT / "templates", REPO_ROOT / "web"
-MACRO = re.compile(r"\[\[(dfn|term|sym|symdef):([\w.-]+)(?:\|([^\]]+))?\]\]|\{\{(quote|num|fig|widget|cite):([\w./-]+)\}\}")
+MACRO = re.compile(r"\[\[(dfn|term|preview|sym|symdef):([\w.-]+)(?:\|([^\]]+))?\]\]|\{\{(quote|num|fig|widget|cite):([\w./-]+)\}\}")
 CALLOUTS = {"example": "Worked example", "nuance": "Nuance", "note": "Note", "object": "", "definition": "Definition", "check": "Control"}
 QUOTE_MAX_WORDS, QUOTE_CHAPTER_MAX = 25, 100  # copyright policy (NOTICE.md, docs/content-style.md)
 
@@ -96,7 +96,7 @@ def expand(text: str, b: Build, page: str) -> str:
     def sub(m: re.Match) -> str:
         nonlocal quoted_words
         kind, key, label = m.group(1), m.group(2), m.group(3)
-        if kind in ("dfn", "term"):
+        if kind in ("dfn", "term", "preview"):  # preview: forward reference (hover card) to a term defined later
             g = b.glossary.get(key)
             if g is None:
                 b.errors.append(f"{page}: term '{key}' missing from glossary.yaml")
@@ -107,7 +107,7 @@ def expand(text: str, b: Build, page: str) -> str:
                     b.errors.append(f"{page}: term '{key}' defined twice (first in {b.defined_terms[key]})")
                 b.defined_terms[key] = page
                 return f'<dfn class="term" id="term-{key}" data-term="{key}" tabindex="0">{text_}</dfn>'
-            if key not in b.defined_terms:
+            if kind == "term" and key not in b.defined_terms:
                 b.errors.append(f"{page}: term '{key}' used before it is defined")
             return f'<a class="term" data-term="{key}" href="{b.root}glossary.html#{key}">{text_}</a>'
         if kind in ("sym", "symdef"):
@@ -273,11 +273,52 @@ def build_site(ctx=None) -> None:
                      "symbols": {k: {"name": f'<span class="math inline">{_esc(v["tex"])}</span> — {v["name"]}', "def": _md.renderInline(v["def"])} for k, v in b.symbols.items()}}
     (assets / "glossary.json").write_text(json.dumps(glossary_json), encoding="utf-8")
     (out / ".nojekyll").write_text("", encoding="utf-8")  # GitHub Pages: serve files/folders starting with _ as-is
+    check_links(out, b.errors)
+    b.errors += [f"term shadow: {w}" for w in shadow_warnings(chapters, b)]
     if b.errors:
         for e in b.errors:
             log.error("content check: %s", e)
         raise RuntimeError(f"site build: {len(b.errors)} content errors (see log)")
     log.info("built %d chapters + dashboard + 5 pages into %s", len(chapters), out)
+
+
+HREF = re.compile(r'(?:href|src)="([^"#?]*)[^"]*"')  # link/asset targets in our generated HTML
+
+
+def check_links(out: Path, errors: list) -> None:
+    """Every relative link or asset in the built pages must exist in `out` (external URLs and data/ are skipped:
+    data/ comes from the Hugging Face dataset at deploy time)."""
+    for page in out.rglob("*.html"):
+        if "data" in page.relative_to(out).parts:
+            continue
+        for target in set(HREF.findall(page.read_text(encoding="utf-8"))):
+            if not target or re.match(r"^[a-z]+:|^//", target) or target.startswith(("data/", "../data/")):
+                continue
+            if not (page.parent / target).resolve().exists():
+                errors.append(f"{page.relative_to(out).as_posix()}: broken link {target}")
+
+
+def shadow_warnings(chapters: list, b: Build) -> list[str]:
+    """Glossary words used in plain chapter text before the chapter that defines them (term-shadow lint).
+
+    Plain text = outside macros, math and code. Only multi-word names or names of 6+ letters are checked, so common
+    short words ("loss", "mod") that are also everyday English do not flood the report.
+    """
+    order = {ch["slug"]: i for i, ch in enumerate(chapters)}
+    first: dict[str, tuple[int, str]] = {}
+    for ch in chapters:
+        text = (CONTENT / "chapters" / f"{ch['slug']}.md").read_text(encoding="utf-8")
+        plain = re.sub(r"\[\[.*?\]\]|\{\{.*?\}\}|\$\$.*?\$\$|\$[^$]*\$|`[^`]*`|\(https?://[^)]*\)", " ", text, flags=re.S).lower()
+        for key, g in b.glossary.items():
+            name = g["name"].lower()
+            # a longer glossary name that contains this one ("residual stream" ⊃ "residual") is not a use of it
+            longer = [o["name"].lower() for o in b.glossary.values() if name in o["name"].lower() and o["name"].lower() != name]
+            text_ = re.sub("|".join(map(re.escape, longer)), " ", plain) if longer else plain
+            previewed = f"[[preview:{key}" in text  # a hover card in this chapter covers its later plain uses
+            if key not in first and not previewed and (" " in name or len(name) >= 6) and re.search(rf"\b{re.escape(name)}\b", text_):
+                first[key] = (order[ch["slug"]], ch["slug"])
+    return [f"'{b.glossary[k]['name']}' appears in {slug} before its definition in {b.defined_terms[k]}"
+            for k, (i, slug) in first.items() if k in b.defined_terms and b.defined_terms[k] in order and i < order[b.defined_terms[k]]]
 
 
 def source_links(entry: dict) -> str:

@@ -12,7 +12,7 @@ The [[dfn:dot-product]] of two vectors multiplies matching entries and adds the 
 
 $$u \cdot v = \sum_i u_i v_i, \qquad (1, 2)\cdot(3, 4) = 1\cdot 3 + 2\cdot 4 = 11.$$
 
-The [[dfn:norm]] (length) of a vector is $\lVert u\rVert = \sqrt{u\cdot u}$; for example $\lVert (3,4)\rVert = \sqrt{9+16} = 5$. Dot products measure alignment: $u \cdot v = \lVert u\rVert\,\lVert v\rVert \cos(\text{angle between them})$ — positive when the arrows point roughly the same way, zero when they are perpendicular, negative when they point apart. (The cosine is explained properly in chapter 9; for now: it is 1 for “same direction”, 0 for “perpendicular”, −1 for “opposite”.)
+The [[dfn:norm]] (length) of a vector is $\lVert u\rVert = \sqrt{u\cdot u}$; for example $\lVert (3,4)\rVert = \sqrt{9+16} = 5$. Dot products measure alignment: $u \cdot v = \lVert u\rVert\,\lVert v\rVert \cos(\text{angle between them})$ — positive when the arrows point roughly the same way, zero when they are perpendicular, negative when they point apart. (The [[preview:cosine|cosine]] is explained properly in chapter 9; for now: it is 1 for “same direction”, 0 for “perpendicular”, −1 for “opposite”.)
 
 {{widget:dot-product}}
 
@@ -31,7 +31,7 @@ The 3-dimensional input became a 2-dimensional output.
 The [[dfn:matrix-product]] $MN$ of two matrices applies one after the other: $(MN)v = M(Nv)$. Its entry in row i, column j is the dot product of row i of M with column j of N. The [[dfn:transpose]] $M^\top$ turns rows into columns; it lets us write a dot product as a product: $u\cdot v = u^\top v$.
 
 ::: note
-**Two conventions.** The paper writes vectors as columns and multiplies matrices on the left ($W_E\,t$), so the embedding matrix is 128 × 113 {{cite:nanda2023}}. Code libraries such as TransformerLens and the ARENA course use rows and multiply on the right ($t\,W_E$, with a 113 × 128 matrix) {{cite:arena152}}. The two are transposes of each other and give the same numbers; this site follows the paper.
+**Two conventions.** The paper writes vectors as columns and multiplies matrices on the left ($W_E\,t$), so the [[preview:embedding|embedding]] matrix is 128 × 113 {{cite:nanda2023}}. Code libraries such as TransformerLens and the ARENA course use rows and multiply on the right ($t\,W_E$, with a 113 × 128 matrix) {{cite:arena152}}. The two are transposes of each other and give the same numbers; this site follows the paper.
 :::
 
 ## One-hot vectors: how tokens enter the network

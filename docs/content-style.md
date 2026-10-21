@@ -8,6 +8,12 @@ enforces the mechanical parts of that promise; the rest is editorial.
 - **Define before use.** A term is defined once with `[[dfn:id]]` and used later with `[[term:id]]`; symbols with
   `[[symdef:id]]` / `[[sym:id]]`. Chapters are checked in reading order (`content/chapters.yaml`); figure captions are
   checked where they are placed.
+- **No plain forward uses (term-shadow lint).** A glossary word (multi-word, or 6+ letters) must not appear in plain text
+  in a chapter before the chapter that defines it. Such a chapter must link the word once with
+  `[[preview:id|text]]`, which shows the definition card ahead of the definition. Chapter 0's overview and the symbol
+  table use this.
+- **Links.** Every relative link and asset in the built HTML must exist. `data/` is excluded because it arrives at
+  deploy time.
 - **Glossary entries** (`content/glossary.yaml`): one sentence, ≤ 35 words, ending with a period, with ≥ 1 source URL.
 - **Quotes** (`content/quotes.yaml`): ≤ 25 words each, ≤ 100 quoted words per chapter; rendered with source and page.
   `tests/test_quotes.py` verifies every quote verbatim against the cited PDF page.

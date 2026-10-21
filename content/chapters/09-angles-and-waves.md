@@ -54,5 +54,5 @@ $\cos 0.5 \cos 0.3 - \sin 0.5 \sin 0.3 = 0.8776\cdot0.9553 - 0.4794\cdot0.2955 =
 These two lines are the whole trick of the network. If you know $\cos$ and $\sin$ of $w a$ and of $w b$ — four numbers — you can compute $\cos$ and $\sin$ of $w(a+b)$ using only **multiplications and additions**. Chapter 12 shows the network doing exactly that.
 
 ::: nuance
-**Why several frequencies?** For a single k, a cosine wave is largest at one point but also *nearly* largest at others (e.g. $\cos(w_{14}\cdot 8) = 0.998$ is almost 1, the paper's App. B example {{cite:nanda2023}}). That is why the network will combine several frequencies — see “constructive interference” in chapter 12.
+**Why several frequencies?** For a single k, a cosine wave is largest at one point but also *nearly* largest at others (e.g. $\cos(w_{14}\cdot 8) = 0.998$ is almost 1, the paper's App. B example {{cite:nanda2023}}). That is why the network will combine several frequencies — see “[[preview:constructive-interference|constructive interference]]” in chapter 12.
 :::

@@ -48,7 +48,7 @@ function initLazy(selector, registry, attr) {
       const body = e.target.querySelector(".fig-body") || e.target;
       if (!loader) { body.innerHTML = `<p class="loading">Unknown ${attr} “${id}”.</p>`; continue; }
       loader().then((mod) => mod.render(body, e.target.dataset)).then(() => renderMath(e.target))
-        .catch((err) => { console.error(err); body.innerHTML = `<p class="loading">Could not draw this (${err.message}).</p>`; });
+        .catch((err) => { console.error(err); body.innerHTML = `<p class="draw-error">Could not draw this (${err.message}).</p>`; });
     }
   }, { rootMargin: "400px 0px" });
   document.querySelectorAll(selector).forEach((el) => io.observe(el));

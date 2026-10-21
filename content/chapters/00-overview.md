@@ -1,4 +1,4 @@
-A small neural network was trained to answer one kind of question: *what is a + b, if you count on a clock with 113 hours?* For thousands of training steps it simply memorised the answers it was shown and failed on everything else. Then — long after it had stopped improving on its training questions — it suddenly started answering *every* question correctly. Researchers reverse-engineered what it had learned: it turns numbers into angles and adds them by rotating. In the words of the paper that did this {{cite:nanda2023}}, the network's algorithm
+A small [[preview:neural-network|neural network]] was trained to answer one kind of question: *what is a + b, if you count on a clock with 113 hours?* For thousands of [[preview:training|training]] steps it simply memorised the answers it was shown and failed on everything else. Then — long after it had stopped improving on its training questions — it suddenly started answering *every* question correctly. Researchers reverse-engineered what it had learned: it turns numbers into angles and adds them by rotating. In the words of the paper that did this {{cite:nanda2023}}, the network's algorithm
 
 {{quote:nanda-algorithm}}
 
@@ -27,7 +27,7 @@ $$\Logits(a,b) = W_U\, x^{(2)}, \qquad \text{answer} = \argmax_c \Logits(a,b)_c$
 
 $$\Logits(a,b)_c \;\approx\; \beta + \sum_{k \in \mathcal K} \alpha_k \cos\!\big(w_k\,(a+b-c)\big), \qquad w_k = \frac{2\pi k}{p}$$
 
-where each term is built from the inputs with two angle-addition identities,
+where each term is built from the inputs with two [[preview:angle-addition|angle-addition identities]],
 
 $$\cos(w_k(a{+}b{-}c)) = \cos(w_k(a{+}b))\cos(w_k c) + \sin(w_k(a{+}b))\sin(w_k c),$$
 
@@ -41,7 +41,7 @@ and the sum over the set 𝒦 of a few “key” frequencies is largest exactly 
 
 $$\theta \;\leftarrow\; \theta\,(1 - \gamma\lambda) \;-\; \gamma\cdot \text{AdamStep}\big(\nabla_\theta \mathcal{L}\big)$$
 
-and along the way passes through three phases — memorisation, circuit formation, cleanup — that can be measured before the sudden jump in test accuracy happens.
+and along the way passes through three phases — memorisation, circuit formation, cleanup — that can be measured before the sudden jump in test [[preview:accuracy|accuracy]] happens.
 :::
 
 | Symbol | Meaning (one sentence) |
@@ -49,30 +49,30 @@ and along the way passes through three phases — memorisation, circuit formatio
 | [[symdef:p]] | The prime the numbers wrap around at; p = 113, so the possible answers are 0, 1, …, 112. |
 | [[symdef:a]], [[symdef:b]] | The two numbers of the question “a + b = ?”, each from 0 to p − 1. |
 | [[symdef:c]], [[symdef:cstar]] | A candidate answer c that the network scores; the correct one is c* = (a + b) mod p. |
-| [[symdef:eq]] | The third input token; the answer is read off at its position. |
-| [[symdef:WE]] | The embedding matrix: column t is the list of 128 numbers that represents token t. |
+| [[symdef:eq]] | The third input token; the answer is read off at its [[preview:position|position]]. |
+| [[symdef:WE]] | The [[preview:embedding|embedding]] [[preview:matrix|matrix]]: column t is the list of 128 numbers that represents token t. |
 | [[symdef:Wpos]] | Positional embeddings: one list of 128 numbers per position, added to the token's list. |
 | [[symdef:x0]] | The list of numbers at position i before any processing. |
-| [[symdef:WQ]], [[symdef:WK]], [[symdef:WV]], [[symdef:WO]] | The four matrices of attention head j (query, key, value, output). |
+| [[symdef:WQ]], [[symdef:WK]], [[symdef:WV]], [[symdef:WO]] | The four matrices of [[preview:attention-head|attention head]] j (query, key, value, output). |
 | [[symdef:A]] | How strongly the “=” position reads from positions a, b and “=” in head j (three numbers summing to 1). |
-| [[symdef:x1]] | The “=” position's list of numbers after the attention step. |
+| [[symdef:x1]] | The “=” position's list of numbers after the [[preview:attention|attention]] step. |
 | [[symdef:Win]], [[symdef:bin]] | Input weights and offsets of the 512 hidden “neurons”. |
-| [[symdef:MLP]] | The 512 neuron values for input (a, b). |
+| [[symdef:MLP]] | The 512 [[preview:neuron|neuron]] values for input (a, b). |
 | [[symdef:Wout]], [[symdef:bout]] | How the neurons write back into the list of numbers. |
 | [[symdef:x2]] | The final list of 128 numbers at the “=” position. |
-| [[symdef:WU]] | The unembedding matrix that turns the final list into one score per answer. |
+| [[symdef:WU]] | The [[preview:unembedding|unembedding]] matrix that turns the final list into one score per answer. |
 | [[symdef:logits]] | The 113 scores, one per candidate answer c. |
-| [[symdef:k]], [[symdef:wk]] | A frequency k (a whole number 1–56) and its angle step w_k = 2πk/p. |
-| [[symdef:K]] | The few key frequencies the trained network uses. |
+| [[symdef:k]], [[symdef:wk]] | A [[preview:frequency|frequency]] k (a whole number 1–56) and its angle step w_k = 2πk/p. |
+| [[symdef:K]] | The few [[preview:key-frequencies|key frequencies]] the trained network uses. |
 | [[symdef:alpha]] | How strongly frequency k contributes to the scores. |
 | [[symdef:theta]] | All 226,816 learned numbers of the network. |
 | [[symdef:L]] | The loss: how wrong the network's scores are. |
-| [[symdef:gamma]], [[symdef:lam]] | The learning rate (0.001) and the weight-decay strength (1). |
+| [[symdef:gamma]], [[symdef:lam]] | The [[preview:learning-rate|learning rate]] (0.001) and the weight-decay strength (1). |
 | [[symdef:d]], [[symdef:n]], [[symdef:H]] | Sizes: 128 numbers per position, 512 neurons, 4 attention heads. |
 
 ## How to read this site
 
-- **Chapters 1–11** build the background: clock arithmetic, the dataset, vectors and matrices, probabilities, the network itself, how it learns, what grokking is, waves, the Fourier basis, and how to measure a fit. Each chapter only uses what earlier chapters defined.
+- **Chapters 1–11** build the background: clock arithmetic, the [[preview:dataset|dataset]], vectors and matrices, probabilities, the network itself, how it learns, what [[preview:grokking|grokking]] is, waves, the [[preview:fourier-basis|Fourier basis]], and how to measure a fit. Each chapter only uses what earlier chapters defined.
 - **Chapters 12–16** derive the algorithm and test it against the trained network in four independent ways, following the paper {{cite:nanda2023}} and the ARENA course {{cite:arena152}}.
 - **Chapters 17–20** go back in time: how the algorithm forms during training, what drives it, and whether it happens the same way for other random seeds (we retrained 22 networks to check).
 - **Chapter 21** returns to the three objects above, now with every piece explained, plus the limitations and open questions.

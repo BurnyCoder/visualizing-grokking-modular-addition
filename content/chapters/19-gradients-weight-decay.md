@@ -28,6 +28,20 @@ Finally, which frequencies does the gradient push into the embedding at each mom
 
 {{fig:grad-norms}}
 
+## What Adam actually does
+
+The raw gradient is not the step. For our retrained runs we saved Adam's two running averages every 1,000 steps, so we can rebuild the direction Adam really moves in, $\hat m/(\sqrt{\hat v}+\epsilon)$, and compare it with the raw gradient and with the weights:
+
+{{fig:adam-alignment}}
+
+Adam's loss step and the weight-decay step are multiplied by the same learning rate, so their sizes can be compared directly:
+
+{{fig:adam-vs-decay}}
+
+At step 40,000, across the 11 weight-decay seeds, the loss step is {{num:seeds.adam_ratio_end_ci}} times the size of the weight-decay step (mean and 95 % interval), and its cosine with the weights is {{num:seeds.adam_cos_w_end_ci}} (bootstrap intervals). The two steps are nearly equal in size and nearly opposite in direction: the balance described above, measured on the steps that are actually taken. The raw gradient alone would not show this reliably — its cosine with the weights at the last checkpoint ranges from {{num:seeds.cos_gw_end_range}} across seeds, because Adam averages the gradient over many steps and rescales every coordinate. How much each weight matrix moves per step:
+
+{{fig:update-norms}}
+
 ## Why does grokking happen? The paper's account
 
 Combining the measurements, the paper's explanation (Sec. 5 and the speculative App. E) runs as follows {{cite:nanda2023}}:
@@ -39,5 +53,5 @@ Combining the measurements, the paper's explanation (Sec. 5 and the speculative 
 ARENA's bonus chapter adds intuition: gradients from individual memorised examples point in unrelated directions and largely cancel, while gradients that serve the general pattern agree across examples and add up {{cite:arena152}}. These accounts are explanations of the measurements, not proofs; the paper labels parts of its App. E as speculative.
 
 ::: nuance
-**What we can and cannot measure here.** For the paper's run we can recompute gradients but not Adam's internal running averages (they were not saved), so the size of the actual updates is unknown. For our own runs we saved Adam's state every 1,000 steps; the dashboard's gradient panels work for both.
+**What we can and cannot measure here.** For the paper's run we can recompute gradients but not Adam's internal running averages (they were not saved), so the size of the actual updates is unknown. For our own runs we saved Adam's state every 1,000 steps and logged each update's size, which the panels in “What Adam actually does” use; the gradient panels work for both.
 :::

@@ -6,7 +6,7 @@ $$f(a, b) = (a + b) \bmod 113, \qquad a, b \in \{0, 1, \ldots, 112\}.$$
 
 There are 113 choices for a and 113 for b, so there are 113 × 113 = **12,769** possible questions — few enough that we can check the network on every single one.
 
-## Examples, labels, and the training/test split
+## Examples, labels, and the [[preview:training|training]]/test split
 
 A [[dfn:dataset]] is a collection of examples: each example is an input together with its correct output, called its [[dfn:label]]. Here the example “(100, 50)” has label 37.
 
@@ -14,7 +14,7 @@ The paper's setup shows the network only a random 30 % of the questions while it
 
 {{fig:split-grid}}
 
-The split is made by shuffling all 12,769 pairs with a fixed random seed and taking the first 30 % (0.3 × 12,769 = 3,830.7, rounded down) {{cite:paperrepo}}. Hover the picture: each cell is one question (a = row, b = column); yellow cells are training questions.
+The split is made by shuffling all 12,769 pairs with a fixed [[preview:seed|random seed]] and taking the first 30 % (0.3 × 12,769 = 3,830.7, rounded down) {{cite:paperrepo}}. Hover the picture: each cell is one question (a = row, b = column); yellow cells are training questions.
 
 ::: example
 **Is (100, 50) a training question?** In the paper's split it is a *test* question — the network never sees its answer during training. (By contrast (5, 71) *is* a training question.) That is why (100, 50) is our running example throughout the site: when the trained network gets it right, it is not because it saw it.

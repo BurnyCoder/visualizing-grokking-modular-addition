@@ -15,11 +15,11 @@ groups:
   - id: weights
     title: "B. Weights seen through the Fourier basis"
     blurb: "The learned matrices, written in the basis of waves. Sparsity here — a few frequencies, nothing else — is the first clue to the algorithm."
-    panels: [we-fourier-bars, wl-fourier-bars, we-fourier-heatmap, wl-fourier-heatmap, we-svals, attn-C-fourier, ov-fourier, wlogit-sorted, pos-embed]
+    panels: [we-fourier-bars, wl-fourier-bars, we-fourier-heatmap, wl-fourier-heatmap, we-svals, attn-C-fourier, ov-fourier, wlogit-sorted, wneur-fourier, pos-embed]
   - id: activations
     title: "C. Activations on every input"
     blurb: "What the attention heads and MLP neurons compute for each of the 12,769 inputs, computed live in your browser from the selected checkpoint's weights."
-    panels: [attn-grid, attn-grids-all, avg-attn, neuron-grid, neuron-small-multiples, neuron-freq-scatter, quad-scatter, cluster-sizes]
+    panels: [attn-grid, attn-grids-all, avg-attn, neuron-grid, neuron-small-multiples, neuron-freq-scatter, quad-scatter, neuron-freq-map, neuron-b2-map, cluster-sizes]
   - id: geometry
     title: "D. Geometry: circles, clouds and confidence"
     blurb: "Low-dimensional pictures of the representations: numbers become angles on circles, and the output distribution sharpens."
@@ -27,15 +27,15 @@ groups:
   - id: output
     title: "E. The answer for one input"
     blurb: "The selected input (a, b): its 113 logits, their fit by a sum of cosines, and the constructive interference that singles out a + b."
-    panels: [output-dist, interference]
+    panels: [output-dist, interference, logit-fourier-2d]
   - id: gradients
     title: "F. Gradients and weight decay"
     blurb: "The forces acting on the weights at each checkpoint, recomputed exactly (training is full-batch)."
-    panels: [grad-alignment, grad-we-fourier-heatmap, grad-norms]
+    panels: [grad-alignment, grad-we-fourier-heatmap, grad-norms, adam-alignment, adam-vs-decay, update-norms]
   - id: interventions
     title: "G. Causal tests"
     blurb: "Change one part of the computation and watch the output: ablations and counterfactual patching."
-    panels: [freq-ablation-bars, patching-result, patching-live]
+    panels: [freq-ablation-bars, cluster-ablations, patching-result, patching-live]
   - id: seeds
     title: "H. All runs and controls"
     blurb: "The paper's run next to our replications with different random seeds, and controls without weight decay or with random labels."

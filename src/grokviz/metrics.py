@@ -202,13 +202,24 @@ def neuron_frequencies(coeffs: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor
     Returns (freq [n] int, fve [n], quad_fve [n]). The 3×3 block of k holds the constant, linear and quadratic
     terms of k (paper extract_freq_2d / ARENA arrange_by_2d_freqs, which however stops at k = p//2 − 1).
     """
-    p = coeffs.shape[0]
-    total = coeffs.pow(2).sum((0, 1))  # [n] total energy (= variance × p² after centring)
-    blocks = torch.stack([fourier.extract_freq_2d(coeffs, k) for k in range(1, p // 2 + 1)])  # [K, 3, 3, n]
-    energy = blocks.pow(2).sum((1, 2))  # [K, n]
-    best, arg = energy.max(0)
+    blocks, total = _freq_blocks(coeffs)
+    best, arg = blocks.pow(2).sum((1, 2)).max(0)  # energy of the strongest 3×3 block per neuron
     quad = blocks[arg, 1:, 1:, torch.arange(coeffs.shape[-1], device=coeffs.device)].pow(2).sum((1, 2))  # quadratic 2×2 part
-    return arg + 1, best / total.clamp_min(1e-300), quad / total.clamp_min(1e-300)
+    return arg + 1, best / total, quad / total
+
+
+def _freq_blocks(coeffs: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+    """3×3 blocks of every frequency k = 1..p//2 → [K, 3, 3, n], and each neuron's total energy [n] (≥ 1e-300)."""
+    p = coeffs.shape[0]
+    total = coeffs.pow(2).sum((0, 1)).clamp_min(1e-300)  # [n] total energy (= variance × p² after centring)
+    return torch.stack([fourier.extract_freq_2d(coeffs, k) for k in range(1, p // 2 + 1)]), total
+
+
+def neuron_freq_energy(coeffs: torch.Tensor) -> torch.Tensor:
+    """Share of each neuron's variance in each frequency's 3×3 block → [n, K] (rows sum to ≤ 1; the rest is outside
+    every block, e.g. cos(w_k a)·cos(w_j b) cross terms). The full map behind `neuron_frequencies`' arg-max."""
+    blocks, total = _freq_blocks(coeffs)
+    return (blocks.pow(2).sum((1, 2)) / total).T
 
 
 def attention_lookup(model: GrokTransformer, p: int) -> torch.Tensor:

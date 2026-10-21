@@ -22,7 +22,7 @@ import logging  # module logger
 import numpy as np  # outputs
 import torch  # tensors
 
-from grokviz import metrics  # grid, evaluate, matrices
+from grokviz import fourier, metrics  # 2D Fourier transform; grid, evaluate, matrices
 from grokviz.checkpoint_metrics import grid_for, reference_index, run_dirs  # shared helpers
 from grokviz.context import PipelineContext  # phase argument
 from grokviz.envcheck import resolve_device  # device
@@ -46,9 +46,31 @@ def key_plane_coords(W_E: torch.Tensor, F: torch.Tensor, k: int) -> torch.Tensor
     return W_E.T @ Q  # [p, 2]
 
 
+HERO_RUNS = ("paper", "wd1_s0")  # runs shown in full detail on the site (every frame; weights at many checkpoints)
+
+
 @torch.no_grad()
-def frame(model, grid: metrics.Grid, K: list[int]) -> dict[str, np.ndarray]:
-    """All geometry arrays for one checkpoint."""
+def spectra(acts: metrics.Acts, grid: metrics.Grid) -> dict[str, np.ndarray]:
+    """2D Fourier pictures of one checkpoint's activations (paper Sec. 4.1–4.3; ARENA 1.5.2 part 1).
+
+    - logit_fourier2d [p, p]: for each 2D Fourier component (a-frequency term, b-frequency term), the norm over answers c
+      of the logits' coefficient, after removing each answer's mean — the paper finds only cos/sin(w_k(a+b)) terms;
+    - neuron_b2 [p, p]: mean over neurons of the squared 2D coefficient of their centred activations — neurons also
+      carry the linear terms cos(w_k a), cos(w_k b) that cancel in the logits;
+    - neuron_freq_energy [n, K]: share of each neuron's variance in each frequency (metrics.neuron_freq_energy).
+    """
+    p = grid.p
+    coeffs = metrics.neuron_fourier(acts.post, grid.F)  # [p, p, n]
+    logits = acts.logits - acts.logits.mean(0, keepdim=True)  # remove each answer's constant (Const⊗Const) term
+    lc = fourier.fft2d(logits, grid.F).reshape(p, p, -1)  # [p, p, c]
+    return {"logit_fourier2d": lc.pow(2).sum(-1).sqrt().float().cpu().numpy(),
+            "neuron_b2": coeffs.pow(2).mean(-1).float().cpu().numpy(),
+            "neuron_freq_energy": metrics.neuron_freq_energy(coeffs).float().cpu().numpy()}
+
+
+@torch.no_grad()
+def frame(model, grid: metrics.Grid, K: list[int], with_spectra: bool = False) -> dict[str, np.ndarray]:
+    """All geometry arrays for one checkpoint (plus the `spectra` arrays when asked)."""
     p = grid.p
     acts = metrics.evaluate(model, grid)
     mats = metrics.paper_matrices(model, p)
@@ -71,7 +93,7 @@ def frame(model, grid: metrics.Grid, K: list[int]) -> dict[str, np.ndarray]:
     we_pca, we_var = pca(W_E.T)
     logit_pca, logit_var = pca(logit_means)
     prob_pca, prob_var = pca(prob_means)
-    return {
+    return {**(spectra(acts, grid) if with_spectra else {}),
         "we_planes": torch.stack([key_plane_coords(W_E, grid.F, k) for k in K]).cpu().numpy(),  # [K, p, 2]
         "we_pca": we_pca.cpu().numpy(), "we_pca_var": we_var.cpu().numpy(),
         "mlp_planes": torch.stack(mlp_planes).cpu().numpy(),  # [K, p, 2]
@@ -93,13 +115,17 @@ def compute_geometry(ctx: PipelineContext, every: int = 2) -> None:
         grid = grid_for(store, ctx.cfg.p, device)
         K = metrics.key_frequencies(store.load_model(reference_index(store), device), grid.F)
         rows: dict[str, list] = {}
-        steps = []
+        steps, spectra_steps = [], []
+        t_last = (len(store.ckpt_steps) - 1) // every * every  # index of the last frame
         for t, step, model in store.iter_models(device, every=every):
-            for key, value in frame(model, grid, K).items():
+            with_spectra = run_dir.name in HERO_RUNS or t == t_last  # heavy maps: every frame only for showcase runs
+            for key, value in frame(model, grid, K, with_spectra).items():
                 rows.setdefault(key, []).append(value)
             steps.append(step)
+            if with_spectra:
+                spectra_steps.append(step)
         arrays = {k: np.stack(v) for k, v in rows.items()}
-        arrays["steps"] = np.asarray(steps)
+        arrays["steps"], arrays["spectra_steps"] = np.asarray(steps), np.asarray(spectra_steps)
         arrays["key_freqs"] = np.asarray(K)
         save_analysis(out_path, **arrays)
         log.info("%s: wrote %s (%d frames)", store.run_id, out_path, len(steps))

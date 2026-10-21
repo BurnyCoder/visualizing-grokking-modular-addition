@@ -17,7 +17,7 @@ from pathlib import Path  # paths
 import numpy as np  # arrays
 import torch  # weights
 
-from grokviz import task  # split sizes
+from grokviz import stats, task  # intervals over seeds; split sizes
 from grokviz.runstore import RunStore  # paper run
 from grokviz.sources import PAPER_ANALYSIS_INDEX  # index of the paper's epoch-40k checkpoint
 
@@ -187,6 +187,54 @@ def run_numbers(reports_dir: Path) -> dict:
     return out
 
 
+def spectra_numbers(runs_dir: Path) -> dict:
+    """paper.*_linear_share: share of the 2D-Fourier energy in linear terms (row/column 0 = Const in b / in a) at the
+    paper's analysis checkpoint, for the neurons (mean over neurons) and for the logits (geometry.spectra)."""
+    path = runs_dir / "paper" / "analysis" / "geometry.npz"
+    g = np.load(path) if path.exists() else None
+    if g is None or "spectra_steps" not in g.files or not len(g["spectra_steps"]):
+        return {}
+    i = int(np.argmin(np.abs(g["spectra_steps"] - 40001)))
+    def linear_share(energy: np.ndarray) -> float:  # cells (i, 0) and (0, j): one factor is the constant
+        return float((energy[0, :].sum() + energy[:, 0].sum() - energy[0, 0]) / energy.sum())
+    logit_energy = g["logit_fourier2d"][i].astype(float) ** 2
+    K = _load(runs_dir / "paper" / "analysis" / "key_freqs.json")["key_freqs"]
+    cells = [(r, c) for k in K for r in (2 * k - 1, 2 * k) for c in (2 * k - 1, 2 * k)]  # cos/sin k × cos/sin k products
+    return {"paper.neuron_linear_share": _v(linear_share(g["neuron_b2"][i].astype(float)), "pct"),
+            "paper.logit_linear_share": _v(linear_share(logit_energy), "pct"),
+            "paper.logit_key_product_share": _v(sum(logit_energy[r, c] for r, c in cells) / logit_energy.sum(), "pct")}
+
+
+def dynamics_numbers(runs_dir: Path) -> dict:
+    """seeds.*: gradient and Adam dynamics over the 11 wd1 runs (gradients.py; exploratory, reports/exp-04).
+
+    - adam_*_end: Adam's step vs weight decay at the last saved step;
+    - cos_gw_end: cos(train-loss gradient, weights) at the last checkpoint;
+    - cos_tt_mid: cos(train gradient, test gradient) at the checkpoint midway between t1 and t2 (circuit formation);
+    - cos_tt_neg: share of checkpoints in [t1, t2] where that cosine is negative (train steps that raise test loss).
+    """
+    rows = []
+    for d in sorted(runs_dir.glob("wd1_s*")):
+        path, ph = d / "analysis" / "gradients.npz", _load(d / "analysis" / "phases.json")
+        g = np.load(path) if path.exists() else None
+        if g is None or "adam_steps" not in g.files or ph is None or ph.get("t2") is None:
+            continue
+        s, tt = g["steps"], g["cos_train_test"]
+        window = (s >= ph["t1"]) & (s <= ph["t2"])
+        mid = int(np.argmin(np.abs(s - (ph["t1"] + ph["t2"]) / 2)))
+        rows.append((g["adam_over_decay"][-1], g["cos_adam_weight"][-1], g["cos_grad_weight"][-1], tt[mid], (tt[window] < 0).mean()))
+    if not rows:
+        return {}
+    ratio, cos_w, cos_gw, tt_mid, tt_neg = np.asarray(rows).T
+    # cosines and shares are bounded, so a symmetric t-interval can spill past ±1 or 100 %; the percentile bootstrap
+    # stays inside the range of the data
+    boot = stats.bootstrap_interval
+    return {"seeds.adam_ratio_end_ci": _ci(boot(ratio), "f"), "seeds.adam_cos_w_end_ci": _ci(boot(cos_w), "f"),
+            "seeds.cos_gw_end_ci": _ci(boot(cos_gw), "f"), "seeds.cos_tt_mid_ci": _ci(boot(tt_mid), "f"),
+            "seeds.cos_tt_neg_ci": _ci(boot(tt_neg), "pct"), "seeds.dynamics_n": _v(len(rows), "int"),
+            "seeds.cos_gw_end_range": _v(f"{cos_gw.min():.3f} to {cos_gw.max():.3f}", "str")}
+
+
 def same_init_numbers(runs_dir: Path) -> dict:
     """seeds.same_init.*: our wd1_s0 starts from the paper's exact initial weights and split (exploratory comparison).
 
@@ -230,4 +278,5 @@ def late_spike_numbers(runs_dir: Path, factor: float = 100.0, gap: int = 2000) -
 
 def build_summary(runs_dir: Path, reports_dir: Path, p: int, frac: float) -> dict:
     """All prose numbers."""
-    return {**paper_numbers(runs_dir, p, frac), **run_numbers(reports_dir), **same_init_numbers(runs_dir), **late_spike_numbers(runs_dir)}
+    return {**paper_numbers(runs_dir, p, frac), **run_numbers(reports_dir), **same_init_numbers(runs_dir), **late_spike_numbers(runs_dir),
+            **spectra_numbers(runs_dir), **dynamics_numbers(runs_dir)}

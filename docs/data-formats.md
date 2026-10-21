@@ -18,6 +18,9 @@ Step semantics: checkpoint t holds the parameters after `ckpt_steps[t]` optimize
 - `manifest.json`: `{schema_version, p, basis_names, train_masks, scalar_columns, runs: [...]}`; each run has `id`, `title`,
   `group`, `key_freqs`, `ckpt_steps`, `geometry_steps`, `weight_steps`, `param_layout` (name + shape in flat order),
   `phases`, `final` (final-checkpoint analysis) and `arrays: {name: {file, dtype, shape, desc, bytes, sha256, [min, max], [columns]}}`.
+  `sha256` holds the first 16 hex digits of the file's SHA-256. Showcase runs (`paper`, `wd1_s0`) also have `spectra_steps`
+  (frames of the 2D-Fourier maps `spec_*`); other runs have these maps at their final checkpoint only.
+  `adam_scalars` (with `steps`) and `update_norm` exist for our retrained runs only.
 - Array files `runs/<id>/<name>.bin`: little-endian; `dtype` ∈ `f32`, `f16`, `i16`, `u8q` (uint8, value = min + q/255·(max − min)).
   Shapes are row-major; e.g. `we_fourier` is `[T, 113]` (Const, cos 1, sin 1, …, sin 56).
 - Weights `w_<step>.bin`: float16 flat vector of the state_dict in `param_layout` order (in-browser model);

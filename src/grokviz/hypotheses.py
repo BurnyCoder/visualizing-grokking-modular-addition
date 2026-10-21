@@ -74,6 +74,8 @@ def analyse_final(store: RunStore, p: int, device) -> dict:
         "logit_fve": logit_fve,
         "wl_resid_sq_frac": wlp["wl_residual_sq_frac"],
         "patching": patch_recovery(model, grid, K, n=1000, seed=0),
+        # ARENA cluster check: loss when one frequency cluster's logit contribution is removed (descriptive, site only)
+        "cluster_ablation": interventions.cluster_ablations(model, acts, grid, freqs, fve, K),
     }
 
 

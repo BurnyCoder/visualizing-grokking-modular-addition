@@ -6,7 +6,9 @@ we compute the training-loss gradient g_train and the test-loss gradient g_test 
   per-parameter ‖g_train‖ and ‖θ‖ (the weight-decay pull is λθ, so ‖g‖ vs λ‖θ‖ shows which force dominates);
   cos(g_train, θ)  — positive means the loss gradient also pushes weights toward zero (descent moves along −g);
   cos(g_train, g_test) — do steps that reduce training loss also reduce test loss? (generalising vs memorising);
-  the Fourier spectrum of the embedding gradient (which frequencies the loss is currently pushing W_E toward).
+  the Fourier spectrum of the embedding gradient (which frequencies the loss is currently pushing W_E toward);
+  for our runs (Adam moments saved every 1,000 steps): cos(Adam direction, g), cos(Adam direction, θ) and the size of
+  Adam's loss step relative to the weight-decay step, |m̂/(√v̂+ε)| ÷ (λ|θ|) — unlike the raw gradient, comparable in size.
 Global context: chapter 19 ("Gradients and weight decay") and dashboard group F; tests ARENA's speculation that
 memorising gradients cancel while pattern gradients reinforce, and the paper's claim that circuit formation
 and cleanup are driven by weight decay (Sec. 5.2–5.3).
@@ -21,6 +23,7 @@ import logging  # module logger
 
 import numpy as np  # outputs
 import torch  # autograd
+from safetensors import safe_open  # lazy reads of the saved Adam moments
 
 from grokviz import losses, metrics  # loss + grid
 from grokviz.checkpoint_metrics import grid_for, run_dirs  # shared run helpers
@@ -50,6 +53,19 @@ def grads_on(model, grid: metrics.Grid, mask: torch.Tensor) -> list[torch.Tensor
     return [p.grad.detach().clone() for p in model.parameters()]
 
 
+def adam_direction(moments, i: int, names: list[str], steps_done: int, betas: tuple[float, float], eps: float = 1e-8) -> torch.Tensor:
+    """Adam's normalised direction m̂/(√v̂ + ε) after `steps_done` updates, from saved moments (flat, float64).
+
+    `moments` is the safe_open handle of optim.safetensors (tensors `exp_avg.<param>` / `exp_avg_sq.<param>` stacked
+    over saves); bias corrections 1 − β^t as in torch.optim.AdamW (https://pytorch.org/docs/stable/generated/torch.optim.AdamW.html).
+    The update AdamW applies is −lr·(this direction) − lr·λ·θ.
+    """
+    b1, b2 = betas
+    m = flat([moments.get_slice(f"exp_avg.{n}")[i] for n in names]) / (1 - b1**steps_done)
+    v = flat([moments.get_slice(f"exp_avg_sq.{n}")[i] for n in names]) / (1 - b2**steps_done)
+    return m / (v.sqrt() + eps)
+
+
 def compute_gradient_dynamics(ctx: PipelineContext) -> None:
     """Phase entry point: write analysis/gradients.npz per run."""
     device = resolve_device(ctx.cfg.device)
@@ -62,6 +78,12 @@ def compute_gradient_dynamics(ctx: PipelineContext) -> None:
         grid = grid_for(store, ctx.cfg.p, device)
         wd = store.meta.get("weight_decay", 1.0)
         rows: dict[str, list] = {}
+        # our runs saved Adam's moments every optim_every steps (the paper's run did not): pair each with its checkpoint
+        optim_file = run_dir / "optim.safetensors"
+        moments = safe_open(str(optim_file), "pt", device="cpu") if optim_file.exists() else None
+        saved = {s: i for i, s in enumerate(store.meta.get("optim_steps", []))}  # step → index in the stacked moments
+        names = [n for n, _ in store.load_model(0).named_parameters()]
+        adam: dict[str, list] = {}
         for t, step, model in store.iter_models(device):
             model.train()
             with torch.enable_grad():
@@ -76,11 +98,17 @@ def compute_gradient_dynamics(ctx: PipelineContext) -> None:
             rows.setdefault("grad_we_fourier", []).append((gw @ grid.F.T).norm(dim=0).cpu().numpy())
             # ‖g‖ / (λ‖θ‖); undefined (NaN) without weight decay instead of a meaningless 1e297
             rows.setdefault("grad_ratio_decay", []).append(float(flat(g_tr).norm() / (wd * flat(params).norm())) if wd else float("nan"))
+            if moments is not None and step in saved:  # Adam's actual step direction vs the raw gradient and the weights
+                d, g, th = adam_direction(moments, saved[step], names, step, tuple(store.meta["betas"])), flat(g_tr).cpu(), flat(params).cpu()
+                adam.setdefault("adam_steps", []).append(step)
+                adam.setdefault("cos_adam_grad", []).append(cosine(d, g))  # 1 = Adam steps straight down the gradient
+                adam.setdefault("cos_adam_weight", []).append(cosine(d, th))  # > 0: the loss step also shrinks the weights
+                adam.setdefault("adam_over_decay", []).append(float(d.norm() / (wd * th.norm())) if wd else float("nan"))
             if t % 100 == 0:
                 log.info("%s: ckpt %d step %d |g|=%.3e cos(g,θ)=%.3f cos(g_tr,g_te)=%.3f", store.run_id, t, step,
                          flat(g_tr).norm(), rows["cos_grad_weight"][-1], rows["cos_train_test"][-1])
-        arrays = {k: np.asarray(v) for k, v in rows.items()}
+        arrays = {k: np.asarray(v) for k, v in {**rows, **adam}.items()}
         arrays["steps"] = np.asarray(store.ckpt_steps)
-        arrays["param_names"] = np.asarray([n for n, _ in store.load_model(0).named_parameters()])
+        arrays["param_names"] = np.asarray(names)
         save_analysis(out_path, **arrays)
         log.info("%s: wrote %s", store.run_id, out_path)

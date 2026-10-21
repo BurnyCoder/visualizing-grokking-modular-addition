@@ -108,8 +108,12 @@ for the preregistered tests. In short:
   - Patching recovers 0.997 [0.995, 0.998] of the logit difference across seeds.
 - **Exploratory:** our seed 0 starts from the paper's exact initial weights. It diverges numerically within ~50 steps,
   yet ends with the paper's key frequencies.
+- **Exploratory dynamics** (gradients, and Adam's step rebuilt from the saved Adam states). During circuit formation the
+  training-loss gradient opposes the test-loss gradient. At the end, Adam's loss step and the weight-decay step are
+  nearly equal and opposite. Weight decay outweighs the loss step most within 1,000 steps of grokking in 10 of 11 seeds.
 
-The details are in [exp-02](reports/exp-02-training.md) and [exp-03](reports/exp-03-hypotheses.md).
+The details are in [exp-02](reports/exp-02-training.md), [exp-03](reports/exp-03-hypotheses.md) and
+[exp-04](reports/exp-04-training-dynamics.md).
 
 ## What happens when you run it
 

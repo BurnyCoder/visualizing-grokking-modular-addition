@@ -7,7 +7,7 @@ addition modulo 113. The network was reverse-engineered by Nanda, Chan, Lieberum
 - **Website:** <https://burnycoder.github.io/visualizing-grokking-modular-addition/>
   - 22 step-by-step chapters, from "what is a remainder" to the full Fourier-multiplication algorithm;
   - one big dashboard of linked visualizations that you can scrub across training.
-- **Models and data:** Hugging Face collection *Visualizing grokking modular addition* (user `BurnyCoder`). It contains:
+- **Models and data:** Hugging Face collection [*Visualizing grokking modular addition*](https://huggingface.co/collections/BurnyCoder/visualizing-grokking-modular-addition-6ad822354f93a379ba50756a). It contains:
   - our 22 runs: [`BurnyCoder/grokking-modular-addition-runs`](https://huggingface.co/BurnyCoder/grokking-modular-addition-runs);
   - the site data: [`BurnyCoder/grokking-modular-addition-site-data`](https://huggingface.co/datasets/BurnyCoder/grokking-modular-addition-site-data).
 - **Reports:** [`reports/`](reports/), with one file per experiment, a [summary of all experiments](reports/summary.md) and a

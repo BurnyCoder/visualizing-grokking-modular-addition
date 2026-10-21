@@ -76,7 +76,8 @@ def publish_runs_to_hub(ctx: PipelineContext) -> None:
 def build_collection(ctx: PipelineContext, api: HfApi) -> None:
     """Create (or reuse) the collection and add every related repository."""
     coll = api.create_collection(title=ctx.cfg.hf_collection_title, namespace=api.whoami()["name"], exists_ok=True,
-                                 description=f"Retrained runs, website data and original checkpoints of the grokking modular-addition transformer. {GITHUB_URL}")
+                                 # the Hub rejects collection descriptions longer than 150 characters
+                                 description="Retrained runs, website data and original checkpoints of the transformer that groks modular addition.")
     items = [(ctx.cfg.hf_runs_repo, "model", "Our 22 retrained runs (seeds and controls)"),
              (ctx.cfg.hf_site_data_repo, "dataset", "Arrays and float16 weights used by the website"),
              ("BurnyCoder/grokking-modular-addition-transformer", "model", "Earlier TransformerLens replication (seed 999)"),

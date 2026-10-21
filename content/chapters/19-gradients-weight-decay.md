@@ -38,6 +38,8 @@ Adam's loss step and the weight-decay step are multiplied by the same learning r
 
 {{fig:adam-vs-decay}}
 
+The ratio stays a little below 1 during memorisation and dips lowest right when the network groks: its minimum, {{num:seeds.adam_dip_ci}} (mean and 95 % interval over seeds), falls within 1,000 steps of the grokking step in {{num:seeds.adam_dip_near_grok}} seeds. At that moment weight decay outweighs the loss by about 10 %, so the weights shrink — the cleanup that the paper attributes to weight decay, seen on the actual steps. (This pattern was noticed after the experiments, not predicted in advance, and the Adam state was saved only every 1,000 steps.)
+
 At step 40,000, across the 11 weight-decay seeds, the loss step is {{num:seeds.adam_ratio_end_ci}} times the size of the weight-decay step (mean and 95 % interval), and its cosine with the weights is {{num:seeds.adam_cos_w_end_ci}} (bootstrap intervals). The two steps are nearly equal in size and nearly opposite in direction: the balance described above, measured on the steps that are actually taken. The raw gradient alone would not show this reliably — its cosine with the weights at the last checkpoint ranges from {{num:seeds.cos_gw_end_range}} across seeds, because Adam averages the gradient over many steps and rescales every coordinate. How much each weight matrix moves per step:
 
 {{fig:update-norms}}

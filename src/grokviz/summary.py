@@ -222,17 +222,21 @@ def dynamics_numbers(runs_dir: Path) -> dict:
         s, tt = g["steps"], g["cos_train_test"]
         window = (s >= ph["t1"]) & (s <= ph["t2"])
         mid = int(np.argmin(np.abs(s - (ph["t1"] + ph["t2"]) / 2)))
-        rows.append((g["adam_over_decay"][-1], g["cos_adam_weight"][-1], g["cos_grad_weight"][-1], tt[mid], (tt[window] < 0).mean()))
+        dip = int(np.argmin(g["adam_over_decay"]))  # where decay most outweighs Adam's loss step (saved every 1,000 steps)
+        near_grok = ph.get("t_grok") is not None and abs(int(g["adam_steps"][dip]) - ph["t_grok"]) <= 1000
+        rows.append((g["adam_over_decay"][-1], g["cos_adam_weight"][-1], g["cos_grad_weight"][-1], tt[mid], (tt[window] < 0).mean(),
+                     g["adam_over_decay"][dip], near_grok))
     if not rows:
         return {}
-    ratio, cos_w, cos_gw, tt_mid, tt_neg = np.asarray(rows).T
+    ratio, cos_w, cos_gw, tt_mid, tt_neg, dip_ratio, near = np.asarray(rows, dtype=float).T
     # cosines and shares are bounded, so a symmetric t-interval can spill past ±1 or 100 %; the percentile bootstrap
     # stays inside the range of the data
     boot = stats.bootstrap_interval
     return {"seeds.adam_ratio_end_ci": _ci(boot(ratio), "f"), "seeds.adam_cos_w_end_ci": _ci(boot(cos_w), "f"),
             "seeds.cos_gw_end_ci": _ci(boot(cos_gw), "f"), "seeds.cos_tt_mid_ci": _ci(boot(tt_mid), "f"),
             "seeds.cos_tt_neg_ci": _ci(boot(tt_neg), "pct"), "seeds.dynamics_n": _v(len(rows), "int"),
-            "seeds.cos_gw_end_range": _v(f"{cos_gw.min():.3f} to {cos_gw.max():.3f}", "str")}
+            "seeds.cos_gw_end_range": _v(f"{cos_gw.min():.3f} to {cos_gw.max():.3f}", "str"),
+            "seeds.adam_dip_ci": _ci(boot(dip_ratio), "f"), "seeds.adam_dip_near_grok": _v(f"{int(near.sum())} of {len(near)}", "str")}
 
 
 def same_init_numbers(runs_dir: Path) -> dict:

@@ -12,7 +12,7 @@ contains float16 copies of its weights, with attribution (decision recorded in N
 Optimiser states (optim.safetensors) are not uploaded: they are large and exactly regenerable by re-running the
 deterministic training.
 Global context: makes every number on the site re-checkable without retraining.
-Sources: huggingface_hub upload_large_folder (https://huggingface.co/docs/huggingface_hub/guides/upload#upload-a-large-folder),
+Sources: huggingface_hub upload_folder for large folders (https://huggingface.co/docs/huggingface_hub/guides/upload#upload-a-large-folder),
 collections API (https://huggingface.co/docs/huggingface_hub/guides/collections).
 """
 
@@ -48,7 +48,7 @@ paper's code, so `GrokTransformer` in the code repository loads them with `stric
 train loss/accuracy, test loss/accuracy every 10 steps, per-parameter weight/gradient/update norms) and
 `analysis/` (all measurements shown on the website).
 
-Code, website and reports: {github}. Author: Libor Burian (independent researcher).
+Code, website and reports: {github}. Author: Libor Burian.
 """
 
 
@@ -65,9 +65,11 @@ def publish_runs_to_hub(ctx: PipelineContext) -> None:
     card.write_text(MODEL_CARD.format(n=len(runs), runs="\n".join(lines), github=GITHUB_URL), encoding="utf-8")
     api.create_repo(repo, repo_type="model", exist_ok=True)
     log.info("uploading %d runs to %s (resumable)", len(runs), repo)
-    api.upload_large_folder(repo_id=repo, repo_type="model", folder_path=str(ctx.cfg.runs_dir),
-                            allow_patterns=["README.md"] + [f"{r}/*" for r in runs] + [f"{r}/analysis/*" for r in runs],
-                            ignore_patterns=["*/optim.safetensors", "*/_tmp/*", "_resume/*", "paper/*"])
+    # huggingface_hub ≥ 2.0 removed upload_large_folder; upload_folder now streams large folders in several commits
+    # and resumes when re-run (https://huggingface.co/docs/huggingface_hub/guides/upload#upload-a-large-folder)
+    api.upload_folder(repo_id=repo, repo_type="model", folder_path=str(ctx.cfg.runs_dir), commit_message="Upload runs",
+                      allow_patterns=["README.md"] + [f"{r}/*" for r in runs] + [f"{r}/analysis/*" for r in runs],
+                      ignore_patterns=["*/optim.safetensors", "*/_tmp/*", "_resume/*", "paper/*"])
     build_collection(ctx, api)
 
 

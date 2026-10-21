@@ -20,7 +20,7 @@ Exponentials make every score positive; dividing by their total makes them add u
 
 {{widget:softmax}}
 
-The predicted answer is the [[dfn:argmax]] — the position of the largest logit (equivalently, of the largest probability). With only two options, softmax has a simple form: the probability of the first is $\frac{e^{x_1}}{e^{x_1}+e^{x_2}} = \frac{1}{1+e^{-(x_1-x_2)}}$, the [[dfn:sigmoid]] $\sigma$ of the difference. We will meet this when an attention head chooses between a and b.
+The predicted answer is the [[dfn:argmax]] — the position of the largest logit (equivalently, of the largest probability). With only two options, softmax has a simple form: the probability of the first is $\frac{e^{x_1}}{e^{x_1}+e^{x_2}} = \frac{1}{1+e^{-(x_1-x_2)}}$, the [[dfn:sigmoid]] $\sigma$ of the difference. We will meet this when an [[preview:attention-head|attention head]] chooses between a and b.
 
 ## Measuring wrongness: the cross-entropy loss
 
@@ -41,7 +41,7 @@ The fraction of examples whose argmax is the correct answer is the [[dfn:accurac
 
 {{quote:nanda-zero-loss}}
 
-Even with 100 % accuracy, the loss can always be lowered by making the logits more extreme, so training never “finishes” — which will matter when we look at what weight decay does in chapter 19.
+Even with 100 % accuracy, the loss can always be lowered by making the logits more extreme, so [[preview:training|training]] never “finishes” — which will matter when we look at what [[preview:weight-decay|weight decay]] does in chapter 19.
 
 ::: nuance
 **Precision.** When the network is very confident, probabilities like $1 - 10^{-9}$ cannot be represented accurately in standard 32-bit floating point (it cannot distinguish numbers closer than about $1.2\times10^{-7}$ to 1). The paper's analysis code therefore computes the loss in 64-bit precision; this avoids artificial loss spikes {{cite:paperrepo}} {{cite:arena152code}}. We do the same.

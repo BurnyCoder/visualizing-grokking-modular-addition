@@ -36,8 +36,14 @@ unknown split. The match also proves that we reconstructed the exact training sp
 
 ## Step 2 — Reproduction checks (R-checks)
 
-All 27 rows are in [`tables/exp01_rchecks.md`](tables/exp01_rchecks.md). **23 of 27 match** within the stated
-tolerances, including:
+All 30 rows are in [`tables/exp01_rchecks.md`](tables/exp01_rchecks.md). **26 of 30 match** within the stated
+tolerances. Two of the rows check claims about the training trajectory rather than the final model:
+- **R15:** the sum of squared weights at the paper's phase boundaries falls 3,373 → 2,001 → 996. It falls faster per
+  step during cleanup (0.22) than during circuit formation (0.17), as in the paper's Fig. 7, which gives no numbers.
+- **R20:** ARENA's late-phase observations. Total SSW goes from 955.4 at step 40,001 to 941.8 at the last checkpoint
+  (ARENA: 955 → 942). Between steps 40,001 and 45,001, heads 0 and 2 go from 0.4 % to 11.3 % and 9.1 % attention on "=".
+
+The matching rows also include:
 - loss 2.412 × 10⁻⁷;
 - key frequencies {14, 35, 41, 42, 52};
 - 433 single-frequency neurons, and 44 neurons in the k = 14 cluster;
@@ -65,6 +71,12 @@ tolerances, including:
 5. **The Gini definition is unspecified in the paper.** Hurley & Rickard's definition on the 113 per-component norms gives
    final values 0.736 (W_E) and 0.801 (W_L). These are consistent with the paper's Fig. 7, which reports no numeric
    mainline values.
+6. **The Fig. 3 sin/cos labels cannot be checked from the weights.**
+   - **The question.** The paper's analysis notebook labels row 0 of its cos-first basis as "sin" (`plot_embed_bars`,
+     porting map P17), and we checked whether the paper's Fig. 3 inherits that swap.
+   - **The result.** At every frequency that carries weight (14, 31, 35, 41, 42, 52), the cos and sin norms of W_E differ
+     by at most 2.2 % (k = 52: 4.146 vs 4.055). A swapped label would therefore look the same.
+   - **Our decision.** Because the swap cannot be confirmed, it is not listed as a paper erratum; only the notebook bug is.
 
 **Not reproduced.** In each case we tried several plausible variants (listed in `rchecks.json → details`):
 

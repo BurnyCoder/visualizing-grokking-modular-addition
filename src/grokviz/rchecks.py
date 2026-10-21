@@ -17,6 +17,7 @@ import logging  # module logger
 import math  # isclose
 from pathlib import Path  # paths
 
+import numpy as np  # nearest checkpoint
 import torch  # tensors
 
 from grokviz import interventions, metrics  # measurements and causal tests
@@ -24,6 +25,7 @@ from grokviz.context import PipelineContext  # phase argument
 from grokviz.envcheck import resolve_device  # device choice
 from grokviz.formatting import fmt_value as _fmt  # same value formatting as the website's R-check table
 from grokviz.patching import patch_recovery  # counterfactual swaps
+from grokviz.phases import PAPER_BOUNDARIES  # the paper's stated phase boundaries
 from grokviz.runstore import RunStore  # run access
 from grokviz.sources import PAPER_ANALYSIS_INDEX, PAPER_RUN_ID  # which run/checkpoint
 
@@ -41,6 +43,35 @@ def _close(x: float, y: float, rel: float) -> bool:
 
 
 @torch.no_grad()
+@torch.no_grad()
+def _dynamics_rows(store: RunStore, grid: metrics.Grid, device) -> list[dict]:
+    """R15 (paper Fig. 7) and R20 (ARENA bonus) — claims about the training trajectory, checked at a few checkpoints.
+
+    R15: the sum of squared weights falls through circuit formation and faster during cleanup (qualitative; the paper
+    gives only the plot). R20: after ~43k epochs total SSW drops from ≈955 to ≈942, and two heads attend to "=" again.
+    """
+    def at(step: int):  # model at the checkpoint nearest to `step` optimiser updates
+        return store.load_model(int(np.argmin(np.abs(np.asarray(store.ckpt_steps) - step))), device)
+
+    def ssw(model) -> float:  # total sum of squared weights (paper Fig. 7)
+        return sum(metrics.sum_sq_weights(model).values())
+
+    b = PAPER_BOUNDARIES  # paper Sec. 5.2, in epochs (= steps − 1)
+    s1, s2, s3 = (ssw(at(b[t] + 1)) for t in ("t1", "t2", "t3"))
+    rate_circuit, rate_cleanup = (s1 - s2) / (b["t2"] - b["t1"]), (s2 - s3) / (b["t3"] - b["t2"])
+    s40, s_end = ssw(at(40001)), ssw(at(store.ckpt_steps[-1]))
+    eq40, eq45 = (metrics.evaluate(at(s), grid).pattern.mean(0)[:, 2].tolist() for s in (40001, 45001))  # attention to "="
+    risen = sum(after > 5 * before and after > 0.05 for before, after in zip(eq40, eq45))
+    return [
+        _row("R15", "SSW at the paper's phase boundaries 1.4k / 9.4k / 14k (Fig. 7)", "falls; steepest in cleanup", [s1, s2, s3],
+             s1 > s2 > s3 and rate_cleanup > rate_circuit, "p.9 Fig. 7", f"qualitative; fall per step {rate_circuit:.3f} (circuit formation) vs {rate_cleanup:.3f} (cleanup)"),
+        _row("R20a", "total SSW at epoch 40k and at the end of training", [955, 942], [s40, s_end],
+             abs(s40 - 955) < 2 and abs(s_end - 942) < 2, "ARENA bonus (training dynamics)", f"last checkpoint: step {store.ckpt_steps[-1]}"),
+        _row("R20b", "heads attending to '=' again after ~43k (attention at 40k → 45k)", "2 heads", [eq40, eq45],
+             risen == 2, "ARENA bonus (training dynamics)", f"{risen} heads rise ≥5× to >5 %"),
+    ]
+
+
 def compute_rchecks(store: RunStore, device) -> dict:
     """All comparisons on the paper's epoch-40k model; returns {"rows": [...], "details": {...}}."""
     model = store.load_model(PAPER_ANALYSIS_INDEX, device)
@@ -114,6 +145,7 @@ def compute_rchecks(store: RunStore, device) -> dict:
              [clusters["loss_key_projection"], clusters["loss_key_projection_no_always_firing"]],
              _close(clusters["loss_key_projection"], 2.482e-7, 0.02) and _close(clusters["loss_key_projection_no_always_firing"], 1.179e-6, 0.02), "ARENA"),
     ]
+    rows += _dynamics_rows(store, grid, device)
     details = {"key_freqs": K, "table1": table1, "heads": heads, "freq_ablation": abl, "wl_projection": wlp,
                "neuron_poly": poly, "skip": skip, "clusters": clusters, "relu": relu, "patching": patch,
                "logit_fit_coef": coef.tolist(), "we_freq_norms": we.tolist()}

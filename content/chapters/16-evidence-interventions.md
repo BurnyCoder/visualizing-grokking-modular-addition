@@ -13,6 +13,10 @@ On the paper's network (unablated loss {{num:rc.R1}}):
 - removing all five key frequencies at once destroys the network (loss {{num:paper.all_key_removed}}, worse than guessing at 4.727);
 - removing **everything except** the 8 × 5 = 40 key components *lowers* the loss to {{num:paper.only_key_kept}} (paper: 7.24 × 10⁻⁸).
 
+The same test works on the neurons instead of the logits. Remove the contribution of one frequency cluster of neurons (chapter 14) and measure the loss; ARENA uses this to confirm that every cluster is needed {{cite:arena152}}:
+
+{{fig:cluster-ablations}}
+
 {{quote:nanda-ablate-others}}
 
 ::: check

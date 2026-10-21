@@ -10,8 +10,8 @@
 | R8a | logit fit Σα_k cos(w_k(a+b−c)) FVE | 0.95 | 0.9614 | yes | p.6 |  |
 | R8b | loss of the fitted logits | 4.7e-08 | 4.395e-08 | yes | p.6 |  |
 | R9a | loss keeping only the 40 key 2D components | 7.24e-08 | 7.236e-08 | yes | p.7 |  |
-| R9b | MLP projected onto 10 W_L directions | 1.19e-07 | 2.377e-07 | **no** | p.8 | not reproduced; variants in details.wl_projection |
-| R9c | MLP projected onto the nullspace | 5.27 | 4.804 | **no** | p.8 | not reproduced; MLP-only bias-corrected is closest |
+| R9b | MLP projected onto 10 W_L directions | 1.19e-07 | 2.377e-07 | **no** | p.8 | closest variant shown; all variants in details.wl_projection |
+| R9c | MLP projected onto the nullspace | 5.27 | 4.804 | **no** | p.8 | closest variant (MLP-only, bias-corrected) shown |
 | R10a | clustered neurons replaced by degree-2 polynomial | 2.48e-07 | 2.482e-07 | yes | p.7 |  |
 | R10b | neurons restricted to cos/sin(w_k(a+b)) terms | 5.54e-08 | 1.121e-07 | **no** | p.7 | per-neuron restriction gives this value; the paper's 5.54e-8 equals the restricted-LOGITS loss (R19a), so the paper likely restricted logits |
 | R11a | MLP skip connection zero-ablated | 9.12e-07 | 8.877e-07 | yes | p.13 |  |
@@ -27,3 +27,6 @@
 | R18 | ARENA ReLU regression r² (with / without quadratic) | [0.966, 0.849] | [0.9659, 0.8494] | yes | ARENA |  |
 | R19a | ARENA trig-only (restricted) logits loss | 5.547e-08 | 5.547e-08 | yes | ARENA |  |
 | R19b | ARENA key-frequency neuron projection loss (with / without always-firing) | [2.482e-07, 1.179e-06] | [2.482e-07, 1.179e-06] | yes | ARENA |  |
+| R15 | SSW at the paper's phase boundaries 1.4k / 9.4k / 14k (Fig. 7) | falls; steepest in cleanup | [3373, 2001, 995.5] | yes | p.9 Fig. 7 | qualitative; fall per step 0.171 (circuit formation) vs 0.219 (cleanup) |
+| R20a | total SSW at epoch 40k and at the end of training | [955, 942] | [955.4, 941.8] | yes | ARENA bonus (training dynamics) | last checkpoint: step 49901 |
+| R20b | heads attending to '=' again after ~43k (attention at 40k → 45k) | 2 heads | [[0.004418, 0.001111, 0.004427, 0.001177], [0.1133, 0.0008202, 0.09146, 0.0008718]] | yes | ARENA bonus (training dynamics) | 2 heads rise ≥5× to >5 % |

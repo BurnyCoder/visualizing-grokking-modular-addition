@@ -18,6 +18,16 @@ ARENA shows the same thing from the neurons' side {{cite:arena152}}: each neuron
 
 {{fig:wlogit-sorted}}
 
+## Linear terms in the neurons, none in the logits
+
+The neurons hold more than the products: chapter 13's 3 × 3 blocks also contain the linear terms cos(w_k a), sin(w_k b), … Averaging the squared 2D Fourier coefficients over all 512 neurons shows both kinds — on the paper's network {{num:paper.neuron_linear_share}} of the neurons' variance sits in linear terms (row and column 0 of the map):
+
+{{fig:neuron-b2-map}}
+
+The same picture for the logits keeps only the products. In the logits, linear terms carry {{num:paper.logit_linear_share}} of the variance: the read-off $W_L$ adds the neurons up so that their linear parts cancel, leaving cos(w_k(a+b)) and sin(w_k(a+b)) — exactly the terms that step 3 of the algorithm needs. The products of the key frequencies hold {{num:paper.logit_key_product_share}} of the logits' variance:
+
+{{fig:logit-fourier-2d}}
+
 ## The logits are a sum of cos(w_k(a+b−c))
 
 Putting the pieces together, the paper fits all 113 × 113 × 113 logits with five numbers, $\Logits(a,b)_c \approx \sum_k \alpha_k\cos(w_k(a+b-c))$, by least squares (we add a constant). On the paper's network this simple formula explains {{num:paper.logit_fve}} of the variance of the 1,442,897 logits (paper: 95 %), with coefficients α = {{num:paper.logit_alpha}} for k = {{num:paper.key_freqs}}. Replacing the network's logits by the fitted formula gives loss {{num:paper.logit_fit_loss}} — *lower* than the network's own {{num:rc.R1}} (paper: 4.7 × 10⁻⁸ vs 2.4 × 10⁻⁷).

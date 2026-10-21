@@ -12,7 +12,7 @@ import { array, model, nearestIndex, row, run, manifest } from "../core/data.js"
 import { Plot } from "../viz/plot.js";
 import { Heatmap } from "../viz/heatmap.js";
 import { cssVar } from "../viz/colors.js";
-import { el, kstep, note, runOf, watch, set } from "./common.js";
+import { clusterOrder, el, kstep, note, runOf, watch, set } from "./common.js";
 
 const K = 56; // frequencies 1..56 for p = 113
 
@@ -113,7 +113,7 @@ export const figures = {
         const nf = row(freqs, t), nv = row(fve, t);
         const p = net.p, n = net.n;
         const F = fourierBasis(p);
-        const order = Array.from({ length: n }, (_, i) => i).sort((x, y) => ((nv[x] > 0.85 ? nf[x] : 99) - (nv[y] > 0.85 ? nf[y] : 99)) || x - y);
+        const order = clusterOrder(nf, nv, n);
         const grid = new Float32Array(n * p);
         order.forEach((neuron, rIdx) => {
           for (let i = 0; i < p; i++) { // component i of column `neuron` of W_L: Σ_c F[i][c] W_L[c][neuron]
@@ -122,12 +122,43 @@ export const figures = {
             grid[rIdx * p + i] = s2;
           }
         });
-        if (!hm) hm = new Heatmap(body, { rows: n, cols: p, size: 420, diverging: true, format: (v) => v.toFixed(3),
+        if (!hm) hm = new Heatmap(body, { rows: n, cols: p, size: 420, height: 420, diverging: true, format: (v) => v.toFixed(3),
           label: (rr, cc) => `neuron ${order[rr]} (k=${nv[order[rr]] > 0.85 ? nf[order[rr]] : "none"}), component ${m.basis_names[cc]}`,
           onClick: (rr) => set({ neuron: order[rr] }) });
         body.append(info);
         hm.draw(grid);
         info.textContent = `step ${net.step}: rows = 512 neurons sorted by their frequency cluster (unclustered last); columns = Fourier components of the output c (Const, cos 1, sin 1, …). Click a row to select that neuron.`;
+      });
+    },
+  },
+
+  "wneur-fourier": {
+    async render(body, ds) {
+      body.innerHTML = "";
+      const m = await manifest();
+      let hm = null;
+      const info = note(body);
+      watch(["run", "step", "head"], async (s) => {
+        const id = runOf(ds), r = await run(id);
+        const net = await model(id, s.step);
+        const t = nearestIndex(r.ckpt_steps, net.step);
+        const nf = row(await array(id, "neuron_freq"), t), nv = row(await array(id, "neuron_fve"), t);
+        const p = net.p, n = net.n, h = Number(s.head) || 0;
+        const F = fourierBasis(p), order = clusterOrder(nf, nv, n);
+        const grid = new Float32Array(n * p);
+        order.forEach((neuron, rIdx) => {
+          for (let i = 0; i < p; i++) { // component i over input tokens a of W_neur[h] = W_in·OV_h(a) (net.PA, grokmodel.js)
+            let acc = 0;
+            for (let a = 0; a < p; a++) acc += F[i * p + a] * net.PA[h][a][neuron];
+            grid[rIdx * p + i] = acc;
+          }
+        });
+        if (!hm) hm = new Heatmap(body, { rows: n, cols: p, size: 420, height: 420, diverging: true, format: (v) => v.toFixed(3),
+          label: (rr, cc) => `neuron ${order[rr]} (k=${nv[order[rr]] > 0.85 ? nf[order[rr]] : "none"}), component ${m.basis_names[cc]} of a`,
+          onClick: (rr) => set({ neuron: order[rr] }) });
+        body.append(info);
+        hm.draw(grid);
+        info.textContent = `step ${net.step}, head ${h}: rows = 512 neurons sorted by frequency cluster; columns = Fourier components (Const, cos 1, sin 1, …) over the token a of W_neur = W_in·W_O·W_V·W_E — what head ${h} adds to each neuron's input when it attends fully to a. Other heads: pick one in the dashboard's control bar. Click a row to select a neuron.`;
       });
     },
   },

@@ -32,9 +32,13 @@ The activation of a neuron over all inputs is equally striking:
 
 {{fig:neuron-grid}}
 
-The right panel is the neuron's 2D Fourier transform (chapter 10, with its average removed): almost all of it sits in the 3 × 3 block of one frequency — constant, linear terms and quadratic terms of that frequency. Neuron 0 of the paper's network is periodic with frequency 42 {{cite:nanda2023}} (Sec. 4.1). Here are more neurons, three from each frequency cluster:
+The right panel is the neuron's 2D Fourier transform (chapter 10, with its average removed): almost all of it sits in the 3 × 3 block of one frequency — constant, linear terms and quadratic terms of that frequency. Neuron 0 of the paper's network is periodic with frequency 42 {{cite:nanda2023}} (Sec. 4.1). Here are more neurons, three from each [[preview:neuron-cluster|frequency cluster]]:
 
 {{fig:neuron-small-multiples}}
+
+Where do these waves come from? A neuron's input is what the attention heads copy from the tokens, passed through $W_{in}$. For one head, the map from the attended token a to all 512 neuron inputs is $W_{neur} = W_{in} W_O W_V W_E$ (ARENA's name for it {{cite:arena152}}). Written in the Fourier basis over a, each neuron's row is already concentrated on the waves of its own frequency — the periodicity is in place before the ReLU acts:
+
+{{fig:wneur-fourier}}
 
 ## Logits are periodic
 

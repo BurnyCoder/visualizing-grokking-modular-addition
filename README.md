@@ -64,7 +64,7 @@ All 22 runs train together on one GPU, vectorised with `torch.func.vmap`. This i
   - counterfactual activation patching of the key-frequency subspace;
   - exact full-batch gradients;
   - activation and output-distribution geometry.
-- **Validation.** The code was first checked against 27 numbers published by the paper and ARENA, using the paper's
+- **Validation.** The code was first checked against 30 numbers published by the paper and ARENA, using the paper's
   network ([experiment 1](reports/exp-01-paper-validation.md)).
 
 **Statistics.**
@@ -76,6 +76,8 @@ All 22 runs train together on one GPU, vectorised with `torch.func.vmap`. This i
 **Website.**
 - **Build.** Static HTML generated from `content/` (Markdown with macros) by `src/grokviz/site_build.py`. The build fails if:
   - a term is used before it is defined;
+  - a glossary word appears in plain text before its defining chapter without a hover card (`[[preview:…]]`);
+  - a relative link or asset in the built pages is missing;
   - a quote is longer than the quote policy allows;
   - a number in the prose is not bound to the analysis output (`site/data/summary.json`).
 - **Quote check.** Separately, `tests/test_quotes.py` checks every quote word for word against its PDF page. It runs
@@ -89,7 +91,7 @@ All 22 runs train together on one GPU, vectorised with `torch.func.vmap`. This i
 See [`reports/summary.md`](reports/summary.md) for all experiments and [`reports/tables/hypotheses.md`](reports/tables/hypotheses.md)
 for the preregistered tests. In short:
 
-- **Our analysis code reproduces 23 of 27 published numbers** on the paper's network. The 4 it does not reproduce are
+- **Our analysis code reproduces 26 of 30 published numbers** on the paper's network. The 4 it does not reproduce are
   explained in [experiment 1](reports/exp-01-paper-validation.md).
 - **Swapping the key-frequency subspace** of a's embedding with that of a′ moves the paper network's output to a′ + b:
   - recovered: 99.7 % of the logit difference;
@@ -106,8 +108,12 @@ for the preregistered tests. In short:
   - Patching recovers 0.997 [0.995, 0.998] of the logit difference across seeds.
 - **Exploratory:** our seed 0 starts from the paper's exact initial weights. It diverges numerically within ~50 steps,
   yet ends with the paper's key frequencies.
+- **Exploratory dynamics** (gradients, and Adam's step rebuilt from the saved Adam states). During circuit formation the
+  training-loss gradient opposes the test-loss gradient. At the end, Adam's loss step and the weight-decay step are
+  nearly equal and opposite. Weight decay outweighs the loss step most within 1,000 steps of grokking in 10 of 11 seeds.
 
-The details are in [exp-02](reports/exp-02-training.md) and [exp-03](reports/exp-03-hypotheses.md).
+The details are in [exp-02](reports/exp-02-training.md), [exp-03](reports/exp-03-hypotheses.md) and
+[exp-04](reports/exp-04-training-dynamics.md).
 
 ## What happens when you run it
 
@@ -159,7 +165,7 @@ flowchart LR
 4. **Hypotheses.** Evaluate H1–H5 exactly as preregistered, and write `reports/tables/hypotheses.{json,md}`.
 5. **Publishing.**
    - Upload the runs to Hugging Face.
-   - Export the site data: about 450 MB of binary arrays and float16 weights, plus `summary.json`.
+   - Export the site data: about 500 MB of binary arrays and float16 weights, plus `summary.json`.
    - Upload the site data and pin it in `site-data.lock`.
    - Build `site/` and render the report figures from the site itself (Playwright).
    - Compile the paper (`paper/main.typ` → `reports/paper.pdf`, Typst). Its numbers come from the same `summary.json`.
@@ -182,6 +188,9 @@ uv sync --extra cu130          # NVIDIA GPU; use `uv sync --extra cpu` without o
 uv run playwright install chromium   # only for render_report_figures and browser tests
 cp .env.example .env           # optional: every setting has a default in .env.example
 ```
+
+On Windows, cloning into a deep folder can fail with "Filename too long" while Git checks out the submodule, whose
+name is long. Add `-c core.longpaths=true` after `git` in the clone command, or clone into a shorter path.
 
 **Run the whole pipeline**, or any subset of phases:
 
@@ -227,6 +236,11 @@ Then open <http://localhost:8766>.
   ```bash
   uv run pytest
   ```
+
+- Two of the tests check the built site and its data: `tests/test_site_data.py` (every array matches its manifest
+  entry, plus the 1 GB Pages limit) and `tests/test_site_browser.py`. The browser test opens every page in headless
+  Chromium, waits for every figure to draw, fails on console errors, and checks the dashboard's first paint is under 3 s.
+  Both are skipped until `site/` has been built with data.
 
 **Configuration.** All settings are environment variables with defaults in [`.env.example`](.env.example), covering
 seeds, steps, logging intervals, paths, pinned revisions and Hugging Face repo ids. Put overrides in `.env`, which is gitignored.

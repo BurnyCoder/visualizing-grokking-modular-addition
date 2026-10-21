@@ -11,6 +11,7 @@ import { Plot } from "../viz/plot.js";
 import { cssVar, freqColor } from "../viz/colors.js";
 import { softmax } from "../model/grokmodel.js";
 import { note, runOf, watch } from "./common.js";
+import { spectrumMap } from "./activations.js";
 
 /** Least-squares α_k (+ intercept) for logits[c] ≈ β + Σ_k α_k cos(w_k(t − c)), t = a + b. */
 export function cosFit(logits, t, freqs, p) {
@@ -31,6 +32,7 @@ export function cosFit(logits, t, freqs, p) {
 }
 
 export const figures = {
+  "logit-fourier-2d": spectrumMap("spec_logit_fourier2d", "size of each 2D Fourier component of the logits (norm over the 113 answers c, each answer's mean removed)"),
   "output-dist": {
     async render(body, ds) {
       body.innerHTML = "";

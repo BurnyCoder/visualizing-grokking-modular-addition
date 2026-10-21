@@ -85,3 +85,22 @@ def test_neuron_frequency_of_a_quadratic_neuron(grid):
     freq, fve, quad = metrics.neuron_frequencies(metrics.neuron_fourier(act, grid.F))
     assert freq.item() == 5 and fve.item() == pytest.approx(1.0)
     assert 0.0 < quad.item() < 1.0  # the linear 0.5·cos(w a) part is not quadratic
+
+
+def test_spectra_of_the_perfect_algorithm(grid, perfect_logits):
+    """Perfect logits live only on the cos/sin(w_k(a+b)) cells of the 2D Fourier map, i.e. the 2×2 block of each key
+    frequency (no linear terms); a cos(w a)cos(w b) + cos(w a) neuron puts all its variance into frequency 5's block."""
+    from grokviz.geometry import spectra
+
+    a = torch.arange(P).double()[:, None]
+    b = torch.arange(P).double()[None, :]
+    w = 2 * math.pi * 5 / P
+    post = (torch.cos(w * a) * torch.cos(w * b) + torch.cos(w * a)).flatten()[:, None]
+    acts = metrics.Acts(logits=perfect_logits, pre=post, post=post, resid_mid=None, pattern=None)
+    s = spectra(acts, grid)
+    energy = torch.as_tensor(s["logit_fourier2d"]).double() ** 2
+    quad_cells = [(i, j) for k in K for i in (2 * k - 1, 2 * k) for j in (2 * k - 1, 2 * k)]
+    assert sum(energy[i, j] for i, j in quad_cells) / energy.sum() == pytest.approx(1.0, abs=1e-9)
+    assert energy[0, :].sum() + energy[:, 0].sum() == pytest.approx(0.0, abs=1e-9)  # linear terms cancel in the logits
+    assert s["neuron_freq_energy"].shape == (1, P // 2) and s["neuron_freq_energy"][0, 4] == pytest.approx(1.0, abs=1e-6)
+    assert s["neuron_b2"][2 * 5 - 1, 0] > 0  # the neuron does carry the linear cos(w a) term

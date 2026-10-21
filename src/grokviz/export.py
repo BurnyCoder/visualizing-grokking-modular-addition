@@ -26,6 +26,7 @@ import torch  # weights
 from grokviz import fourier, task  # basis names, split masks
 from grokviz.checkpoint_metrics import run_dirs  # selected runs
 from grokviz.context import PipelineContext  # phase argument
+from grokviz.geometry import HERO_RUNS  # runs exported in full detail
 from grokviz.runstore import RunStore  # run access
 from grokviz.summary import build_summary  # prose numbers
 
@@ -114,8 +115,15 @@ def export_run(root: Path, store: RunStore, p: int, weight_every: int | None) ->
         w.add("grad_scalars", np.stack([g["cos_grad_weight"], g["cos_train_test"], g["grad_ratio_decay"]], 1),
               "cos(g,θ), cos(g_train,g_test), |g|/(λ|θ|)", columns=["cos_grad_weight", "cos_train_test", "grad_over_decay"])
         w.add("grad_we_fourier", g["grad_we_fourier"], "Fourier norms of the W_E gradient", dtype="f16")
+        if "adam_steps" in g.files:  # our runs only: Adam's direction from the saved moments
+            w.add("adam_scalars", np.stack([g["cos_adam_grad"], g["cos_adam_weight"], g["adam_over_decay"]], 1),
+                  "cos(Adam direction, g), cos(Adam direction, θ), |Adam direction|/(λ|θ|)",
+                  columns=["cos_adam_grad", "cos_adam_weight", "adam_over_decay"], steps=g["adam_steps"].tolist())
+    if "update_norm" in c:  # our runs only: size of each parameter's actual AdamW update, logged during training
+        w.add("update_norm", c["update_norm"], "norm of each parameter's AdamW update", columns=[str(x) for x in store.meta["param_names"]],
+              step0=0, step_every=int(c["norms_steps"][1] - c["norms_steps"][0]))
     # Geometry frames.
-    geo_steps = None
+    geo_steps = spectra_steps = None
     if (a / "geometry.npz").exists():
         geo = np.load(a / "geometry.npz")
         geo_steps = geo["steps"].tolist()
@@ -125,6 +133,13 @@ def export_run(root: Path, store: RunStore, p: int, weight_every: int | None) ->
             w.add(f"geo_{k}", geo[k], f"explained variance of {k[:-4]}")
         w.add("geo_p_correct", geo["p_correct"], "probability of the correct answer per input", dtype="u8q")
         w.add("geo_entropy", geo["entropy"], "normalised entropy of the prediction per input", dtype="u8q")
+        if "spectra_steps" in geo.files and len(geo["spectra_steps"]):  # 2D Fourier maps (log10 of the share of the max)
+            spectra_steps = geo["spectra_steps"].tolist()
+            for k, desc in (("logit_fourier2d", "norm of each 2D Fourier component of the logits"),
+                            ("neuron_b2", "mean squared 2D Fourier coefficient over neurons")):
+                x = geo[k] / geo[k].max(axis=(1, 2), keepdims=True)  # per frame, relative to its largest component
+                w.add(f"spec_{k}", np.log10(x + 1e-6), f"{desc} (log10, relative to the frame's maximum)", dtype="u8q")
+            w.add("spec_neuron_freq", geo["neuron_freq_energy"], "share of each neuron's variance per frequency k=1..56", dtype="u8q")
     # Weights for the in-browser model.
     names = list(store.state_dict(0).keys())
     shapes = {k: list(v.shape) for k, v in store.state_dict(0).items()}
@@ -141,7 +156,7 @@ def export_run(root: Path, store: RunStore, p: int, weight_every: int | None) ->
         "id": store.run_id, "title": store.meta.get("title", store.run_id), "kind": store.meta["kind"],
         "group": store.meta.get("group", "paper"), "split_seed": store.meta["split_seed"], "init_seed": store.meta.get("init_seed"),
         "weight_decay": store.meta["weight_decay"], "fn_name": store.meta.get("fn_name", "add"), "label_seed": store.meta.get("label_seed"),
-        "key_freqs": [int(k) for k in m["key_freqs"]], "ckpt_steps": [int(s) for s in m["steps"]], "geometry_steps": geo_steps,
+        "key_freqs": [int(k) for k in m["key_freqs"]], "ckpt_steps": [int(s) for s in m["steps"]], "geometry_steps": geo_steps, "spectra_steps": spectra_steps,
         "weight_steps": weight_steps, "param_layout": [{"name": n, "shape": shapes[n]} for n in names],
         "phases": ph, "final": fin, "arrays": w.arrays,
     }
@@ -158,7 +173,7 @@ def export_site_data(ctx: PipelineContext) -> None:
         if not (run_dir / "analysis" / "ckpt_metrics.npz").exists():
             continue
         store = RunStore(run_dir)
-        weight_every = 2 if store.run_id == "paper" else (5 if store.run_id == "wd1_s0" else None)  # hero runs only
+        weight_every = (2 if store.run_id == "paper" else 5) if store.run_id in HERO_RUNS else None  # showcase runs only
         runs.append(export_run(root, store, ctx.cfg.p, weight_every))
         log.info("exported %s (%d arrays)", store.run_id, len(runs[-1]["arrays"]))
     _, names = fourier.fourier_basis(ctx.cfg.p)

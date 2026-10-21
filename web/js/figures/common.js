@@ -42,3 +42,10 @@ export const runInfo = (ds) => run(runOf(ds));
 export function note(parent) {
   return el(parent, "p", "fig-note");
 }
+
+/**
+ * Neuron indices sorted by frequency cluster: neurons whose best single-frequency FVE exceeds 0.85 come first, ordered
+ * by that frequency; the rest (unclustered / always-firing) last. `freq[i]`, `fve[i]` as in metrics.neuron_frequencies.
+ */
+export const clusterOrder = (freq, fve, n = freq.length) =>
+  Array.from({ length: n }, (_, i) => i).sort((x, y) => ((fve[x] > 0.85 ? freq[x] : 99) - (fve[y] > 0.85 ? freq[y] : 99)) || x - y);

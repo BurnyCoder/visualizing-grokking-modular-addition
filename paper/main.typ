@@ -28,8 +28,8 @@
 #block(inset: (x: 1.2em, y: 0.4em))[
   *Abstract.* Nanda et al. @nanda2023 reverse-engineered a one-layer transformer that groks addition modulo 113 and
   showed that it computes $(a + b) mod 113$ with a Fourier-multiplication algorithm. We (i) re-implement their
-  analysis and that of the ARENA course @arena152, and check it against 27 numbers they publish for their own network:
-  23 reproduce, and we explain the 4 that do not; (ii) add a counterfactual causal test — swapping the key-frequency
+  analysis and that of the ARENA course @arena152, and check it against #n("rchecks.n_rows") numbers they publish for their own network:
+  #n("rchecks.n_match") reproduce, and we explain the #n("rchecks.n_miss") that do not; (ii) add a counterfactual causal test — swapping the key-frequency
   subspace of the embedding of $a$ with that of $a'$ moves the output to $a' + b$, recovering #n("paper.patch_key")
   of the logit difference (95 % CI #n("paper.patch_key_lo")–#n("paper.patch_key_hi")) versus #n("paper.patch_complement")
   for the complementary subspace and #n("paper.patch_random") for a random subspace of equal dimension; (iii) retrain the
@@ -53,7 +53,7 @@ network, and (b) a pre-specified, statistically controlled test of the main clai
 networks. This work provides both.
 
 *Contributions.*
-+ An analysis pipeline whose outputs match 23 of 27 published numbers on the paper's own checkpoints
++ An analysis pipeline whose outputs match #n("rchecks.n_match") of #n("rchecks.n_rows") published numbers on the paper's own checkpoints
   (@sec-validation), with documented definitional findings (e.g., the reported "test loss" $2.41 times 10^(-7)$ is the
   loss over all 12,769 pairs).
 + A counterfactual subspace-patching test of the claim that the embedding encodes $a$ only through
@@ -135,9 +135,9 @@ are screenshots of the same modules.
 
 == Reproducing the published numbers <sec-validation>
 
-Table 1 lists all 27 checks. 23 match within stated tolerances. Two definitional findings: the paper's
+Table 1 lists all #n("rchecks.n_rows") checks. #n("rchecks.n_match") match within stated tolerances. Two definitional findings: the paper's
 "test loss" $2.41 times 10^(-7)$ equals the loss over _all_ pairs (test-only: #n("paper.loss40k_test")), and the
-"$W_L$ residual < 0.55 %" is a squared-norm ratio (#n("paper.wl_resid_sq"); the norm ratio is #n("paper.wl_resid_norm")).
+"$W_L$ residual < 0.55 %" is a squared-norm ratio (#n("paper.wl_resid_sq")\; the norm ratio is #n("paper.wl_resid_norm")).
 The four non-reproduced rows are projections and ablations whose exact procedure the paper does not specify; for
 R10b, the paper's value equals our restricted-_logit_ loss rather than a per-neuron restriction.
 
@@ -160,7 +160,7 @@ recur everywhere in the network and are the key frequencies #n("paper.key_freqs"
 512 MLP neurons have more than 85 % of their variance explained by a single frequency, forming clusters of
 #n("paper.cluster_sizes") neurons. The logits are fit by $sum_k alpha_k cos(w_k(a+b-c))$ with
 #n("paper.logit_fve") variance explained; replacing the logits by this fit gives loss #n("paper.logit_fit_loss").
-Ablating any single key frequency from the logits multiplies the loss by #n("paper.key_ablation_ratio_range"); the
+Ablating any single key frequency from the logits multiplies the loss by #n("paper.key_ablation_ratio_range")\; the
 largest effect of a non-key frequency is #n("paper.nonkey_ablation_max_ratio") (@fig-ablation).
 
 #fig("we-fourier-bars", [Norm of each Fourier component of the embedding $W_E$ at step 40,001 (paper run).]) <fig-we>
@@ -181,7 +181,7 @@ for the key-frequency subspace and the two controls (1,000 random triples; boots
 == Training dynamics <sec-dynamics>
 
 On the paper's run our objective phase rules put the end of memorisation at step #n("paper.t1"), the end of circuit
-formation at #n("paper.t2"), and the end of cleanup at #n("paper.t3"); test accuracy reaches 99 % at
+formation at #n("paper.t2"), and the end of cleanup at #n("paper.t3")\; test accuracy reaches 99 % at
 #n("paper.t_grok") (@fig-progress). The excluded loss rises from #n("paper.excluded_t1") at the end of memorisation to
 #n("paper.excluded_t2") at the end of circuit formation, while the restricted loss has already fallen far below the
 test loss. Exploratory gradient analysis (exact full-batch gradients at every checkpoint): the cosine between the
@@ -189,6 +189,18 @@ training-set and test-set gradients is #n("paper.cos_tt_start") at initialisatio
 memorisation and circuit formation (#n("paper.cos_tt_mid") at step #n("paper.mid_step")); after grokking the
 gradient is almost exactly anti-parallel to the weights (cosine #n("paper.cos_gw_40k") at step 40,001), the signature
 of an equilibrium between the loss gradient and weight decay.
+
+Across our 11 seeds (exploratory; reports/exp-04) the train-test gradient cosine is negative at #n("seeds.cos_tt_neg_ci")
+of the checkpoints between $t_1$ and $t_2$. Because Adam rescales gradients, we also rebuilt the optimiser's actual
+direction $d = hat(m) \/ (sqrt(hat(v)) + epsilon)$ from moments saved every 1,000 steps. At step 40,000 the loss step
+and the decay step are nearly equal and opposite: $norm(d) \/ (lambda norm(theta))$ = #n("seeds.adam_ratio_end_ci"),
+$cos(d, theta)$ = #n("seeds.adam_cos_w_end_ci"), whereas the raw gradient's cosine with the weights varies from
+#n("seeds.cos_gw_end_range"). The ratio is lowest, #n("seeds.adam_dip_ci"), within 1,000 steps of grokking in
+#n("seeds.adam_dip_near_grok") seeds: weight decay briefly outweighs the loss while the network generalises, consistent
+with the paper's account of cleanup. This last observation is post hoc.
+
+#fig("adam-vs-decay", [Size of Adam's loss step relative to the weight-decay step for seed 0, every 1,000 steps
+(log scale); shading marks the phases.], width: 70%) <fig-adam>
 
 #fig("progress-measures", [Train, test, restricted and excluded loss over training of the paper run (log scale);
 shading marks the three phases from our objective rules.]) <fig-progress>
@@ -235,7 +247,7 @@ initialisations: #n("controls.split0").
 *Exploratory: what selects the frequencies.* Our seed 0 starts from the paper's exact initial weights (max
 difference #n("seeds.same_init_diff")) on the paper's split. The two training-loss curves agree to five significant
 digits for #n("seeds.same_init_loss_steps") steps and then diverge — full-batch Adam amplifies rounding differences —
-and the final weights have cosine similarity #n("seeds.same_init_cos40k"); nevertheless both runs end with
+and the final weights have cosine similarity #n("seeds.same_init_cos40k")\; nevertheless both runs end with
 #n("seeds.same_init_keys_equal") key frequencies (#n("seeds.same_init_keys")), whereas three new initialisations on
 the same split chose different ones. With a single same-initialisation pair this is suggestive only: the
 initialisation, not floating-point noise, appears to select the frequencies.

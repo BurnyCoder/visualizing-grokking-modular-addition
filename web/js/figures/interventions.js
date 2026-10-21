@@ -37,6 +37,33 @@ export const figures = {
     },
   },
 
+  "cluster-ablations": {
+    async render(body, ds) {
+      body.innerHTML = "";
+      const plot = new Plot(body, { height: 260 });
+      const info = note(body);
+      watch(["run"], async () => {
+        const r = await run(runOf(ds));
+        const c = r.final?.cluster_ablation;
+        if (!c) { info.textContent = "No cluster analysis for this run yet."; return; }
+        // one bar per neuron cluster (its frequency k, or "-1" = neurons with no dominant frequency), sorted by effect
+        const keys = Object.keys(c.loss_excluding_cluster).filter((k) => c.cluster_sizes[k] > 0)
+          .sort((x, y) => c.loss_excluding_cluster[y] - c.loss_excluding_cluster[x]);
+        const name = (k) => (k === "-1" ? "other neurons" : `k = ${k}`);
+        const times = (x) => `${Number(x.toPrecision(2)).toLocaleString("en-US")}×`; // 803.4 → "800×"
+        await plot.draw([{ x: keys.map(name), y: keys.map((k) => c.loss_excluding_cluster[k]), type: "bar",
+          marker: { color: keys.map((k) => (k === "-1" ? cssVar("--train") : cssVar("--test"))) },
+          hovertemplate: keys.map((k) => `${name(k)}: ${c.cluster_sizes[k]} neurons<br>loss %{y:.3g}<extra></extra>`) }],
+        { yaxis: { type: "log", title: { text: "loss without this cluster (log)" }, exponentformat: "power" }, xaxis: { type: "category" },
+          shapes: [{ type: "line", xref: "paper", x0: 0, x1: 1, y0: c.loss_key_projection, y1: c.loss_key_projection, line: { dash: "dot", color: cssVar("--ink") } }] });
+        const base = c.loss_key_projection, ratio = (k) => c.loss_excluding_cluster[k] / base;
+        const keyRatios = keys.filter((k) => k !== "-1").map(ratio), rest = keys.includes("-1") ? ` and removing the other neurons (no dominant frequency) by ${times(ratio("-1"))}` : "";
+        info.textContent = `Each neuron cluster's contribution to the logits is removed in turn (clusters: neurons whose activations are > 85 % one frequency; each restricted to that frequency's terms, ARENA 1.5.2). Dotted line: loss with all clusters kept, ${base.toExponential(2)}. ` +
+          (keyRatios.length ? `Removing one frequency's cluster multiplies the loss by ${times(Math.min(...keyRatios))} to ${times(Math.max(...keyRatios))}${rest}.` : "");
+      });
+    },
+  },
+
   "patching-result": {
     async render(body, ds) {
       body.innerHTML = "";
@@ -45,10 +72,10 @@ export const figures = {
         const r = await run(runOf(ds));
         const pt = r.final?.patching;
         if (!pt) return;
-        const names = ["key", "random", "complement"], labels = [`key-frequency subspace (${pt.key.dims} dims)`, `random subspace (${pt.random.dims} dims)`, `everything else (${pt.complement.dims} dims)`];
+        const names = ["key", "random", "complement"], labels = [`key frequencies<br>(${pt.key.dims} dims)`, `random<br>(${pt.random.dims} dims)`, `everything else<br>(${pt.complement.dims} dims)`]; // <br>: two-line tick labels fit narrow panels
         await plot.draw([{ x: labels, y: names.map((n) => pt[n].mean), type: "bar", marker: { color: [cssVar("--restricted"), cssVar("--ink-soft"), cssVar("--excluded")] },
           error_y: { type: "data", symmetric: false, array: names.map((n) => pt[n].ci95[1] - pt[n].mean), arrayminus: names.map((n) => pt[n].mean - pt[n].ci95[0]) } }],
-        { yaxis: { title: { text: "fraction of logit difference recovered" }, range: [-0.1, 1.1] }, hovermode: "closest" });
+        { yaxis: { title: { text: "fraction of logit difference recovered" }, range: [-0.1, 1.1] }, xaxis: { tickangle: 0, automargin: true }, hovermode: "closest" });
       });
     },
   },

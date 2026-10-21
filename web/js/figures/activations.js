@@ -12,7 +12,7 @@ import { Heatmap, miniHeatmap } from "../viz/heatmap.js";
 import { Plot } from "../viz/plot.js";
 import { freqColor } from "../viz/colors.js";
 import { fourierBasis } from "./weights.js";
-import { el, note, runOf, set, state, watch } from "./common.js";
+import { basisName, clusterOrder, el, note, runOf, set, state, watch } from "./common.js";
 
 /** 2D Fourier transform of a p×p grid (rows a, cols b): C = F G Fᵀ (orthonormal basis). */
 export function fft2(grid, p) {
@@ -33,7 +33,56 @@ export function fft2(grid, p) {
 
 const centre = (g) => { const m = g.reduce((x, y) => x + y, 0) / g.length; return g.map((v) => v - m); }; // remove the constant
 
+/**
+ * A p×p 2D-Fourier map from a precomputed array [S, p, p] (log10 of each component's size relative to the frame's
+ * largest; src/grokviz/geometry.py `spectra`), shown at the spectra frame nearest the selected step. Rows: component in
+ * a, columns: component in b (Const, cos 1, sin 1, …). Runs other than the two showcase runs have only the final frame.
+ */
+export function spectrumMap(arrayName, what) {
+  return {
+    async render(body, ds) {
+      body.innerHTML = "";
+      const hm = new Heatmap(body, { rows: 113, cols: 113, size: 300, diverging: false, format: (v) => `10^${v.toFixed(1)} of max`,
+        label: (r, c) => `${basisName(r)} (in a) × ${basisName(c)} (in b)` });
+      const info = note(body);
+      watch(["run", "step"], async (s) => {
+        const id = runOf(ds), r = await run(id);
+        if (!r.spectra_steps) { info.textContent = "no 2D Fourier maps for this run"; return; }
+        const f = nearestIndex(r.spectra_steps, s.step);
+        hm.draw(row(await array(id, arrayName), f), { min: -4, max: 0 });
+        const only = r.spectra_steps.length === 1 ? " (this run has this map only at its final checkpoint)" : "";
+        info.textContent = `step ${r.spectra_steps[f]}${only}: ${what}. Colour: log10 of each component's size relative to the largest (darkest = 10⁻⁴ or less).`;
+      });
+    },
+  };
+}
+
 export const figures = {
+  "neuron-b2-map": spectrumMap("spec_neuron_b2", "mean over all 512 neurons of the squared 2D Fourier coefficients of their activations"),
+  "neuron-freq-map": {
+    async render(body, ds) {
+      body.innerHTML = "";
+      let hm = null;
+      const info = note(body);
+      watch(["run", "step"], async (s) => {
+        const id = runOf(ds), r = await run(id);
+        if (!r.spectra_steps) { info.textContent = "no neuron–frequency map for this run"; return; }
+        const f = nearestIndex(r.spectra_steps, s.step);
+        const a = await array(id, "spec_neuron_freq"), v = row(a, f), [n, K] = a.shape.slice(1);
+        const best = Array.from({ length: n }, (_, i) => { let k = 0; for (let j = 1; j < K; j++) if (v[i * K + j] > v[i * K + k]) k = j; return k + 1; });
+        const fve = Array.from({ length: n }, (_, i) => v[i * K + best[i] - 1]);
+        const order = clusterOrder(best, fve, n), grid = new Float32Array(n * K);
+        order.forEach((neuron, rIdx) => { for (let j = 0; j < K; j++) grid[rIdx * K + j] = v[neuron * K + j]; });
+        if (!hm) hm = new Heatmap(body, { rows: n, cols: K, size: 420, height: 420, diverging: false, format: (x) => `${(100 * x).toFixed(1)} %`,
+          label: (rr, cc) => `neuron ${order[rr]}, frequency k = ${cc + 1}`, onClick: (rr, cc) => set({ neuron: order[rr], freq: cc + 1 }) });
+        body.append(info);
+        hm.draw(grid, { min: 0, max: 1 });
+        const only = r.spectra_steps.length === 1 ? " (final checkpoint only for this run)" : "";
+        info.textContent = `step ${r.spectra_steps[f]}${only}: share of each neuron's variance (rows, sorted by cluster) explained by each frequency's 2D Fourier terms (columns k = 1…56). A bright single cell per row = a single-frequency neuron. Click to select a neuron and frequency.`;
+      });
+    },
+  },
+
   "attn-grid": {
     async render(body, ds) {
       body.innerHTML = "";

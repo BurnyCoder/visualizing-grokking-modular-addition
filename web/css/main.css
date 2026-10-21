@@ -115,6 +115,7 @@ th { background: var(--bg-soft); }
 .fig-what { margin: 0.15rem 0 0; font-size: 0.88rem; color: var(--ink-soft); }
 .fig-body { min-height: 120px; position: relative; }
 .fig-body .loading { color: var(--ink-soft); font-size: 0.85rem; }
+.draw-error { color: var(--test); font-size: 0.85rem; }  /* a figure whose module threw (also caught by tests/test_site_browser.py) */
 .fig-more { font-size: 0.86rem; color: var(--ink-soft); margin-top: 0.4rem; }
 .fig-more summary { cursor: pointer; }
 .fig-eq { overflow-x: auto; padding: 0.3rem 0; color: var(--ink); }

@@ -5,6 +5,7 @@ This is the one-page overview. Each experiment has its own report, with methods,
 - [exp-01: paper validation](exp-01-paper-validation.md)
 - [exp-02: training](exp-02-training.md)
 - [exp-03: hypotheses](exp-03-hypotheses.md)
+- [exp-04: training dynamics (exploratory)](exp-04-training-dynamics.md)
 
 The paper (`paper.pdf`) compresses all of them. The website explains everything from scratch, in 22 chapters.
 
@@ -47,15 +48,16 @@ For the full glossary, with sources, see the website's glossary page (`content/g
 
 | # | Question | Result | Confidence |
 |---|---|---|---|
-| 1 | Does our analysis code reproduce the paper's and ARENA's published numbers on the paper's own network? | 23 of 27 match. The 4 misses are under-specified ablations, documented with the variants we tried. Two definitional findings: the "test loss" 2.41×10⁻⁷ is over all pairs, and the "< 0.55 %" residual is a squared ratio. | High: exact checkpoints, exact split, numbers to 3–4 digits. |
+| 1 | Does our analysis code reproduce the paper's and ARENA's published numbers on the paper's own network? | 26 of 30 match. The 4 misses are under-specified ablations, documented with the variants we tried. Two definitional findings: the "test loss" 2.41×10⁻⁷ is over all pairs, and the "< 0.55 %" residual is a squared ratio. | High: exact checkpoints, exact split, numbers to 3–4 digits. |
 | 1b | Causal test on the paper's network: is a read only through its key-frequency subspace? | Swapping that 10-dimensional subspace (of 128) moves the answer to a′ + b: 0.997 of the logit difference, 95 % CI 0.994–1.000. Complement: 0.002. Random 10-dimensional subspace: 0.062. | High (1,000 triples, bootstrap CI); one network. |
 | 2 | Can the paper's recipe be retrained for 22 runs, reproducibly, on one laptop GPU? | Yes: ≈ 70 min with vmap-batched training, bitwise deterministic across processes and resumption. Early full-batch Adam amplifies rounding noise, so runs are compared as distributions. | High (tested). |
 | 3 | Do the paper's mechanistic claims (H1–H5) hold across 11 seeds, against controls? | H1, H2, H3 supported (11/11 seeds each, Holm p = 0.002); H5 supported (11/11 vs 0/5 grokked, Holm p = 0.001); H4 not supported (6/11, Holm p = 0.5), because the weight-norm rule for naming key frequencies sometimes includes a weak frequency or omits small contributions. Patching recovers 0.997 [0.995, 0.998] of the logit difference in the seeds. | High for the verdicts (preregistered, 11 seeds, Holm-corrected); the explanation of H4's failure is post hoc. |
 | 3b | Exploratory: what selects the key frequencies? | The run started from the paper's exact initial weights (`wd1_s0`) diverges after ~52 steps (weight cosine 0.74 at the end) yet ends with the paper's key frequencies; 3 new initialisations on the same split choose different ones. 2 of 14 grokked runs show repeated late loss spikes. | Low–moderate: one same-init pair; not preregistered. |
+| 4 | Exploratory: which forces act during the phases (exact gradients; Adam's actual step from saved moments)? | During circuit formation the train-loss gradient opposes the test-loss gradient (negative cosine at 97.9 % of checkpoints between t1 and t2). At the end, Adam's loss step and the weight-decay step are nearly equal and opposite (ratio 0.992, cosine −0.991). Weight decay outweighs the loss step most (ratio 0.906) within 1,000 steps of grokking in 10 of 11 seeds. | Moderate for the end-of-training balance (11 seeds); low for the grokking dip (post hoc, 1,000-step resolution). |
 
 ## What we learned about doing this (cross-cutting)
 
-- **Validate before extending.** Checking 27 published numbers exposed two definitions the paper's text leaves
+- **Validate before extending.** Checking 30 published numbers exposed two definitions the paper's text leaves
   implicit. Without that check, every figure on the site would have used a different loss than the paper.
 - **Bind numbers, don't type them.** Every number in the website, reports' tables and paper comes from one
   `summary.json`. When the R7 reference value was corrected, every place that shows it updated together.

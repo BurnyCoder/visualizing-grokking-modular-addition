@@ -27,7 +27,7 @@ If the skip connection around the MLP is ignored, $x^{(2)} \approx W_{out}\,\mat
 
 $$\Logits(a,b) \approx W_U W_{out}\,\mathrm{MLP}(a,b) = W_L\,\mathrm{MLP}(a,b).$$
 
-The paper calls $W_L = W_U W_{out}$ (a 113 × 512 matrix) the [[dfn:neuron-logit-map]] [[symdef:WL]]: column m says how much one unit of neuron m's activation adds to each answer's logit. ARENA calls the same matrix (transposed) $W_{logit}$. A product of matrices that maps one meaningful quantity directly to another is an [[dfn:effective-weights|effective weight]] matrix; we will study $W_L$ in the Fourier basis in chapter 15.
+The paper calls $W_L = W_U W_{out}$ (a 113 × 512 matrix) the [[dfn:neuron-logit-map]] [[symdef:WL]]: column m says how much one unit of neuron m's activation adds to each answer's logit. ARENA calls the same matrix (transposed) $W_{logit}$. A product of matrices that maps one meaningful quantity directly to another is an [[dfn:effective-weights|effective weight]] matrix; we will study $W_L$ in the [[preview:fourier-basis|Fourier basis]] in chapter 15.
 
 ## Consequence 2: each head is a two-way choice between a and b
 
@@ -45,7 +45,7 @@ This is the paper's App. C.1.3 derivation {{cite:nanda2023}}; ARENA calls $C_j$ 
 
 ## Consequence 3: the input is symmetric in a and b
 
-The problem has [[dfn:commutativity]]: a + b = b + a. A network that has learned the task should treat a and b alike. In the trained network the positional embeddings of positions 0 and 1 are both **small** — length {{num:paper.pos_norm0}} and {{num:paper.pos_norm1}}, against {{num:paper.we_norm_mean}} for a typical token embedding — and point in similar directions (cosine similarity {{num:paper.pos_cos01}}), whereas the “=” position's embedding is large ({{num:paper.pos_norm2}}). So whether a number sits at position 0 or 1 barely changes its vector, and a and b are processed (almost) identically:
+The problem has [[dfn:commutativity]]: a + b = b + a. A network that has learned the task should treat a and b alike. In the trained network the positional embeddings of positions 0 and 1 are both **small** — length {{num:paper.pos_norm0}} and {{num:paper.pos_norm1}}, against {{num:paper.we_norm_mean}} for a typical token embedding — and point in similar directions ([[preview:cosine|cosine]] similarity {{num:paper.pos_cos01}}), whereas the “=” position's embedding is large ({{num:paper.pos_norm2}}). So whether a number sits at position 0 or 1 barely changes its vector, and a and b are processed (almost) identically:
 
 {{fig:pos-embed}}
 
@@ -58,5 +58,5 @@ $$\begin{aligned}\Logits(a,b) \approx W_L\,\ReLU\Big(W_{in}\big[\,&x_2 + \textst
 where $E_t$ is token t's embedding plus its positional vector. Everything that depends on the input enters through the embeddings $E_a$, $E_b$, the lookup tables $C_j$, a ReLU, and the neuron–logit map $W_L$. The rest of the site explains what each of these does.
 
 ::: nuance
-These simplifications are justified *empirically for the trained network*. Early in training, the skip connections and attention to “=” can matter; the dashboard's attention panels show attention to “=” jumping back up around step 43,000 — a late change that neither the paper nor ARENA explains {{cite:arena152}}.
+These simplifications are justified *empirically for the trained network*. Early in [[preview:training|training]], the skip connections and attention to “=” can matter; the dashboard's attention panels show attention to “=” jumping back up around step 43,000 — a late change that neither the paper nor ARENA explains {{cite:arena152}}.
 :::

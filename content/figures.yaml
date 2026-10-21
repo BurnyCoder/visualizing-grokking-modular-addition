@@ -155,10 +155,20 @@ wlogit-sorted:
   cite: "{{cite:arena152}} “W_logit in Fourier basis”; {{cite:nanda2023}} Fig. 5 (right)"
   producer: "browser (GrokModel)"
   size: l
+wneur-fourier:
+  title: "W_neur in the Fourier basis: what attention writes into each neuron"
+  what: "For the selected head, the map from the token a (attended to) to the 512 neurons' inputs, written in the Fourier basis over a."
+  eq: "W_{neur}^{j} = W_{in}\\,W_O^{j}\\,W_V^{j}\\,W_E \\quad (512 \\times 113)"
+  read: "Rows are neurons sorted by frequency cluster, columns the components Const, cos 1, sin 1, … over a. On the dashboard, pick the head in the control bar (chapters show head 0). This is ARENA's W_neur (paper: the OV circuit followed by W_in)."
+  expect: "Block structure: a neuron of cluster k receives only cos k and sin k of a, so each neuron's input is already a single wave before the ReLU."
+  chapter: "13-evidence-periodicity.html"
+  cite: "{{cite:arena152}} “W_neur in Fourier basis”"
+  producer: "browser (GrokModel)"
+  size: l
 pos-embed:
   title: "Positional embeddings"
   what: "The three learned vectors added at positions 0 (a), 1 (b) and 2 (=)."
-  expect: "Rows 0 and 1 end up nearly identical — consistent with a + b = b + a."
+  expect: "Rows 0 and 1 stay small (paper run: norms {{num:paper.pos_norm0}} and {{num:paper.pos_norm1}}, against {{num:paper.we_norm_mean}} for a typical token embedding) and partly aligned (cosine {{num:paper.pos_cos01}}), so a and b are treated almost alike; row 2 (the “=” position) is large."
   chapter: "06-simplifying-the-model.html"
   cite: "{{cite:arena152}} “Answer some initial questions”"
   producer: "browser (GrokModel)"
@@ -219,6 +229,23 @@ cluster-sizes:
   what: "Number of neurons with more than 85 % of their variance at each key frequency, stacked."
   chapter: "18-watch-it-form.html"
   producer: "checkpoint_metrics.py"
+neuron-b2-map:
+  title: "All neurons in the 2D Fourier basis"
+  what: "Mean over the 512 neurons of the squared 2D Fourier coefficients of their activations (log scale)."
+  read: "Cell (i, j) = how much the neurons, on average, contain the wave (basis i in a) × (basis j in b). Row 0 / column 0 hold the linear terms cos(w_k a), cos(w_k b); the cells cos k × cos k, sin k × sin k, … hold the products. Compare with the same map for the logits (group E)."
+  expect: "Bright cells only at the key frequencies — both linear terms on the edges and product terms on the diagonal blocks."
+  chapter: "15-evidence-readoff.html"
+  cite: "{{cite:nanda2023}} Sec. 4.2, Fig. 4; {{cite:arena152}} “Neuron activations in Fourier basis”"
+  producer: "geometry.spectra"
+neuron-freq-map:
+  title: "Which frequency each neuron uses"
+  what: "Share of each neuron's variance explained by each frequency's 2D Fourier terms; rows = neurons sorted by cluster, columns = k = 1…56."
+  read: "The arg-max of each row is the neuron's frequency; its value is the neuron's [[term:fve]] at that frequency (the 85 % threshold defines the clusters)."
+  expect: "One bright cell per row for most neurons, in a few columns — the key frequencies."
+  chapter: "14-evidence-neurons-heads.html"
+  cite: "{{cite:nanda2023}} Sec. 4.2; {{cite:arena152}}"
+  producer: "geometry.spectra (metrics.neuron_freq_energy)"
+  size: l
 # ---------------- D. geometry ----------------
 embed-circles:
   title: "Numbers on circles: the embedding in each key plane"
@@ -286,6 +313,14 @@ interference:
   cite: "{{cite:nanda2023}} App. B, Fig. 8"
   producer: "browser (GrokModel) + least squares"
   size: l
+logit-fourier-2d:
+  title: "The logits in the 2D Fourier basis"
+  what: "Size of each 2D Fourier component (in a and in b) of the logits, combined over all 113 answers (log scale)."
+  read: "Same layout as the neuron map in group C. Each answer's mean is removed first, so the Const × Const cell is empty."
+  expect: "The product cells of the key frequencies (cos k × cos k, sin k × sin k, cos k × sin k) are by far the brightest — on the paper's network they hold {{num:paper.logit_key_product_share}} of the logits' variance. The faint lines along key rows and columns are small (the colour scale is logarithmic), and the neurons' large linear terms have almost cancelled."
+  chapter: "15-evidence-readoff.html"
+  cite: "{{cite:nanda2023}} Sec. 4.2"
+  producer: "geometry.spectra"
 # ---------------- F. gradients ----------------
 grad-norms:
   title: "Size of the gradient, per parameter"
@@ -299,11 +334,29 @@ grad-alignment:
   expect: "After grokking the gradient is almost exactly anti-parallel to the weights (an equilibrium with weight decay); during memorisation the train and test gradients are nearly unrelated."
   chapter: "19-gradients-weight-decay.html"
   producer: "gradients.py"
-grad-vs-decay:
-  title: "Loss pull vs weight-decay pull"
-  what: "‖∇L‖ divided by λ‖θ‖ at every checkpoint."
+adam-alignment:
+  title: "Where Adam actually steps"
+  what: "Cosine between Adam's step direction and the raw gradient, and between Adam's step direction and the weights, every 1,000 steps."
+  eq: "d_t = \\hat m_t / (\\sqrt{\\hat v_t} + \\epsilon), \\qquad \\theta_{t+1} = \\theta_t - \\eta\\, d_{t+1} - \\eta\\lambda\\theta_t"
+  read: "Adam divides each coordinate of the gradient's running average by its running size, so its step can point elsewhere than the raw gradient. Computed from Adam's internal state, saved every 1,000 steps for our retrained runs only."
+  expect: "After grokking, cos(Adam direction, weights) ≈ −1: the loss step pushes the weights outward exactly against weight decay's pull inward."
   chapter: "19-gradients-weight-decay.html"
-  producer: "gradients.py"
+  cite: "{{cite:loshchilov2019}}"
+  producer: "gradients.py (adam_direction)"
+adam-vs-decay:
+  title: "Adam's loss step vs the weight-decay step"
+  what: "Size of Adam's loss-driven step divided by the size of the weight-decay step, every 1,000 steps."
+  eq: "\\frac{\\lVert \\hat m/(\\sqrt{\\hat v}+\\epsilon) \\rVert}{\\lambda \\lVert \\theta \\rVert}"
+  read: "Both steps are multiplied by the same learning rate, so the ratio compares the two forces directly (unlike the raw gradient, which Adam rescales). Log scale; 1 means the two are equally large."
+  expect: "The ratio settles at 1 after grokking: an equilibrium in which the loss and weight decay balance."
+  chapter: "19-gradients-weight-decay.html"
+  producer: "gradients.py (adam_direction)"
+update-norms:
+  title: "How much each parameter actually moves"
+  what: "Size of each parameter's AdamW update, logged every 10 steps during training (our retrained runs)."
+  read: "Log scale; one line per weight matrix. Hover to see values."
+  chapter: "19-gradients-weight-decay.html"
+  producer: "train.py (logged during training)"
 grad-we-fourier-heatmap:
   title: "Which frequencies the embedding gradient pushes"
   what: "Share of the embedding gradient's energy in each frequency (rows) at every checkpoint (columns)."
@@ -319,6 +372,14 @@ freq-ablation-bars:
   cite: "{{cite:nanda2023}} Sec. 4.4, Fig. 6"
   producer: "interventions.freq_ablation_table"
   size: l
+cluster-ablations:
+  title: "Removing one neuron cluster"
+  what: "Loss after removing the logit contribution of one frequency cluster of neurons (log scale), largest effect first."
+  read: "Clusters: neurons with more than 85 % of their variance at one frequency, each restricted to that frequency's terms; “other neurons” = those without a dominant frequency. Hover for cluster sizes."
+  expect: "Every key-frequency cluster is necessary; the neurons without a dominant frequency matter much less."
+  chapter: "16-evidence-interventions.html"
+  cite: "{{cite:arena152}} “Neuron clusters”; {{cite:nanda2023}} Sec. 4.3"
+  producer: "interventions.cluster_ablations"
 patching-result:
   title: "Counterfactual patching: swapping the key-frequency part of a"
   what: "Fraction of the logit difference L[a′+b] − L[a+b] recovered when part of a's embedding is replaced by a′'s (1,000 random triples, 95 % bootstrap interval)."

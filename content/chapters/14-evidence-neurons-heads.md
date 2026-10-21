@@ -12,6 +12,10 @@ Our measurement on the paper's network gives the same count, **{{num:paper.neuro
 
 The cluster sizes are {{num:paper.cluster_sizes}} — the paper reports 44 neurons for k = 14 and ARENA the full list {{cite:arena152}}. The remaining {{num:paper.always_firing}} neurons are positive on almost every input (colour), so their ReLU never “switches”; they act linearly and carry little frequency structure (ARENA calls them the always-firing cluster).
 
+The scatter shows only each neuron's best frequency. The full table — every neuron's share of variance at every frequency — makes the clusters visible as bright cells in a few columns:
+
+{{fig:neuron-freq-map}}
+
 ## The ReLU does the multiplication
 
 How can a network built from matrix products and ReLUs multiply two numbers? A ReLU applied to a *sum* of waves produces products. ARENA's example {{cite:arena152}}: take $f(a,b) = \ReLU\big(A + \cos(wa) + \cos(wb)\big)$ with a small constant A, and fit it by least squares with a constant, $\cos(wa)$, $\cos(wb)$ and the product $\cos(wa)\cos(wb)$:

@@ -21,7 +21,6 @@
   transformer, with a preregistered multi-seed replication]
   #v(6pt)
   Libor Burian \
-  Independent researcher \
   #link("https://burnycoder.github.io/visualizing-grokking-modular-addition/")[burnycoder.github.io/visualizing-grokking-modular-addition] ·
   #link("https://github.com/BurnyCoder/visualizing-grokking-modular-addition")[code]
 ]
@@ -205,7 +204,7 @@ shading marks the three phases from our objective rules.]) <fig-progress>
       h,
       if "successes" in d { str(d.successes) + " / " + str(d.n) + " seeds" } else {
         str(d.wd1_grokked) + "/" + str(d.wd1_n) + " with vs " + str(d.wd0_grokked) + "/" + str(d.wd0_n) + " without weight decay grokked" },
-      str(calc.round(d.p_holm, digits: 6)),
+      str(calc.round(d.p_holm, digits: 4)),
       if d.supported { "yes" } else { "no" },
     )).flatten(),
   ),
@@ -219,8 +218,32 @@ Across the 11 weight-decay seeds, memorisation ends at step #n("seeds.t1_ci"), c
 fit explains #n("seeds.logitfve_ci") of the logit variance, and the patching test recovers #n("seeds.patch_key_ci")
 for the key subspace versus #n("seeds.patch_random_ci") for a random one.
 
+*Why H4 fails.* H4 conjoins three conditions. Decomposing the preregistered criterion post hoc (counts only, no new
+test): every non-key frequency is individually dispensable in #n("hyp.h4_nonkey_ok") seeds (worst
+#n("hyp.h4_nonkey_max")×); every key frequency is necessary in #n("hyp.h4_key_ok") (weakest #n("hyp.h4_key_min")×);
+keeping only the key frequencies costs ≤ 1.5× in #n("hyp.h4_keep_ok") (worst #n("hyp.h4_keep_max")×). Both failing
+parts concern the operationalisation of $K$ — frequencies whose $W_L$ Fourier norm is ≥ 25 % of the largest — rather
+than the existence of a sparse set of necessary frequencies: the rule twice admits a frequency with a large weight
+norm but small causal effect, and in seeds with 3–4 key frequencies the many individually negligible non-key
+components jointly matter at the $10^(-7)$ loss scale. Thresholds calibrated on a single model with five
+well-separated frequencies did not transfer to all seeds; a causal (ablation-based) definition of $K$ would be the
+natural preregistered choice in future work.
+
 *Controls.* No weight decay: #n("controls.wd0"). Random labels: #n("controls.rand"). Paper split with new
 initialisations: #n("controls.split0").
+
+*Exploratory: what selects the frequencies.* Our seed 0 starts from the paper's exact initial weights (max
+difference #n("seeds.same_init_diff")) on the paper's split. The two training-loss curves agree to five significant
+digits for #n("seeds.same_init_loss_steps") steps and then diverge — full-batch Adam amplifies rounding differences —
+and the final weights have cosine similarity #n("seeds.same_init_cos40k"); nevertheless both runs end with
+#n("seeds.same_init_keys_equal") key frequencies (#n("seeds.same_init_keys")), whereas three new initialisations on
+the same split chose different ones. With a single same-initialisation pair this is suggestive only: the
+initialisation, not floating-point noise, appears to select the frequencies.
+
+*Exploratory: late loss spikes.* After grokking, the test loss of #n("seeds.spike_n") of 14 grokked runs repeatedly
+jumps more than 100× above its running minimum and recovers: #n("seeds.spikes"). Such spikes with adaptive
+optimisers were described as the slingshot mechanism @thilak2022; we did not investigate their cause. All tests use
+step 40,000, where both runs are at 100 % test accuracy.
 
 #fig("seed-test-loss", [Test loss of every run over training (log scale); seeds as thin lines.]) <fig-seeds>
 
@@ -239,20 +262,27 @@ mechanistic claims together with an explorable presentation of the full evidence
 
 *What the evidence supports.* On the paper's network, the reproduction and the patching test agree with the
 Fourier-multiplication account to within a few percent; the patching result is the most direct causal statement we
-make: $a$ is read through a 10-dimensional subspace of a 128-dimensional embedding. The multi-seed results are
-summarised in @tab-hyp.
+make: $a$ is read through a 10-dimensional subspace of a 128-dimensional embedding. Across seeds, hidden progress
+(H1), the dismantling of memorisation (H2), learned basis-specific sparsity (H3) and the necessity of weight decay
+(H5) replicate in every seed, and the patching result replicates with the same effect size. The one failed test (H4)
+shows that "the key frequencies" is less sharply defined than the paper's single model suggests: which frequencies
+count depends on whether one ranks them by weight norm or by causal effect.
 
 *Limitations.* (i) All runs share the paper's architecture, data fraction, modulus and optimiser; we do not test other
 settings, where other algorithms are known to arise @zhong2023. (ii) Four of the paper's numbers could not be
 reproduced because procedures are under-specified; we do not use them as evidence. (iii) Phase boundaries come from
 rules we calibrated on the paper's run before seeing our runs; other reasonable rules shift them. (iv) Our runs last
 40,000 steps; the paper's late change near step 43,000 is outside this window. (v) Training is bitwise reproducible
-only on the same software and hardware stack.
+only on the same software and hardware stack. (vi) Our seed 0 shares the paper's initialisation and split, so it is
+not independent of the paper's run (it is independent of our other seeds). (vii) The H4 decomposition, the
+same-initialisation comparison and the loss spikes are post hoc and descriptive.
 
 = Conclusion
 
-The modular-addition transformer is, as claimed, a Fourier-multiplication machine, and the claim survives a
-counterfactual test on the original network. The website makes every step of this evidence inspectable on the real
+On the paper's network, the Fourier-multiplication account survives a counterfactual test: the input is read through
+its key-frequency subspace and essentially nowhere else. Across 11 independently trained seeds, four of five
+preregistered claims replicate; the fifth fails on how sharply "key frequencies" can be delimited, not on whether a
+few frequencies carry the computation. The website makes every step of this evidence inspectable on the real
 weights; the pipeline, data and preregistration make it reproducible.
 
 #bibliography("refs.bib", style: "ieee")

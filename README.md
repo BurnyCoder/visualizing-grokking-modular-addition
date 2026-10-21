@@ -95,7 +95,19 @@ for the preregistered tests. In short:
   - recovered: 99.7 % of the logit difference;
   - complement-subspace control: 0.2 %;
   - random-subspace control: 6 %.
-- **Seeds and controls:** RESULTS_PLACEHOLDER
+- **Seeds and controls (preregistered, 11 seeds):**
+  - All 11 seeds with weight decay grok; none of the 5 without it does (Fisher p = 2.3 × 10⁻⁴).
+  - Supported (11/11 seeds each, Holm-adjusted p = 0.002):
+    - restricted loss falls before test loss (H1);
+    - excluded loss rises during circuit formation (H2);
+    - Fourier sparsity is learned and specific to the Fourier basis (H3).
+  - **Not supported:** the strict key-frequency ablation criterion (H4, 6/11). The weight-norm rule that names the key
+    frequencies sometimes includes a weak one, or misses small joint contributions.
+  - Patching recovers 0.997 [0.995, 0.998] of the logit difference across seeds.
+- **Exploratory:** our seed 0 starts from the paper's exact initial weights. It diverges numerically within ~50 steps,
+  yet ends with the paper's key frequencies.
+
+The details are in [exp-02](reports/exp-02-training.md) and [exp-03](reports/exp-03-hypotheses.md).
 
 ## What happens when you run it
 
@@ -268,4 +280,4 @@ Coding-agent conventions are in [`AGENTS.md`](AGENTS.md); deployment is describe
   (2022) and the three videos used as framing (Nanda & Smith, Nanda & Chan, Welch Labs) are credited throughout. Their
   terms are listed in [`NOTICE.md`](NOTICE.md).
 - **License.** Our code and text are MIT ([`LICENSE`](LICENSE)).
-- **Author.** Libor Burian, independent researcher.
+- **Author.** Libor Burian.

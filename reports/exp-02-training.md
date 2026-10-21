@@ -86,7 +86,47 @@
 
 ## Results
 
-RESULTS_PLACEHOLDER
+All 22 runs trained together in 4,376 s (73 min), from `logs/20261021-000752_pipeline.log`. The final checkpoint is at
+step 40,000. The phase boundaries follow the frozen rules in `docs/operationalizations.md`, and K is each run's key
+frequencies at its final checkpoint.
+
+| Run | Final train acc | Final test acc | Final test loss | t1 | t2 | t3 | t_grok | Key frequencies K |
+|---|---|---|---|---|---|---|---|---|
+| `wd1_s0` | 100.0 % | 100.0 % | 4.44e-07 | 1,561 | 9,600 | 12,900 | 10,600 | 14, 35, 41, 42, 52 |
+| `wd1_s1` | 100.0 % | 100.0 % | 2.55e-07 | 1,562 | 9,600 | 13,800 | 10,700 | 2, 3, 23, 37, 39 |
+| `wd1_s2` | 100.0 % | 100.0 % | 3.40e-07 | 1,597 | 3,900 | 6,500 | 4,600 | 6, 7, 15, 27, 38 |
+| `wd1_s3` | 100.0 % | 100.0 % | 8.10e-07 | 1,572 | 7,400 | 13,900 | 8,300 | 9, 27, 53, 55 |
+| `wd1_s4` | 100.0 % | 100.0 % | 1.58e-07 | 1,578 | 6,500 | 11,900 | 7,900 | 11, 25, 49 |
+| `wd1_s5` | 100.0 % | 100.0 % | 1.86e-07 | 1,570 | 9,200 | 12,700 | 10,100 | 9, 34, 38, 40 |
+| `wd1_s6` | 100.0 % | 100.0 % | 4.88e-07 | 1,563 | 9,800 | 17,300 | 10,900 | 7, 26, 35, 41 |
+| `wd1_s7` | 100.0 % | 100.0 % | 5.07e-07 | 1,586 | 4,900 | 7,800 | 5,600 | 12, 18, 20, 48, 55 |
+| `wd1_s8` | 100.0 % | 100.0 % | 1.16e-06 | 1,576 | 9,900 | 14,500 | 11,000 | 37, 44, 45, 46, 47, 51 |
+| `wd1_s9` | 100.0 % | 100.0 % | 1.42e-07 | 1,604 | 4,200 | 7,300 | 5,100 | 19, 34, 35 |
+| `wd1_s10` | 100.0 % | 100.0 % | 2.11e-07 | 1,570 | 6,900 | 10,800 | 8,200 | 19, 31, 45, 47 |
+| `wd0_s0` | 100.0 % | 6.0 % | 53.9 | 11,817 | — | — | — | all 56 (no sparse set) |
+| `wd0_s1` | 100.0 % | 1.9 % | 58.2 | 11,831 | — | — | — | all 56 |
+| `wd0_s2` | 100.0 % | 8.1 % | 50.8 | 11,819 | — | — | — | all 56 |
+| `wd0_s3` | 100.0 % | 21.5 % | 49.2 | 11,834 | — | — | — | all 56 |
+| `wd0_s4` | 100.0 % | 16.2 % | 50.2 | 11,835 | — | — | — | all 56 |
+| `rand_s0` | 100.0 % | 0.9 % | 30.0 | 1,586 | — | — | — | all 56 |
+| `rand_s1` | 100.0 % | 0.9 % | 29.8 | 1,580 | — | — | — | all 56 |
+| `rand_s2` | 100.0 % | 0.8 % | 30.4 | 1,582 | — | — | — | all 56 |
+| `split0_init100` | 100.0 % | 100.0 % | 1.21e-06 | 1,590 | 8,000 | 12,000 | 9,100 | 2, 14, 27, 30, 37, 52 |
+| `split0_init101` | 100.0 % | 100.0 % | 3.24e-07 | 1,573 | 8,400 | 11,700 | 9,900 | 9, 14, 15, 27 |
+| `split0_init102` | 100.0 % | 100.0 % | 4.82e-07 | 1,693 | 3,700 | 6,500 | 4,300 | 7, 38, 49, 53 |
+| paper (for reference) | 100 % | 100 % | 3.02e-07 (test pairs) | 1,567 | 9,301 | 14,001 | 10,601 | 14, 35, 41, 42, 52 |
+
+- **Grokking.** Every run with weight decay (wd1, split0) groks; t_grok ranges from 4,300 to 11,000 steps. No run without
+  weight decay groks.
+- **Same initialisation as the paper.** `wd1_s0` starts from the paper's exact initial weights (largest difference
+  3.0 × 10⁻⁸) on the paper's split:
+  - **Same curve at first.** Its training loss matches the paper's logged curve to 5 significant digits for the first
+    52 steps.
+  - **Then it diverges.** This is point 2 above, now observed against an independent implementation.
+  - **Same end point.** It ends with the paper's key frequencies; its weights at step 40,000 have cosine similarity
+    0.74 with the paper's step-40,001 weights. See [exp-03](exp-03-hypotheses.md), exploratory observation 1.
+- **Late spikes.** Two runs (`wd1_s4`, `split0_init102`) show repeated test-loss spikes after grokking (exp-03,
+  exploratory observation 2).
 
 ## Limitations
 

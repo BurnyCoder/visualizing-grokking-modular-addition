@@ -293,4 +293,4 @@ weights; the pipeline, data and preregistration make it reproducible.
 Code, data formats and the full pipeline: `github.com/BurnyCoder/visualizing-grokking-modular-addition`
 (`uv run grokviz --phases all`). Runs: Hugging Face `BurnyCoder/grokking-modular-addition-runs`; site data:
 `BurnyCoder/grokking-modular-addition-site-data`. Hardware: one RTX 5070 Laptop GPU; training of all 22 runs takes
-≈ 70 minutes, per-checkpoint analysis ≈ 50 minutes. Per-experiment reports with learnings are in `reports/`.
+≈ 73 minutes, per-checkpoint analysis ≈ 72 minutes. Per-experiment reports with learnings are in `reports/`.

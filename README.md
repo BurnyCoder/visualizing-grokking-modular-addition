@@ -152,14 +152,14 @@ flowchart LR
 2. **Training.** Train the 22 runs: about 70 minutes on an RTX 5070 laptop GPU. Training saves a resume point every
    2,000 steps; if it is interrupted, rerunning the phase continues from there.
 3. **Measurement.**
-   - Compute every metric at every checkpoint (`runs/<id>/analysis/ckpt_metrics.npz`; ~50 minutes for 23 runs).
+   - Compute every metric at every checkpoint (`runs/<id>/analysis/ckpt_metrics.npz`; ~70 minutes for 22 runs).
    - Compute exact full-batch gradients and the activation/output geometry.
    - Detect phase boundaries.
    - Run the ablations, random-basis nulls and patching on the final checkpoints.
 4. **Hypotheses.** Evaluate H1–H5 exactly as preregistered, and write `reports/tables/hypotheses.{json,md}`.
 5. **Publishing.**
    - Upload the runs to Hugging Face.
-   - Export the site data: about 250 MB of binary arrays and float16 weights, plus `summary.json`.
+   - Export the site data: about 450 MB of binary arrays and float16 weights, plus `summary.json`.
    - Upload the site data and pin it in `site-data.lock`.
    - Build `site/` and render the report figures from the site itself (Playwright).
    - Compile the paper (`paper/main.typ` → `reports/paper.pdf`, Typst). Its numbers come from the same `summary.json`.

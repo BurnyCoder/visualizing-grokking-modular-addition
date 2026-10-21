@@ -64,7 +64,7 @@ All 22 runs train together on one GPU, vectorised with `torch.func.vmap`. This i
   - counterfactual activation patching of the key-frequency subspace;
   - exact full-batch gradients;
   - activation and output-distribution geometry.
-- **Validation.** The code was first checked against 27 numbers published by the paper and ARENA, using the paper's
+- **Validation.** The code was first checked against 30 numbers published by the paper and ARENA, using the paper's
   network ([experiment 1](reports/exp-01-paper-validation.md)).
 
 **Statistics.**
@@ -89,7 +89,7 @@ All 22 runs train together on one GPU, vectorised with `torch.func.vmap`. This i
 See [`reports/summary.md`](reports/summary.md) for all experiments and [`reports/tables/hypotheses.md`](reports/tables/hypotheses.md)
 for the preregistered tests. In short:
 
-- **Our analysis code reproduces 23 of 27 published numbers** on the paper's network. The 4 it does not reproduce are
+- **Our analysis code reproduces 26 of 30 published numbers** on the paper's network. The 4 it does not reproduce are
   explained in [experiment 1](reports/exp-01-paper-validation.md).
 - **Swapping the key-frequency subspace** of a's embedding with that of a′ moves the paper network's output to a′ + b:
   - recovered: 99.7 % of the logit difference;

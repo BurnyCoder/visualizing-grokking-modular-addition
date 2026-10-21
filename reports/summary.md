@@ -47,7 +47,7 @@ For the full glossary, with sources, see the website's glossary page (`content/g
 
 | # | Question | Result | Confidence |
 |---|---|---|---|
-| 1 | Does our analysis code reproduce the paper's and ARENA's published numbers on the paper's own network? | 23 of 27 match. The 4 misses are under-specified ablations, documented with the variants we tried. Two definitional findings: the "test loss" 2.41×10⁻⁷ is over all pairs, and the "< 0.55 %" residual is a squared ratio. | High: exact checkpoints, exact split, numbers to 3–4 digits. |
+| 1 | Does our analysis code reproduce the paper's and ARENA's published numbers on the paper's own network? | 26 of 30 match. The 4 misses are under-specified ablations, documented with the variants we tried. Two definitional findings: the "test loss" 2.41×10⁻⁷ is over all pairs, and the "< 0.55 %" residual is a squared ratio. | High: exact checkpoints, exact split, numbers to 3–4 digits. |
 | 1b | Causal test on the paper's network: is a read only through its key-frequency subspace? | Swapping that 10-dimensional subspace (of 128) moves the answer to a′ + b: 0.997 of the logit difference, 95 % CI 0.994–1.000. Complement: 0.002. Random 10-dimensional subspace: 0.062. | High (1,000 triples, bootstrap CI); one network. |
 | 2 | Can the paper's recipe be retrained for 22 runs, reproducibly, on one laptop GPU? | Yes: ≈ 70 min with vmap-batched training, bitwise deterministic across processes and resumption. Early full-batch Adam amplifies rounding noise, so runs are compared as distributions. | High (tested). |
 | 3 | Do the paper's mechanistic claims (H1–H5) hold across 11 seeds, against controls? | H1, H2, H3 supported (11/11 seeds each, Holm p = 0.002); H5 supported (11/11 vs 0/5 grokked, Holm p = 0.001); H4 not supported (6/11, Holm p = 0.5), because the weight-norm rule for naming key frequencies sometimes includes a weak frequency or omits small contributions. Patching recovers 0.997 [0.995, 0.998] of the logit difference in the seeds. | High for the verdicts (preregistered, 11 seeds, Holm-corrected); the explanation of H4's failure is post hoc. |
@@ -55,7 +55,7 @@ For the full glossary, with sources, see the website's glossary page (`content/g
 
 ## What we learned about doing this (cross-cutting)
 
-- **Validate before extending.** Checking 27 published numbers exposed two definitions the paper's text leaves
+- **Validate before extending.** Checking 30 published numbers exposed two definitions the paper's text leaves
   implicit. Without that check, every figure on the site would have used a different loss than the paper.
 - **Bind numbers, don't type them.** Every number in the website, reports' tables and paper comes from one
   `summary.json`. When the R7 reference value was corrected, every place that shows it updated together.

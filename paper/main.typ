@@ -28,8 +28,8 @@
 #block(inset: (x: 1.2em, y: 0.4em))[
   *Abstract.* Nanda et al. @nanda2023 reverse-engineered a one-layer transformer that groks addition modulo 113 and
   showed that it computes $(a + b) mod 113$ with a Fourier-multiplication algorithm. We (i) re-implement their
-  analysis and that of the ARENA course @arena152, and check it against 27 numbers they publish for their own network:
-  23 reproduce, and we explain the 4 that do not; (ii) add a counterfactual causal test — swapping the key-frequency
+  analysis and that of the ARENA course @arena152, and check it against #n("rchecks.n_rows") numbers they publish for their own network:
+  #n("rchecks.n_match") reproduce, and we explain the #n("rchecks.n_miss") that do not; (ii) add a counterfactual causal test — swapping the key-frequency
   subspace of the embedding of $a$ with that of $a'$ moves the output to $a' + b$, recovering #n("paper.patch_key")
   of the logit difference (95 % CI #n("paper.patch_key_lo")–#n("paper.patch_key_hi")) versus #n("paper.patch_complement")
   for the complementary subspace and #n("paper.patch_random") for a random subspace of equal dimension; (iii) retrain the
@@ -53,7 +53,7 @@ network, and (b) a pre-specified, statistically controlled test of the main clai
 networks. This work provides both.
 
 *Contributions.*
-+ An analysis pipeline whose outputs match 23 of 27 published numbers on the paper's own checkpoints
++ An analysis pipeline whose outputs match #n("rchecks.n_match") of #n("rchecks.n_rows") published numbers on the paper's own checkpoints
   (@sec-validation), with documented definitional findings (e.g., the reported "test loss" $2.41 times 10^(-7)$ is the
   loss over all 12,769 pairs).
 + A counterfactual subspace-patching test of the claim that the embedding encodes $a$ only through
@@ -135,7 +135,7 @@ are screenshots of the same modules.
 
 == Reproducing the published numbers <sec-validation>
 
-Table 1 lists all 27 checks. 23 match within stated tolerances. Two definitional findings: the paper's
+Table 1 lists all #n("rchecks.n_rows") checks. #n("rchecks.n_match") match within stated tolerances. Two definitional findings: the paper's
 "test loss" $2.41 times 10^(-7)$ equals the loss over _all_ pairs (test-only: #n("paper.loss40k_test")), and the
 "$W_L$ residual < 0.55 %" is a squared-norm ratio (#n("paper.wl_resid_sq"); the norm ratio is #n("paper.wl_resid_norm")).
 The four non-reproduced rows are projections and ablations whose exact procedure the paper does not specify; for

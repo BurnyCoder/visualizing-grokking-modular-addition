@@ -45,4 +45,6 @@ All functions were re-implemented. None was copied verbatim: P, PC and A have no
 - **T43, T129, T141:** a 99-epoch offset between the loss curves and the checkpoint metrics.
 - **A, `arrange_by_2d_freqs`:** it iterates `range(1, p//2)` and so drops k = 56.
 - **PC `helpers.cross_entropy_high_precision`:** the code casts to float32 while the comment says float64.
-- **P17 `plot_embed_bars`:** labels row 0 of its cos-first basis as "sin", which swaps the sin/cos labels.
+- **P17 `plot_embed_bars`:** labels row 0 of its cos-first basis as "sin", which swaps the sin/cos labels. Whether the
+  paper's Fig. 3 inherits the swap cannot be told from the weights, because cos and sin norms differ by ≤ 2.2 % at every
+  key frequency (reports/exp-01, item 6). It is therefore not listed as a paper erratum.

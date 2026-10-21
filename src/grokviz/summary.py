@@ -71,6 +71,9 @@ def paper_numbers(runs_dir: Path, p: int, frac: float) -> dict:
         ours = row["ours"]
         out[f"rc.{row['id']}"] = _v(ours, "sci") if isinstance(ours, float) else _v(ours)
     out["rchecks.rows"] = _v(rc["rows"], "str")
+    out["rchecks.n_rows"] = _v(len(rc["rows"]), "int")  # how many published numbers we checked
+    out["rchecks.n_match"] = _v(sum(bool(r["match"]) for r in rc["rows"]), "int")  # … and how many we reproduce
+    out["rchecks.n_miss"] = _v(sum(not r["match"] for r in rc["rows"]), "int")
     det = rc["details"]
     eq = det["skip"]["attention_to_eq_per_head"]
     out["paper.attn_eq_pct"] = _v(", ".join(f"{100 * x:.2f} %" for x in eq), "str")

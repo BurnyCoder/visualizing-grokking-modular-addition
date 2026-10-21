@@ -76,6 +76,8 @@ All 22 runs train together on one GPU, vectorised with `torch.func.vmap`. This i
 **Website.**
 - **Build.** Static HTML generated from `content/` (Markdown with macros) by `src/grokviz/site_build.py`. The build fails if:
   - a term is used before it is defined;
+  - a glossary word appears in plain text before its defining chapter without a hover card (`[[preview:…]]`);
+  - a relative link or asset in the built pages is missing;
   - a quote is longer than the quote policy allows;
   - a number in the prose is not bound to the analysis output (`site/data/summary.json`).
 - **Quote check.** Separately, `tests/test_quotes.py` checks every quote word for word against its PDF page. It runs
@@ -183,6 +185,9 @@ uv run playwright install chromium   # only for render_report_figures and browse
 cp .env.example .env           # optional: every setting has a default in .env.example
 ```
 
+On Windows, cloning into a deep folder can fail with "Filename too long" while Git checks out the submodule, whose
+name is long. Add `-c core.longpaths=true` after `git` in the clone command, or clone into a shorter path.
+
 **Run the whole pipeline**, or any subset of phases:
 
 ```bash
@@ -227,6 +232,11 @@ Then open <http://localhost:8766>.
   ```bash
   uv run pytest
   ```
+
+- Two of the tests check the built site and its data: `tests/test_site_data.py` (every array matches its manifest
+  entry, plus the 1 GB Pages limit) and `tests/test_site_browser.py`. The browser test opens every page in headless
+  Chromium, waits for every figure to draw, fails on console errors, and checks the dashboard's first paint is under 3 s.
+  Both are skipped until `site/` has been built with data.
 
 **Configuration.** All settings are environment variables with defaults in [`.env.example`](.env.example), covering
 seeds, steps, logging intervals, paths, pinned revisions and Hugging Face repo ids. Put overrides in `.env`, which is gitignored.

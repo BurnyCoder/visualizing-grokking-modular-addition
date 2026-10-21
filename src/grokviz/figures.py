@@ -41,6 +41,14 @@ REPORT_FIGURES = [
     ("freq-ablation-bars", "run=paper&step=40001"),
     ("patching-result", "run=paper&step=40001"),
     ("grad-alignment", "run=paper&step=40001"),
+    ("wneur-fourier", "run=paper&step=40001&head=0"),
+    ("neuron-freq-map", "run=paper&step=40001"),
+    ("neuron-b2-map", "run=paper&step=40001"),
+    ("logit-fourier-2d", "run=paper&step=40001"),
+    ("cluster-ablations", "run=paper&step=40001"),
+    ("adam-alignment", "run=wd1_s0&step=40000"),
+    ("adam-vs-decay", "run=wd1_s0&step=40000"),
+    ("update-norms", "run=wd1_s0&step=40000"),
     ("seed-test-loss", "run=wd1_s0&step=40000"),
     ("seed-key-freqs", "run=paper"),
 ]
@@ -74,6 +82,7 @@ def render_report_figures(ctx: PipelineContext) -> None:
             browser = pw.chromium.launch()
             page = browser.new_page(viewport={"width": 1400, "height": 1000}, color_scheme="light", device_scale_factor=2)
             for fid, state in REPORT_FIGURES:
+                page.goto("about:blank")  # fresh document: the dashboard reads its state from the #hash only when it loads
                 page.goto(f"{base}/dashboard.html#{state}")
                 # on paper: no interactive "How to read it" toggles, and no sticky control bar overlapping the figure
                 page.add_style_tag(content=".fig details { display: none; } .controlbar, .topbar { position: static; }")

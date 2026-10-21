@@ -25,3 +25,6 @@ logs/
 node_modules/
 .ipynb_checkpoints/
 test-results/
+
+# fresh-clone replication checks (README "Install and reproduce"), never committed
+/_clean/

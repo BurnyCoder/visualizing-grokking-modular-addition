@@ -72,10 +72,10 @@ export const figures = {
         const r = await run(runOf(ds));
         const pt = r.final?.patching;
         if (!pt) return;
-        const names = ["key", "random", "complement"], labels = [`key-frequency subspace (${pt.key.dims} dims)`, `random subspace (${pt.random.dims} dims)`, `everything else (${pt.complement.dims} dims)`];
+        const names = ["key", "random", "complement"], labels = [`key frequencies<br>(${pt.key.dims} dims)`, `random<br>(${pt.random.dims} dims)`, `everything else<br>(${pt.complement.dims} dims)`]; // <br>: two-line tick labels fit narrow panels
         await plot.draw([{ x: labels, y: names.map((n) => pt[n].mean), type: "bar", marker: { color: [cssVar("--restricted"), cssVar("--ink-soft"), cssVar("--excluded")] },
           error_y: { type: "data", symmetric: false, array: names.map((n) => pt[n].ci95[1] - pt[n].mean), arrayminus: names.map((n) => pt[n].mean - pt[n].ci95[0]) } }],
-        { yaxis: { title: { text: "fraction of logit difference recovered" }, range: [-0.1, 1.1] }, hovermode: "closest" });
+        { yaxis: { title: { text: "fraction of logit difference recovered" }, range: [-0.1, 1.1] }, xaxis: { tickangle: 0, automargin: true }, hovermode: "closest" });
       });
     },
   },

@@ -18,6 +18,8 @@ from grokviz.paper import paper_inputs  # the function under test
 def test_paper_compiles_with_bound_numbers(tmp_path):
     """Every n("key") in main.typ gets a value; the PDF has several pages and the author line."""
     source = (REPO_ROOT / "paper" / "main.typ").read_text(encoding="utf-8")
+    # Typst ends an embedded expression at ";" and drops it: prose must write #n("key")\; to keep the semicolon
+    assert not re.search(r'#n\("[\w.]+"\);', source), "unescaped ';' after #n(...) is swallowed by Typst"
     keys = set(re.findall(r'#?n\("([\w.]+)"\)', source))
     summary = {k: {"value": 0.5, "fmt": ".2f"} for k in keys}
     summary["rchecks.rows"] = {"value": [{"id": "R1", "quantity": "loss", "paper": 2.41e-7, "ours": 2.412e-7, "match": True}], "fmt": "str"}

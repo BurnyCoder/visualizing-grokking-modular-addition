@@ -75,7 +75,8 @@ def render_report_figures(ctx: PipelineContext) -> None:
             page = browser.new_page(viewport={"width": 1400, "height": 1000}, color_scheme="light", device_scale_factor=2)
             for fid, state in REPORT_FIGURES:
                 page.goto(f"{base}/dashboard.html#{state}")
-                page.add_style_tag(content=".fig details { display: none; }")  # interactive "How to read it" toggles are noise on paper
+                # on paper: no interactive "How to read it" toggles, and no sticky control bar overlapping the figure
+                page.add_style_tag(content=".fig details { display: none; } .controlbar, .topbar { position: static; }")
                 fig = page.locator(f"#fig-{fid}")
                 fig.scroll_into_view_if_needed()
                 page.wait_for_function(f"!document.querySelector('#fig-{fid} .loading')", timeout=60_000)  # figure drawn
@@ -84,6 +85,7 @@ def render_report_figures(ctx: PipelineContext) -> None:
                 log.info("figure %s → %s", fid, out / f"{fid}.png")
             page.set_viewport_size({"width": 1400, "height": 900})
             for path, name in PAGES:
+                page.goto("about:blank")  # a fresh document: same-page #hash changes (and reloads) keep the old scroll position
                 page.goto(f"{base}/{path}")
                 page.wait_for_timeout(6000)
                 page.screenshot(path=str(images / name))

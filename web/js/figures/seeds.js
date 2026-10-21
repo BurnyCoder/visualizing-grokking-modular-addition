@@ -42,14 +42,20 @@ export const figures = {
   "seed-key-freqs": {
     async render(body) {
       body.innerHTML = "";
-      const plot = new Plot(body, { height: 360 });
       const m = await manifest();
-      const runs = m.runs;
+      // runs where (almost) every frequency passes the 25 % rule have no sparse key set (no weight decay, random
+      // labels): drawing 56 "key" dots for them would suggest structure that is not there, so they are listed instead
+      const natural = (a, b) => a.id.localeCompare(b.id, undefined, { numeric: true }); // wd1_s2 before wd1_s10
+      const sparse = m.runs.filter((r) => r.key_freqs.length <= 20).sort(natural), dense = m.runs.filter((r) => r.key_freqs.length > 20);
+      const fewest = Math.min(...dense.map((r) => r.key_freqs.length));
+      const plot = new Plot(body, { height: 90 + 24 * sparse.length });
       const traces = [];
-      runs.forEach((r, i) => r.key_freqs.forEach((k) => traces.push({ x: [k], y: [r.id], type: "scatter", mode: "markers", marker: { size: 10, color: freqColor(k) }, showlegend: false, hovertemplate: `${r.id}: k=${k}<extra></extra>` })));
-      await plot.draw(traces, { xaxis: { title: { text: "key frequency k" }, range: [0, 57], dtick: 4 }, yaxis: { automargin: true, categoryorder: "array", categoryarray: runs.map((r) => r.id).reverse() }, hovermode: "closest", margin: { l: 110 } });
+      sparse.forEach((r) => r.key_freqs.forEach((k) => traces.push({ x: [k], y: [r.id], type: "scatter", mode: "markers", marker: { size: 10, color: freqColor(k) }, showlegend: false, hovertemplate: `${r.id}: k=${k}<extra></extra>` })));
+      await plot.draw(traces, { xaxis: { title: { text: "key frequency k" }, range: [0, 57], dtick: 4 },
+        yaxis: { automargin: true, type: "category", dtick: 1, categoryorder: "array", categoryarray: sparse.map((r) => r.id).reverse() }, hovermode: "closest", margin: { l: 110 } });
       plot.el.on?.("plotly_click", (ev) => set({ run: ev.points[0].y }));
-      el(body, "p", "fig-note", "Each dot is a key frequency of that run (frequencies whose W_L Fourier norm is at least 25 % of the largest). Click a run to select it everywhere.");
+      el(body, "p", "fig-note", "Each dot is a key frequency of that run (frequencies whose W_L Fourier norm is at least 25 % of the largest). Click a run to select it everywhere."
+        + (dense.length ? ` Not shown: ${dense.map((r) => r.id).join(", ")} — no frequency stands out in these runs (${fewest === 56 ? "all 56" : `${fewest}–56 of 56`} frequencies pass the rule), i.e. they have no sparse Fourier structure.` : ""));
     },
   },
 

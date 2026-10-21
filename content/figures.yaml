@@ -351,3 +351,4 @@ hypothesis-table:
   what: "Results of the five tests written down before training (docs/preregistration.md)."
   chapter: "20-robustness.html"
   producer: "hypotheses.py"
+  size: xl

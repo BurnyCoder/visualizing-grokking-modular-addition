@@ -26,7 +26,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="grokviz", description="Grokking, Visualized — pipeline runner")
     parser.add_argument("--phases", type=_csv, default=["all"], help="comma list of phases, or 'all'")
     parser.add_argument("--skip", type=_csv, default=[], help="comma list of phases to skip")
-    parser.add_argument("--runs", type=_csv, default=[], help="run-id prefixes to process (default: all)")
+    parser.add_argument("--runs", type=_csv, default=[], help="run ids or groups to process, e.g. wd1_s1 or wd1 (default: all)")
     parser.add_argument("--force", action="store_true", help="recompute outputs that already exist")
     parser.add_argument("--verbose", action="store_true", help="log DEBUG messages too")
     return parser

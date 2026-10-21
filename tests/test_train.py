@@ -71,8 +71,9 @@ def test_batched_training_matches_unbatched_adamw(cfg, device, tmp_path, spec):
     """A batched run (R = 1) matches an independent torch.optim.AdamW run, with strong and with zero weight decay.
 
     Compared after 4 steps only: early full-batch Adam training is chaotic — rounding differences between
-    mathematically identical kernels grow roughly ×3 per step (measured: 3e-7 at step 2 → 1e-2 at step 20,
-    see reports/exp-02), so long horizons would test floating-point noise, not correctness. λ = 100 makes a
+    mathematically identical kernels are amplified by orders of magnitude within tens of steps (measured max parameter
+    difference: 3e-7 after 20 steps → 2e-2 after 50 → 0.24 after 200, see reports/exp-02-training.md), so long
+    horizons would test floating-point noise, not correctness. λ = 100 makes a
     wrong decay visible: each step shrinks weights by lr·λ = up to 3 %, far above rounding noise.
     """
     train_runs(cfg, [spec], device, tmp_path, num_steps=4)
@@ -102,6 +103,20 @@ def test_first_step_has_zero_learning_rate_and_format(batched_runs):
     assert store.ckpt_steps == [0, 100, 200]
     assert np.isfinite(c["grad_norm"]).all() and c["test_loss"].shape == (20,)
     assert not (out / "a" / "_tmp").exists() and (out / "a" / "optim.safetensors").exists()
+
+
+def test_resumed_training_is_bitwise_identical(cfg, device, tmp_path):
+    """Crash after 40 steps (resume state saved every 20), resume, finish 60 → identical to an uninterrupted run."""
+    specs = [RunSpec("r1", "wd1", 2, 2, 1.0), RunSpec("r2", "wd0", 3, 3, 0.0)]
+    train_runs(cfg, specs, device, tmp_path / "straight", num_steps=60, resume_every=20)
+    train_runs(cfg, specs, device, tmp_path / "crashy", num_steps=60, resume_every=20, stop_after=40)
+    assert not (tmp_path / "crashy" / "r1" / "meta.json").exists()  # the "crash" left an unfinished run
+    train_runs(cfg, specs, device, tmp_path / "crashy", num_steps=60, resume_every=20)  # resumes at step 40
+    for rid in ("r1", "r2"):
+        a, b = RunStore(tmp_path / "straight" / rid), RunStore(tmp_path / "crashy" / rid)
+        assert all(torch.equal(a.state_dict(t)[k], b.state_dict(t)[k]) for t in range(len(a.ckpt_steps)) for k in a.state_dict(0))
+        assert np.array_equal(a.curves()["train_loss"], b.curves()["train_loss"])
+    assert not (tmp_path / "crashy" / "_resume").exists()
 
 
 def test_training_is_bitwise_deterministic(cfg, device, tmp_path):

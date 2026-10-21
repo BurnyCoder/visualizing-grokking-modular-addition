@@ -26,7 +26,7 @@ import gc  # release memmaps before deleting their files
 import logging  # module logger
 import shutil  # remove temporary memmaps
 import time  # timing / ETA
-from dataclasses import dataclass  # run specification
+from dataclasses import asdict, dataclass  # run specification (asdict: resume fingerprint)
 from pathlib import Path  # paths
 
 import numpy as np  # memmaps and curves
@@ -91,8 +91,15 @@ def _per_run_norm(t: torch.Tensor) -> torch.Tensor:
     return t.detach().double().flatten(1).norm(dim=1)
 
 
-def train_runs(cfg: Config, specs: list[RunSpec], device, runs_dir: Path, num_steps: int | None = None) -> None:
-    """Train all `specs` together (vmap over the run axis) and write each run to runs_dir/<run_id>/."""
+def train_runs(cfg: Config, specs: list[RunSpec], device, runs_dir: Path, num_steps: int | None = None,
+               resume_every: int = 2000, stop_after: int | None = None) -> None:
+    """Train all `specs` together (vmap over the run axis) and write each run to runs_dir/<run_id>/.
+
+    Resumable: every `resume_every` steps the on-disk checkpoint arrays are flushed and the full training state
+    (stacked parameters, Adam/scheduler state, logged curves) is saved to runs_dir/_resume/state.pt; calling again
+    with the same runs continues from there and, being deterministic and full-batch, ends bitwise identical to an
+    uninterrupted run (tests/test_train.py). `stop_after` simulates a crash after that many steps (tests only).
+    """
     torch.use_deterministic_algorithms(True)  # bitwise-reproducible kernels (needs CUBLAS_WORKSPACE_CONFIG)
     n_steps = num_steps or cfg.num_steps
     R = len(specs)
@@ -125,9 +132,20 @@ def train_runs(cfg: Config, specs: list[RunSpec], device, runs_dir: Path, num_st
     full = {**params, **buffers}  # buffers (the causal mask) are part of the state_dict
     state_names = list(full)
 
+    resume_file = runs_dir / "_resume" / "state.pt"  # saved training state for crash recovery
+    # everything that shapes the trajectory or the saved arrays; a resume state is only reused if it matches exactly
+    fingerprint = repr(([asdict(s) for s in specs], n_steps, cfg.lr, cfg.beta1, cfg.beta2, cfg.warmup_steps, cfg.p,
+                        cfg.frac_train, cfg.ckpt_every, cfg.test_every, cfg.norms_every, cfg.optim_every))
+    # weights_only=True: only tensors and plain containers are unpickled (https://pytorch.org/docs/stable/generated/torch.load.html)
+    saved = torch.load(resume_file, weights_only=True) if resume_file.exists() else None
+    if saved is not None and saved.get("fingerprint") != fingerprint:
+        log.warning("ignoring %s: it was saved for different runs or settings", resume_file)
+        saved = None
+
     def mm(run_id: str, key: str, n: int, item_shape) -> np.memmap:
         """Disk-backed [n, ...] array for one run (keeps RAM flat whatever the number of checkpoints)."""
-        return np.lib.format.open_memmap(tmp[run_id] / f"{key}.npy", mode="w+", dtype=np.float32, shape=(n, *item_shape))
+        mode = "r+" if saved is not None else "w+"  # reopen the partially filled arrays when resuming
+        return np.lib.format.open_memmap(tmp[run_id] / f"{key}.npy", mode=mode, dtype=np.float32, shape=(n, *item_shape))
 
     ck = {s.run_id: {k: mm(s.run_id, k, n_ckpt, full[k].shape[1:]) for k in state_names} for s in specs}
     om = {s.run_id: {f"{m}.{k}": mm(s.run_id, f"{m}.{k}", n_opt, params[k].shape[1:]) for k in names for m in ("exp_avg", "exp_avg_sq")}
@@ -144,9 +162,37 @@ def train_runs(cfg: Config, specs: list[RunSpec], device, runs_dir: Path, num_st
             for r, s in enumerate(specs):
                 ck[s.run_id][k][i] = values[r]
 
-    save_ckpt(0)
+    first = 0  # first step to run (non-zero when resuming)
+    if saved is not None:  # restore exactly the state the interrupted run had reached
+        with torch.no_grad():
+            for k, v in params.items():
+                v.copy_(saved["params"][k].to(device))
+        opt.load_state_dict(saved["opt"])
+        sched.load_state_dict(saved["sched"])
+        for k in g:
+            g[k].copy_(saved["g"][k].to(device))
+        for k in gn:
+            gn[k].copy_(saved["gn"][k].to(device))
+        lrs[:] = saved["lrs"].numpy()
+        first = saved["step"]
+        log.info("resuming %d runs from step %d (%s)", R, first, resume_file)
+    else:
+        save_ckpt(0)
+
+    def save_resume(done: int) -> None:
+        """Flush checkpoint memmaps and atomically write the full training state."""
+        for arrays in (*ck.values(), *om.values()):
+            for a in arrays.values():
+                a.flush()
+        resume_file.parent.mkdir(parents=True, exist_ok=True)
+        blob = {"fingerprint": fingerprint, "step": done,
+                "params": {k: v.detach().cpu() for k, v in params.items()}, "opt": opt.state_dict(), "sched": sched.state_dict(),
+                "g": {k: v.cpu() for k, v in g.items()}, "gn": {k: v.cpu() for k, v in gn.items()}, "lrs": torch.from_numpy(lrs.copy())}
+        torch.save(blob, resume_file.with_suffix(".tmp"))
+        resume_file.with_suffix(".tmp").replace(resume_file)  # atomic rename: never leaves a half-written state
+
     start = time.perf_counter()
-    for step in range(n_steps):  # `step` = optimizer steps already applied
+    for step in range(first, n_steps):  # `step` = optimizer steps already applied
         logits = batched(params, buffers, xs)  # [R, n_train, 114]
         per_run = _ce(logits, ys)  # [R] training losses
         g["train_loss"][:, step] = per_run.detach()
@@ -184,11 +230,16 @@ def train_runs(cfg: Config, specs: list[RunSpec], device, runs_dir: Path, num_st
                     values = st[m].detach().cpu().numpy()
                     for r, s in enumerate(specs):
                         om[s.run_id][f"{m}.{k}"][i] = values[r]
+        if done % resume_every == 0 and done < n_steps:
+            save_resume(done)
+        if stop_after is not None and done == stop_after:  # simulated crash (tests)
+            ck.clear(), om.clear(), gc.collect()
+            return
         if done % 2000 == 0 or done == n_steps:
             elapsed = time.perf_counter() - start
             ti = min(step // cfg.test_every, n_test - 1)
             summary = ", ".join(f"{s.run_id}: {g['test_acc'][r, ti]:.3f}" for r, s in enumerate(specs[:6]))
-            log.info("step %6d/%d (%.0f s, ETA %.0f s) test-acc %s%s", done, n_steps, elapsed, elapsed / done * (n_steps - done),
+            log.info("step %6d/%d (%.0f s, ETA %.0f s) test-acc %s%s", done, n_steps, elapsed, elapsed / (done - first) * (n_steps - done),
                      summary, " ..." if R > 6 else "")
     seconds = time.perf_counter() - start
     env = collect_environment(device)
@@ -209,14 +260,16 @@ def train_runs(cfg: Config, specs: list[RunSpec], device, runs_dir: Path, num_st
             "param_names": names, "model_shape": shape.__dict__, "deterministic": True,
             "trained_with": [x.run_id for x in specs], "train_seconds_all_runs": seconds, "environment": env,
         }
-        write_run(runs_dir / s.run_id, meta, stacked, curves)
+        # Adam moments first: meta.json (written last by write_run) is the "run finished" marker other phases check
         save_file({k: torch.from_numpy(np.array(v)).contiguous() for k, v in om[s.run_id].items()}, str(runs_dir / s.run_id / "optim.safetensors"))
+        write_run(runs_dir / s.run_id, meta, stacked, curves)
         del stacked
     ck.clear()  # drop memmap references so Windows releases the files
     om.clear()
     gc.collect()
     for d in tmp.values():
         shutil.rmtree(d, ignore_errors=True)
+    shutil.rmtree(resume_file.parent, ignore_errors=True)  # training finished: the resume state is obsolete
 
 
 def train_all_runs(ctx: PipelineContext) -> None:
@@ -226,6 +279,8 @@ def train_all_runs(ctx: PipelineContext) -> None:
     if not todo:
         log.info("all selected runs already exist")
         return
+    if ctx.force:  # --force means "train from scratch", never "continue an old interrupted training"
+        shutil.rmtree(ctx.cfg.runs_dir / "_resume", ignore_errors=True)
     log.info("training %d runs together: %s", len(todo), ", ".join(s.run_id for s in todo))
     train_runs(ctx.cfg, todo, device, ctx.cfg.runs_dir)
     log.info("finished %d runs", len(todo))

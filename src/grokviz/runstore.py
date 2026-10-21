@@ -35,6 +35,18 @@ def write_run(run_dir: Path, meta: dict, stacked: dict[str, torch.Tensor], curve
     (run_dir / "meta.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
 
 
+def save_analysis(path: Path, **arrays) -> None:
+    """Write an analysis .npz atomically (temporary file, then rename) and create `analysis/` if needed.
+
+    Phases skip a run whose output already exists, so a file truncated by an interrupt must never appear under
+    its final name. Source: os.replace is atomic on one filesystem (https://docs.python.org/3/library/os.html#os.replace).
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(path.stem + ".tmp.npz")  # np.savez keeps names that already end in .npz
+    np.savez_compressed(tmp, **arrays)
+    tmp.replace(path)
+
+
 class RunStore:
     """Read-only access to one run folder."""
 

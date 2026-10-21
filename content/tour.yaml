@@ -1,0 +1,51 @@
+# tour.yaml — the dashboard's guided tour: each step sets the shared state and focuses one panel.
+# Global context: a 2-minute narrative through training for the paper's run; numbers in the text refer to the
+# paper's run (step values are checkpoints: the paper's checkpoint "epoch e" holds weights after e+1 steps).
+- title: "The puzzle"
+  panel: loss-curves
+  state: {run: paper, step: 1001}
+  text: "After ~1,000 steps the training loss is tiny but the test loss is huge: the network has memorised its 3,830 training sums and fails on the other 8,939."
+- title: "A long plateau"
+  panel: acc-curves
+  state: {step: 5001}
+  text: "For thousands of steps nothing seems to happen: training accuracy is 100 %, test accuracy near chance."
+- title: "…but the weights are changing"
+  panel: we-fourier-bars
+  state: {step: 5001}
+  text: "Look at the embedding in the Fourier basis: a few frequencies are already standing out of the noise."
+- title: "Hidden progress"
+  panel: progress-measures
+  state: {step: 7001}
+  text: "The restricted loss — the loss using only those few frequencies — is already falling, and the excluded loss is rising: the training answers increasingly come from the Fourier circuit, not memorisation."
+- title: "Numbers become angles"
+  panel: embed-circles
+  state: {step: 9001}
+  text: "Projected onto the right planes, the 113 embeddings line up on circles: the network represents a number a by the angle 2πk·a/113."
+- title: "Grokking"
+  panel: loss-curves
+  state: {step: 11001}
+  text: "Weight decay now strips away the memorising weights and the test loss collapses — after the circuit already existed."
+- title: "Cleanup"
+  panel: ssw-curves
+  state: {step: 14001}
+  text: "The sum of squared weights falls steeply: the memorisation solution is expensive and weight decay removes it."
+- title: "Periodic neurons"
+  panel: neuron-grid
+  state: {step: 40001, neuron: 0}
+  text: "Every neuron's activation over all inputs is a pattern of stripes: a function of cos and sin of one frequency."
+- title: "Interference"
+  panel: interference
+  state: {step: 40001, a: 100, b: 50}
+  text: "For any input, each key frequency contributes a cosine wave over the candidate answers; all of them peak together only at a + b."
+- title: "Causal check"
+  panel: freq-ablation-bars
+  state: {step: 40001}
+  text: "Remove one key frequency from the logits and the loss explodes; remove any other frequency and nothing happens."
+- title: "Late surprise"
+  panel: avg-attn
+  state: {step: 45001}
+  text: "Even after 40,000 steps training is not over: around 43k two heads suddenly attend to '=' again — a small phase change nobody has explained yet."
+- title: "Not a fluke"
+  panel: seed-test-loss
+  state: {step: 40000}
+  text: "All 11 of our weight-decay seeds grok (at different times, with different key frequencies); none of the 5 runs without weight decay do."

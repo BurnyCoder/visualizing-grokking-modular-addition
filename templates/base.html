@@ -1,0 +1,46 @@
+{#- base.html — shared page skeleton for every page of the site (Jinja2 template).
+    Local: head (fonts, KaTeX/Plotly from pinned CDN versions with SRI), top navigation, footer; pages fill the
+    `content` block. Global: rendered by src/grokviz/site_build.py; all pages share one stylesheet and the
+    same ES-module bootstrap (assets/js/app.js) which wires tooltips, math, figures and the global state.
+    Sources: KaTeX auto-render (https://katex.org/docs/autorender), Plotly partial bundles
+    (https://github.com/plotly/plotly.js/blob/master/dist/README.md). -#}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ page_title }}</title>
+  <meta name="description" content="{{ description }}">
+  <link rel="icon" href="{{ root }}assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  {#- SRI hashes = sha384 of the exact pinned files (openssl dgst -sha384 -binary | openssl base64 -A) #}
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.19.0/dist/katex.min.css" integrity="sha384-3rdsX6e5mueWyoweR9NIVmtEsUkokpBT/0ALqKKIBMr9j4qhHkaIkAcGgsE6uVlp" crossorigin="anonymous">
+  <link rel="stylesheet" href="{{ root }}assets/css/main.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.19.0/dist/katex.min.js" integrity="sha384-QFFtAGzvvj+bfgCGxXJlNZZR1nXEZgvG8tDLCCY1F19xl20WlfTYgguB4VcNdxYk" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/plotly.js-cartesian-dist-min@4.1.2/plotly-cartesian.min.js" integrity="sha256-qvEv8dRnH36T9t9CkWUatMprdsDqXxV27BAw48KBmiA=" crossorigin="anonymous"></script>
+  <script>window.GROKVIZ = {{ page_config | tojson }};</script>
+  <script type="module" src="{{ root }}assets/js/app.js"></script>
+</head>
+<body class="{{ body_class }}">
+  <header class="topbar">
+    <a class="brand" href="{{ root }}index.html">Grokking, <span>Visualized</span></a>
+    <nav class="topnav">
+      <a href="{{ root }}chapters/{{ first_chapter }}.html" {% if nav == 'learn' %}aria-current="page"{% endif %}>Learn step by step</a>
+      <a href="{{ root }}dashboard.html" {% if nav == 'dashboard' %}aria-current="page"{% endif %}>Dashboard</a>
+      <a href="{{ root }}glossary.html" {% if nav == 'glossary' %}aria-current="page"{% endif %}>Glossary</a>
+      <a href="{{ root }}references.html" {% if nav == 'references' %}aria-current="page"{% endif %}>Sources</a>
+    </nav>
+    <button class="theme-toggle" type="button" aria-label="Toggle dark mode">◐</button>
+  </header>
+  {% block content %}{% endblock %}
+  <footer class="footer">
+    <p>Built by Libor Burian from the paper's released checkpoints and our own replications.
+      Paper: Nanda, Chan, Lieberum, Smith &amp; Steinhardt (2023), <a href="https://arxiv.org/abs/2301.05217">arXiv:2301.05217</a>.
+      Code &amp; data: <a href="https://github.com/BurnyCoder/visualizing-grokking-modular-addition">GitHub</a> ·
+      <a href="{{ root }}references.html#licenses">third-party terms</a>.</p>
+  </footer>
+  <div id="tooltip" class="tooltip" role="tooltip" hidden></div>
+</body>
+</html>

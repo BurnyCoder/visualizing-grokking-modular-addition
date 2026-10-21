@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "site",
+      "runtimeExecutable": "uv",
+      "runtimeArgs": ["run", "--no-sync", "python", "-m", "grokviz.serve", "--dir", "site", "--port", "8766"],
+      "port": 8766
+    }
+  ]
+}

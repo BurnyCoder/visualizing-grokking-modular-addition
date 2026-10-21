@@ -100,3 +100,26 @@ The paper's own mechanistic effects are orders of magnitude larger than these de
 
 ## Deviations
 *(None at the time of tagging. Any later change to definitions, runs or tests is listed here with date and reason.)*
+
+No hypothesis, metric, threshold, run or test was changed after the tag. The implementation, however, was completed
+after it. For transparency, here is everything that happened after the tag, with the information available at each point:
+
+- **Analysis code written after the tag** (2026-10-18 18:04:39 +02:00, one minute after the tag).
+  - **What.** `src/grokviz/hypotheses.py` was written, implementing the tests exactly as worded above. The tag itself
+    contains only this document.
+  - **When relative to results.** The first training launch started at 18:03:59. Its first log line, at 18:07:50,
+    came after the file was written.
+  - **When committed.** Only on 2026-10-21 (`ad8e69d`), because an OS restart interrupted the session.
+- **Information seen during training.** The training log prints test accuracy for `wd1_s0`–`wd1_s5` every 2,000
+  steps. This is the input of H5 on the weight-decay side. No metric used by H1–H4 was computed for any of our runs
+  before the analysis code was final.
+- **Later code edits (2026-10-21, `158e527`).** These did not touch the test logic or thresholds:
+  - `analyse_final` uses the paper's analysis checkpoint (epoch 40k) for the paper run, which is not part of any test;
+  - runs without per-checkpoint metrics are skipped.
+- **Training code changes after the tag.** These do not change what is trained:
+  - `train.py` gained crash-resume support (`38d0510`); the resumed and uninterrupted trajectories are bitwise identical
+    (`tests/test_train.py`);
+  - all runs were relaunched from scratch after the interruption.
+- **Logging cadence.** During training, test loss and accuracy are logged every 10 steps (`GROKVIZ_TEST_EVERY`), not
+  every step. This does not affect the tests: the phase rules and the hypotheses read test loss and accuracy from the
+  per-checkpoint metrics (every 100 steps), as stated.

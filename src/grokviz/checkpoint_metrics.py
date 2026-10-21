@@ -24,16 +24,19 @@ import torch  # tensors
 from grokviz import fourier, losses, metrics  # measurements
 from grokviz.context import PipelineContext  # phase argument
 from grokviz.envcheck import resolve_device  # device
-from grokviz.runstore import RunStore  # run access
+from grokviz.runstore import RunStore, save_analysis  # run access; atomic analysis writes
 
 log = logging.getLogger("grokviz.checkpoint_metrics")
 
 
-def run_dirs(ctx: PipelineContext) -> list:
-    """All run folders (with meta.json) selected by --runs."""
+def run_dirs(ctx: PipelineContext, all_runs: bool = False) -> list:
+    """Finished run folders (with meta.json) selected by --runs; `all_runs` ignores --runs for phases whose output
+    aggregates every run (hypothesis tests, site export), so a partial selection can never overwrite them."""
     if not ctx.cfg.runs_dir.exists():
         return []
-    return [d for d in sorted(ctx.cfg.runs_dir.iterdir()) if (d / "meta.json").exists() and ctx.wants(d.name)]
+    if all_runs and ctx.runs:
+        log.warning("--runs %s ignored: this phase always aggregates every run", ",".join(ctx.runs))
+    return [d for d in sorted(ctx.cfg.runs_dir.iterdir()) if (d / "meta.json").exists() and (all_runs or ctx.wants(d.name))]
 
 
 def grid_for(store: RunStore, p: int, device) -> metrics.Grid:
@@ -54,16 +57,15 @@ def measure_checkpoint(model, grid: metrics.Grid, K: list[int]) -> dict[str, np.
     L, y, F = acts.logits, grid.labels, grid.F
     we = metrics.we_fourier_norms(model, F)
     wl = metrics.wl_fourier_norms(model, F)
-    W_E = metrics.paper_matrices(model, grid.p)["W_E"]
+    mats = metrics.paper_matrices(model, grid.p)
+    W_E, W_L = mats["W_E"], mats["W_L"]
     excl = metrics.excluded_loss_per_freq(L, grid)
     nf_post = metrics.neuron_frequencies(metrics.neuron_fourier(acts.post, F))
     nf_pre = metrics.neuron_frequencies(metrics.neuron_fourier(acts.pre, F))
     _, logit_fve, _ = metrics.logit_cos_fit(L, grid, K)
     ssw = metrics.sum_sq_weights(model)
     C = metrics.attention_lookup(model, grid.p)
-    W_L = metrics.paper_matrices(model, grid.p)["W_L"]
-    rows = torch.stack([F[i] for k in K for i in (2 * k - 1, 2 * k)])
-    wl_resid = float(((W_L - rows.T @ (rows @ W_L)).norm() / W_L.norm()) ** 2)
+    wl_resid = metrics.wl_residual_sq_frac(W_L, fourier.key_rows(F, K))
     out = {
         "loss_train": losses.grid_loss(L, y, grid.is_train).item(),
         "loss_test": losses.grid_loss(L, y, grid.is_test).item(),
@@ -130,7 +132,6 @@ def compute_checkpoint_metrics(ctx: PipelineContext) -> None:
         arrays["steps"] = np.asarray(store.ckpt_steps)
         arrays["key_freqs"] = np.asarray(K)
         arrays["param_names"] = np.asarray(list(dict(store.load_model(0).named_parameters()).keys()))
-        out_path.parent.mkdir(exist_ok=True)
-        np.savez_compressed(out_path, **arrays)
+        save_analysis(out_path, **arrays)
         (run_dir / "analysis" / "key_freqs.json").write_text(json.dumps({"key_freqs": K, "reference_index": reference_index(store)}), encoding="utf-8")
         log.info("%s: wrote %s (%d checkpoints, %.0f s)", store.run_id, out_path, len(store.ckpt_steps), time.perf_counter() - start)

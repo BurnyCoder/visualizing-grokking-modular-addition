@@ -1,0 +1,6 @@
+# macros.yaml — KaTeX macros available in all math on the site (\name → expansion).
+# Global context: keeps notation identical across chapters, figure captions and the dashboard.
+Logits: "\\mathrm{Logits}"
+ReLU: "\\mathrm{ReLU}"
+softmax: "\\mathrm{softmax}"
+argmax: "\\mathrm{argmax}"

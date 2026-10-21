@@ -22,6 +22,7 @@ import torch  # tensors
 from grokviz import interventions, metrics  # measurements and causal tests
 from grokviz.context import PipelineContext  # phase argument
 from grokviz.envcheck import resolve_device  # device choice
+from grokviz.formatting import fmt_value as _fmt  # same value formatting as the website's R-check table
 from grokviz.patching import patch_recovery  # counterfactual swaps
 from grokviz.runstore import RunStore  # run access
 from grokviz.sources import PAPER_ANALYSIS_INDEX, PAPER_RUN_ID  # which run/checkpoint
@@ -43,7 +44,8 @@ def _close(x: float, y: float, rel: float) -> bool:
 def compute_rchecks(store: RunStore, device) -> dict:
     """All comparisons on the paper's epoch-40k model; returns {"rows": [...], "details": {...}}."""
     model = store.load_model(PAPER_ANALYSIS_INDEX, device)
-    grid = metrics.Grid.build(113, store.meta["frac_train"], store.meta["split_seed"], device)
+    p = store.meta["model_shape"]["d_vocab"] - 1  # 113: every number token plus the "=" token
+    grid = metrics.Grid.build(p, store.meta["frac_train"], store.meta["split_seed"], device)
     acts = metrics.evaluate(model, grid)
     K = metrics.key_frequencies(model, grid.F)
     y = grid.labels
@@ -63,7 +65,7 @@ def compute_rchecks(store: RunStore, device) -> dict:
     heads = interventions.fit_attention_heads(model, acts, grid)
     table1 = interventions.table1_readoff(model, acts, grid, K)
     clusters = interventions.cluster_ablations(model, acts, grid, freqs, fve, K)
-    relu = interventions.relu_multiplier_regression(113, 42)
+    relu = interventions.relu_multiplier_regression(p, 42)  # ARENA's example frequency k = 42
     excl = [metrics.excluded_loss(acts.logits, grid, [k]) for k in K]
     restricted = metrics.restricted_loss(acts.logits, grid, K)
     patch = patch_recovery(model, grid, K, n=1000, seed=0)
@@ -78,15 +80,16 @@ def compute_rchecks(store: RunStore, device) -> dict:
              f"norm ratio {wlp['wl_residual_norm_frac']:.4f}; the paper's '<0.55 %' matches the squared-norm ratio"),
         _row("R5", "neurons with >85 % FVE at one frequency", 433, n_clustered, n_clustered == 433, "p.6"),
         _row("R6", "neurons in the k=14 cluster", 44, k14, k14 == 44, "p.7"),
-        _row("R7", "Table 1 FVE of u_k/v_k read-offs (mean)", 0.963, sum(r["fve"] for r in table1) / len(table1), None, "p.6 Table 1",
-             "per-row values in details.table1"),
+        _row("R7", "Table 1 FVE of u_k/v_k read-offs (mean of 10)", 0.9624, sum(r["fve"] for r in table1) / len(table1),
+             abs(sum(r["fve"] for r in table1) / len(table1) - 0.9624) < 0.01, "p.6 Table 1",
+             "paper's ten values average 96.24 %; per-row values in details.table1"),
         _row("R8a", "logit fit Σα_k cos(w_k(a+b−c)) FVE", 0.95, logit_fve, abs(logit_fve - 0.95) < 0.02, "p.6"),
         _row("R8b", "loss of the fitted logits", 4.7e-8, losses.grid_loss(fit, y).item(), _close(losses.grid_loss(fit, y).item(), 4.7e-8, 0.1), "p.6"),
         _row("R9a", "loss keeping only the 40 key 2D components", 7.24e-8, abl["only_key_kept"], _close(abl["only_key_kept"], 7.24e-8, 0.01), "p.7"),
-        _row("R9b", "MLP projected onto 10 W_L directions", 1.19e-7, wlp["projection"]["with_skip_bias_corrected"], False, "p.8",
-             "not reproduced; variants in details.wl_projection"),
-        _row("R9c", "MLP projected onto the nullspace", 5.27, wlp["nullspace"]["mlp_only_bias_corrected"], False, "p.8",
-             "not reproduced; MLP-only bias-corrected is closest"),
+        _row("R9b", "MLP projected onto 10 W_L directions", 1.19e-7, wlp["projection"]["with_skip_bias_corrected"],
+             _close(wlp["projection"]["with_skip_bias_corrected"], 1.19e-7, 0.1), "p.8", "closest variant shown; all variants in details.wl_projection"),
+        _row("R9c", "MLP projected onto the nullspace", 5.27, wlp["nullspace"]["mlp_only_bias_corrected"],
+             _close(wlp["nullspace"]["mlp_only_bias_corrected"], 5.27, 0.05), "p.8", "closest variant (MLP-only, bias-corrected) shown"),
         _row("R10a", "clustered neurons replaced by degree-2 polynomial", 2.48e-7, poly["polynomial"], _close(poly["polynomial"], 2.48e-7, 0.02), "p.7"),
         _row("R10b", "neurons restricted to cos/sin(w_k(a+b)) terms", 5.54e-8, poly["strict_trig_only"], _close(poly["strict_trig_only"], 5.54e-8, 0.02), "p.7",
              "per-neuron restriction gives this value; the paper's 5.54e-8 equals the restricted-LOGITS loss (R19a), so the "
@@ -115,15 +118,6 @@ def compute_rchecks(store: RunStore, device) -> dict:
                "neuron_poly": poly, "skip": skip, "clusters": clusters, "relu": relu, "patching": patch,
                "logit_fit_coef": coef.tolist(), "we_freq_norms": we.tolist()}
     return {"rows": rows, "details": details}
-
-
-def _fmt(v) -> str:
-    """Compact formatting for the markdown table."""
-    if isinstance(v, float):
-        return f"{v:.4g}"
-    if isinstance(v, list):
-        return "[" + ", ".join(_fmt(x) for x in v) + "]"
-    return str(v)
 
 
 def write_table(rows: list[dict], path: Path) -> None:

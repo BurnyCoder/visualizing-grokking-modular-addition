@@ -84,6 +84,11 @@ def sin_apb_dir(F: torch.Tensor, k: int) -> torch.Tensor:
     return (basis_term_2d(F, 2 * k, 2 * k - 1) + basis_term_2d(F, 2 * k - 1, 2 * k)) / math.sqrt(2)
 
 
+def key_rows(F: torch.Tensor, freqs: list[int]) -> torch.Tensor:
+    """The 1D basis vectors cos k, sin k of each frequency (rows 2k−1, 2k of F) stacked → [2·len(freqs), p]."""
+    return torch.stack([F[i] for k in freqs for i in (2 * k - 1, 2 * k)])
+
+
 def trig_dirs(F: torch.Tensor, freqs: list[int]) -> torch.Tensor:
     """Stack the orthonormal directions [cos_apb(k), sin_apb(k) for k in freqs] → [2·len(freqs), p*p]."""
     return torch.stack([d for k in freqs for d in (cos_apb_dir(F, k), sin_apb_dir(F, k))])

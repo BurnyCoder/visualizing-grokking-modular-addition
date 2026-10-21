@@ -96,6 +96,12 @@ def paper_matrices(model: GrokTransformer, p: int) -> dict[str, torch.Tensor]:
     return {"W_E": W_E, "W_U": W_U, "W_out": W_out, "W_L": W_U @ W_out}
 
 
+def wl_residual_sq_frac(W_L: torch.Tensor, rows: torch.Tensor) -> float:
+    """‖W_L − R^T R W_L‖² / ‖W_L‖² for orthonormal key rows R [2|K|, p]: the share of W_L's squared norm outside the
+    key cos/sin directions (paper Sec. 4.2 reports < 0.55 % for its model)."""
+    return float(((W_L - rows.T @ (rows @ W_L)).norm() / W_L.norm()) ** 2)
+
+
 def we_fourier_norms(model: GrokTransformer, F: torch.Tensor) -> torch.Tensor:
     """ℓ2 norm (over d_model) of each Fourier component of the embedding: [p] (paper Fig. 3 left)."""
     W_E = paper_matrices(model, F.shape[0])["W_E"]

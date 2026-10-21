@@ -1,0 +1,90 @@
+# chapters.yaml — reading order of the "Learn step by step" chapters (definition order is checked in this order).
+# Each: slug (file content/chapters/<slug>.md), title, summary (one line), sources (shown under the title).
+- slug: 00-overview
+  title: "The whole picture, first"
+  summary: "What this site explains, the two mathematical objects at its heart, and how to read the rest."
+  sources: ["{{cite:nanda2023}} abstract, Sec. 3", "{{cite:arena152}} intro", "{{cite:video_welch}}"]
+- slug: 01-clock-arithmetic
+  title: "Counting on a clock"
+  summary: "Remainders, “mod”, and why 113 is a good choice."
+  sources: ["{{cite:wiki_modular}}", "{{cite:video_welch}} 16:59 “Clocks perform modular addition”"]
+- slug: 02-task-as-data
+  title: "The task as a dataset"
+  summary: "12,769 questions, 30 % of them for training, encoded as three tokens."
+  sources: ["{{cite:nanda2023}} Sec. 3", "{{cite:paperrepo}} gen_train_test", "{{cite:arena152}} “Notation”"]
+- slug: 03-vectors-and-matrices
+  title: "Vectors and matrices"
+  summary: "The only linear algebra you need: dot products, matrix products, one-hot vectors, bases and projections."
+  sources: ["{{cite:arena152}} “Notation”"]
+- slug: 04-scores-to-probabilities
+  title: "From scores to probabilities"
+  summary: "Logits, the softmax, and how the cross-entropy loss measures wrongness."
+  sources: ["{{cite:wiki_softmax}}", "{{cite:wiki_crossentropy}}", "{{cite:torch_ce}}"]
+- slug: 05-the-model
+  title: "The model, step by step"
+  summary: "A one-layer transformer computing one answer, followed number by number."
+  sources: ["{{cite:nanda2023}} Sec. 3, App. A", "{{cite:elhage2021}}", "{{cite:vaswani2017}}"]
+- slug: 06-simplifying-the-model
+  title: "Simplifying the model"
+  summary: "Which parts matter: ablations, the functional form and the effective weights."
+  sources: ["{{cite:arena152}} section 1 “Functional form”", "{{cite:nanda2023}} App. A.1"]
+- slug: 07-learning
+  title: "How the model learns"
+  summary: "Gradients, AdamW and weight decay, with toy examples and the real training curves."
+  sources: ["{{cite:kingma2015}}", "{{cite:loshchilov2019}}", "{{cite:paperrepo}} Trainer"]
+- slug: 08-grokking
+  title: "Grokking"
+  summary: "Memorise first, generalise thousands of steps later."
+  sources: ["{{cite:power2022}}", "{{cite:nanda2023}} Sec. 1, 5", "{{cite:video_paper}}"]
+- slug: 09-angles-and-waves
+  title: "Angles and waves"
+  summary: "The unit circle, sine and cosine, frequency, and the angle-addition identities."
+  sources: ["{{cite:wiki_trig}}"]
+- slug: 10-fourier-basis
+  title: "The Fourier basis"
+  summary: "Describing any list of 113 numbers as a mix of waves — and why periodic means sparse."
+  sources: ["{{cite:wiki_dft}}", "{{cite:tb3b1b_fourier}}", "{{cite:arena152}} “Fourier Transforms”"]
+- slug: 11-measuring-fit
+  title: "Measuring fit and sparsity"
+  summary: "Variance explained, least squares, SVD/PCA and the Gini coefficient."
+  sources: ["{{cite:wiki_svd}}", "{{cite:wiki_pca}}", "{{cite:hurley2009}}"]
+- slug: 12-fourier-multiplication
+  title: "The Fourier multiplication algorithm"
+  summary: "How a network can add modulo 113 using rotations — derived step by step."
+  sources: ["{{cite:nanda2023}} Sec. 3.1, App. B", "{{cite:arena152}} “Summary of the algorithm”"]
+- slug: 13-evidence-periodicity
+  title: "Evidence 1: everything is periodic"
+  summary: "The weights and activations of the trained network, seen through the Fourier basis."
+  sources: ["{{cite:nanda2023}} Sec. 4.1", "{{cite:arena152}} section 1"]
+- slug: 14-evidence-neurons-heads
+  title: "Evidence 2: neurons and heads"
+  summary: "Single-frequency neurons, ReLU as a multiplier, and attention as a lookup table."
+  sources: ["{{cite:nanda2023}} Sec. 4.3, App. C.1", "{{cite:arena152}} section 2"]
+- slug: 15-evidence-readoff
+  title: "Evidence 3: reading off the answer"
+  summary: "The neuron–logit map is rank 10 and reads cos/sin(w_k(a+b)) out of the neurons."
+  sources: ["{{cite:nanda2023}} Sec. 4.2, Table 1", "{{cite:arena152}} “Understanding logit computation”"]
+- slug: 16-evidence-interventions
+  title: "Evidence 4: interventions"
+  summary: "Remove or swap parts of the computation and check that the story predicts what happens."
+  sources: ["{{cite:nanda2023}} Sec. 4.4", "{{cite:geiger2021}}"]
+- slug: 17-progress-measures
+  title: "Progress measures and the three phases"
+  summary: "Restricted loss, excluded loss, Gini and weight norm reveal progress hidden in the plateau."
+  sources: ["{{cite:nanda2023}} Sec. 5", "{{cite:arena152}} section 3", "{{cite:barak2022}}"]
+- slug: 18-watch-it-form
+  title: "Watch it form"
+  summary: "The whole of training, scrubbable: circles emerge from noise, then the memorisation melts away."
+  sources: ["{{cite:arena152}} section 3", "{{cite:nanda2023}} Fig. 14"]
+- slug: 19-gradients-weight-decay
+  title: "Gradients and weight decay"
+  summary: "What pushes the weights during each phase, recomputed exactly at every checkpoint."
+  sources: ["{{cite:loshchilov2019}}", "{{cite:nanda2023}} Sec. 5.3, App. E", "{{cite:arena152}} bonus"]
+- slug: 20-robustness
+  title: "Is it robust? Seeds and controls"
+  summary: "22 retrained networks, preregistered tests, and what changes from seed to seed."
+  sources: ["docs/preregistration.md", "{{cite:nanda2023}} App. C.2, D.1"]
+- slug: 21-summary
+  title: "The whole picture, again"
+  summary: "The full objects, now fully explained — plus limitations, nuances, errata and related work."
+  sources: ["{{cite:nanda2023}}", "{{cite:zhong2023}}", "{{cite:chughtai2023}}", "{{cite:gromov2023}}", "{{cite:liu2022}}"]

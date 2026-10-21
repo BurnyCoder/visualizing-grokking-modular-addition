@@ -18,7 +18,7 @@ import math  # sqrt, pi
 import torch  # tensors
 
 from grokviz import fourier, losses  # Fourier tools, losses
-from grokviz.metrics import Acts, Grid, paper_matrices  # shared containers
+from grokviz.metrics import Acts, Grid, paper_matrices, wl_residual_sq_frac  # shared containers and helpers
 from grokviz.model import GrokTransformer  # network
 
 
@@ -83,7 +83,7 @@ def wl_direction_projection(model: GrokTransformer, acts: Acts, grid: Grid, key_
     variants we could compute (with/without the skip connection) because the paper does not say which.
     """
     W_L = paper_matrices(model, grid.p)["W_L"]  # [p, n]
-    rows = torch.stack([grid.F[i] for k in key_freqs for i in (2 * k - 1, 2 * k)]).to(W_L.dtype)  # [10, p]
+    rows = fourier.key_rows(grid.F, key_freqs).to(W_L.dtype)  # [10, p]
     Q, _ = torch.linalg.qr((rows @ W_L).T)  # orthonormal basis [n, 10] of the read-off directions u_k, v_k
     proj = acts.post @ Q @ Q.T
     null = acts.post - proj
@@ -98,9 +98,8 @@ def wl_direction_projection(model: GrokTransformer, acts: Acts, grid: Grid, key_
             "mlp_only": losses.grid_loss(mlp_only, y).item(),
             "mlp_only_bias_corrected": losses.grid_loss(losses.bias_correct(mlp_only, acts.logits), y).item(),
         }
-    residual = W_L - rows.T @ (rows @ W_L)  # W_L minus its 10-direction approximation
-    out["wl_residual_norm_frac"] = float(residual.norm() / W_L.norm())  # Frobenius ratio
-    out["wl_residual_sq_frac"] = out["wl_residual_norm_frac"] ** 2  # fraction of squared norm (≈ paper's 0.55 %)
+    out["wl_residual_sq_frac"] = wl_residual_sq_frac(W_L, rows)  # fraction of squared norm (≈ paper's 0.55 %)
+    out["wl_residual_norm_frac"] = out["wl_residual_sq_frac"] ** 0.5  # Frobenius ratio
     return out
 
 

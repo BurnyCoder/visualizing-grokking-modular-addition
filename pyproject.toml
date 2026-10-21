@@ -17,7 +17,14 @@ dependencies = [
     "scipy>=1.16",
     "python-dotenv>=1.1",
     "safetensors>=0.6",
-    "huggingface-hub>=0.35",
+    "huggingface-hub>=2.0",  # upload_folder streams large folders resumably (2.0 removed upload_large_folder)
+    "jinja2>=3.1",
+    "markdown-it-py>=3.0",
+    "mdit-py-plugins>=0.4",
+    "pyyaml>=6.0",
+    "pymupdf>=1.26",
+    "typst>=0.13",
+    "playwright>=1.50",
 ]
 
 # Accelerator extras: pick exactly one at sync time, e.g. `uv sync --extra cu130` (NVIDIA, CUDA 13.0)

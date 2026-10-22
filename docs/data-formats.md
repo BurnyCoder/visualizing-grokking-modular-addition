@@ -24,6 +24,8 @@ Step semantics: checkpoint t holds the parameters after `ckpt_steps[t]` optimize
 - Array files `runs/<id>/<name>.bin`: little-endian; `dtype` ∈ `f32`, `f16`, `i16`, `u8q` (uint8, value = min + q/255·(max − min)).
   Shapes are row-major; e.g. `we_fourier` is `[T, 113]` (Const, cos 1, sin 1, …, sin 56); `attn_C` is `[T, 4, 113]`, each head's
   attention score lookup C_j[t] (paper App. C.1.3), float16.
+  `grad_norm` and `weight_norm` are `[T, 11]`, one column per parameter in the same order; only `grad_norm` lists the
+  parameter names in `columns` (the `weight-norms` panel reads them from there).
 - Weights `w_<step>.bin`: float16 flat vector of the state_dict in `param_layout` order (in-browser model). Showcase runs
   store every 2nd (`paper`) or 5th (`wd1_s0`) checkpoint. Every other run stores the checkpoints chosen by `export.snapshot_steps`:
   every `fine` steps up to t3 + 2,000, then every `coarse` steps (only the coarse grid when no t3 was detected), plus the

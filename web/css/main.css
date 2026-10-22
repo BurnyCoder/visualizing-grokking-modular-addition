@@ -145,7 +145,11 @@ body.modal-open { overflow: hidden; }
 .small-multiples { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0.6rem; }
 .small-multiples figure { margin: 0; font-size: 0.75rem; color: var(--ink-soft); }
 .small-multiples canvas { width: 100%; height: auto; image-rendering: pixelated; border: 1px solid var(--line); }
-.small-multiples figure.selected canvas { outline: 2px solid var(--accent); outline-offset: 1px; } /* selected head / neuron */
+.heads-grid { display: grid; grid-template-columns: auto repeat(3, minmax(0, 1fr)); gap: 0.35rem 0.5rem; align-items: center; } /* attention-heads-grid: heads × (to a, to b, to =) */
+.heads-grid .fig-note { margin: 0; text-align: center; }
+.heads-grid figure { margin: 0; }
+.heads-grid canvas { width: 100%; image-rendering: pixelated; border: 1px solid var(--line); cursor: crosshair; display: block; }
+.heads-grid figure.selected canvas, .small-multiples figure.selected canvas { outline: 2px solid var(--accent); outline-offset: 1px; } /* selected head / neuron */
 .colorbar { display: flex; align-items: center; gap: 0.4rem; font-size: 0.75rem; color: var(--ink-soft); font-family: var(--mono); }
 .colorbar canvas { width: 120px; height: 10px; border: 1px solid var(--line); }
 .plot { width: 100%; min-height: 260px; position: relative; } /* positions the step cursor overlay */
@@ -177,6 +181,24 @@ body.modal-open { overflow: hidden; }
 .canvas-plot { display: block; width: 100%; }
 @media (max-width: 80rem) { .hero-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 40rem) { .hero-tiles { grid-template-columns: minmax(0, 1fr); } }
+/* forward-flow diagram (web/js/figures/flow.js) */
+.flow { width: 100%; height: auto; display: block; }
+.flow-edges path { fill: none; stroke: var(--line); stroke-width: 1.2; }
+.flow-edges path.skip { stroke-dasharray: 4 3; }
+.flow-pulse { fill: var(--accent); }
+.flow-cell { transition: fill 0.35s; } /* values ease to the new input (no transition under reduced motion) */
+.flow-nodes > :not(.clickable):not(.hover) { pointer-events: none; } /* clicks reach the stage zones underneath */
+.flow-cell.clickable { cursor: pointer; }
+.flow-box { fill: var(--bg-soft); stroke: var(--line); }
+.flow-bar { transition: width 0.35s; }
+.flow-bar.k0 { fill: var(--train); } .flow-bar.k1 { fill: var(--restricted); } .flow-bar.k2 { fill: var(--accent); }
+.flow-text { font: 600 13px Inter, sans-serif; fill: var(--ink); }
+.flow-small { font: 11px Inter, sans-serif; fill: var(--ink-soft); }
+.flow-head { font: 600 12px Inter, sans-serif; fill: var(--ink-soft); }
+.flow-marker { fill: var(--ink); }
+.flow-zone { fill: transparent; cursor: pointer; }
+.flow-zone:hover, .flow-zone.on { fill: color-mix(in srgb, var(--accent) 7%, transparent); }
+.flow-eq { min-height: 1.5rem; }
 /* player bar (web/js/ui/player-bar.js): full on the dashboard, compact in chapters, mini inside animated figures */
 .player-bar { flex: 1 1 32rem; min-width: 0; }
 .pb-main { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem 0.5rem; }

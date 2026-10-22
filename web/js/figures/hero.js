@@ -14,15 +14,15 @@
 // Global context: the dashboard's first impression and chapter 0's opening animation; every tile is also a full
 // dashboard panel further down (loss-curves, pcorrect-grid, embed-circles, neuron-grid).
 // Sources: paper Fig. 1–4 and Sec. 3–5 (https://arxiv.org/abs/2301.05217).
-import { array, model, nearestIndex, run, trainMask } from "../core/data.js";
-import { frameAt, lerpInto, lerpPolar2, phaseOf } from "../core/anim.js";
+import { array, model, run, trainMask } from "../core/data.js";
+import { lerpPolar2, phaseOf } from "../core/anim.js";
 import { Plot, phaseShapes } from "../viz/plot.js";
 import { Heatmap } from "../viz/heatmap.js";
 import { CanvasPlot } from "../viz/canvas.js";
 import { clockColor, cssVar } from "../viz/colors.js";
 import { pagePlayer } from "../ui/page-player.js";
 import { lossTraces } from "./curves.js";
-import { el, follow, frameKey, note, runOf, set, storeOf, watch } from "./common.js";
+import { el, fill, follow, frameKey, note, runOf, set, storeOf, watch } from "./common.js";
 
 const P = 113;
 const SAY = { // one line per phase (phases detected by src/grokviz/phases.py)
@@ -31,23 +31,6 @@ const SAY = { // one line per phase (phases detected by src/grokviz/phases.py)
   cleanup: "Cleanup: weight decay removes the memorising weights; the test loss collapses and every input lights up.",
   "after cleanup": "After cleanup: the network adds on every input with a few frequencies.",
 };
-
-/**
- * Fill `out` with frame data at the store's position: frames are `len` numbers at `offset` within each of the stored
- * frames of `a` (one per entry of `steps`). Paused: the nearest stored frame. Playing: `lerp` of the two frames around
- * the fractional step. Returns a label saying which.
- */
-function fill(out, a, steps, s, { offset = 0, lerp = lerpInto } = {}) {
-  const size = a.data.length / steps.length, frame = (f) => a.data.subarray(f * size + offset, f * size + offset + out.length);
-  if (s.playing && s.stepf != null) {
-    const { i, j, t } = frameAt(steps, s.stepf);
-    lerp(out, frame(i), frame(j), t);
-    return t > 0 ? `step ≈ ${Math.round(s.stepf).toLocaleString("en-US")}, blended between the stored frames at ${steps[i].toLocaleString("en-US")} and ${steps[j].toLocaleString("en-US")}` : `step ${steps[i].toLocaleString("en-US")}`;
-  }
-  const f = nearestIndex(steps, s.step);
-  out.set(frame(f));
-  return `step ${steps[f].toLocaleString("en-US")} (stored frame)`;
-}
 
 export const figures = {
   "hero-grokking": {

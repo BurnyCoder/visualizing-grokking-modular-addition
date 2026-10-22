@@ -24,7 +24,7 @@ function overTraining(traces, layout = {}, height = 270) {
       body.innerHTML = "";
       const plot = new Plot(body, { height, stepAxis: true });
       let shown = null;
-      watch(["run", "step"], async (s, changed) => {
+      watch(body, ["run", "step"], async (s, changed) => {
         const id = runOf(ds);
         if (id !== shown || changed.includes("theme")) {
           shown = id;

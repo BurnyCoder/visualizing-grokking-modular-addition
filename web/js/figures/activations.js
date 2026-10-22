@@ -12,7 +12,7 @@ import { Heatmap, miniHeatmap } from "../viz/heatmap.js";
 import { Plot } from "../viz/plot.js";
 import { freqColor } from "../viz/colors.js";
 import { fourierBasis } from "./weights.js";
-import { basisName, clusterOrder, el, note, runOf, set, state, watch } from "./common.js";
+import { basisName, clusterOrder, el, follow, frameKey, note, runOf, set, watch } from "./common.js";
 
 /** 2D Fourier transform of a p×p grid (rows a, cols b): C = F G Fᵀ (orthonormal basis). */
 export function fft2(grid, p) {
@@ -45,14 +45,14 @@ export function spectrumMap(arrayName, what) {
       const hm = new Heatmap(body, { rows: 113, cols: 113, size: 300, diverging: false, format: (v) => `10^${v.toFixed(1)} of max`,
         label: (r, c) => `${basisName(r)} (in a) × ${basisName(c)} (in b)` });
       const info = note(body);
-      watch(["run", "step"], async (s) => {
+      watch(body, ["run", "step"], async (s) => {
         const id = runOf(ds), r = await run(id);
         if (!r.spectra_steps) { info.textContent = "no 2D Fourier maps for this run"; return; }
         const f = nearestIndex(r.spectra_steps, s.step);
         hm.draw(row(await array(id, arrayName), f), { min: -4, max: 0 });
         const only = r.spectra_steps.length === 1 ? " (this run has this map only at its final checkpoint)" : "";
         info.textContent = `step ${r.spectra_steps[f]}${only}: ${what}. Colour: log10 of each component's size relative to the largest (darkest = 10⁻⁴ or less).`;
-      });
+      }, { dedupe: frameKey(ds, "spectra_steps"), theme: false });
     },
   };
 }
@@ -62,24 +62,28 @@ export const figures = {
   "neuron-freq-map": {
     async render(body, ds) {
       body.innerHTML = "";
-      let hm = null;
+      let hm = null, order = []; // current neuron order (read by the hover label and the marks)
       const info = note(body);
-      watch(["run", "step"], async (s) => {
+      const mark = (s) => { hm?.marks.set("neuron", { row: order.indexOf(s.neuron) }); hm?.marks.set("freq", { col: s.freq - 1 }); };
+      watch(body, ["run", "step"], async (s) => {
         const id = runOf(ds), r = await run(id);
         if (!r.spectra_steps) { info.textContent = "no neuron–frequency map for this run"; return; }
         const f = nearestIndex(r.spectra_steps, s.step);
         const a = await array(id, "spec_neuron_freq"), v = row(a, f), [n, K] = a.shape.slice(1);
         const best = Array.from({ length: n }, (_, i) => { let k = 0; for (let j = 1; j < K; j++) if (v[i * K + j] > v[i * K + k]) k = j; return k + 1; });
         const fve = Array.from({ length: n }, (_, i) => v[i * K + best[i] - 1]);
-        const order = clusterOrder(best, fve, n), grid = new Float32Array(n * K);
+        order = clusterOrder(best, fve, n);
+        const grid = new Float32Array(n * K);
         order.forEach((neuron, rIdx) => { for (let j = 0; j < K; j++) grid[rIdx * K + j] = v[neuron * K + j]; });
         if (!hm) hm = new Heatmap(body, { rows: n, cols: K, size: 420, height: 420, diverging: false, format: (x) => `${(100 * x).toFixed(1)} %`,
           label: (rr, cc) => `neuron ${order[rr]}, frequency k = ${cc + 1}`, onClick: (rr, cc) => set({ neuron: order[rr], freq: cc + 1 }) });
         body.append(info);
         hm.draw(grid, { min: 0, max: 1 });
+        mark(s);
         const only = r.spectra_steps.length === 1 ? " (final checkpoint only for this run)" : "";
-        info.textContent = `step ${r.spectra_steps[f]}${only}: share of each neuron's variance (rows, sorted by cluster) explained by each frequency's 2D Fourier terms (columns k = 1…56). A bright single cell per row = a single-frequency neuron. Click to select a neuron and frequency.`;
-      });
+        info.textContent = `step ${r.spectra_steps[f]}${only}: share of each neuron's variance (rows, sorted by cluster) explained by each frequency's 2D Fourier terms (columns k = 1…56). A bright single cell per row = a single-frequency neuron. Click to select a neuron and frequency (outlined).`;
+      }, { dedupe: frameKey(ds, "spectra_steps"), theme: false });
+      follow(body, ["neuron", "freq"], mark);
     },
   },
 
@@ -88,11 +92,12 @@ export const figures = {
       body.innerHTML = "";
       const hm = new Heatmap(body, { rows: 113, cols: 113, size: 300, diverging: false, format: (v) => v.toFixed(3), onClick: (a, b) => set({ a, b }) });
       const info = note(body);
-      watch(["run", "step", "head"], async (s) => {
+      watch(body, ["run", "step", "head"], async (s) => {
         const net = await model(runOf(ds), s.step);
         hm.draw(net.attentionGrid(s.head, 0), { min: 0, max: 1 });
-        info.textContent = `head ${s.head}, step ${net.step}: attention from '=' to the first number a, for every input (a = row, b = column). Click a cell to select that input.`;
-      });
+        info.textContent = `head ${s.head}, step ${net.step}: attention from '=' to the first number a, for every input (a = row, b = column). Click a cell to select that input (outlined).`;
+      }, { dedupe: frameKey(ds, "weight_steps", "head"), theme: false });
+      follow(body, ["a", "b"], (s) => hm.marks.set("input", { row: s.a, col: s.b }));
     },
   },
 
@@ -101,7 +106,8 @@ export const figures = {
       body.innerHTML = "";
       const grid = el(body, "div", "small-multiples");
       const info = note(body);
-      watch(["run", "step"], async (s) => {
+      const mark = (s) => [...grid.children].forEach((f, h) => f.classList.toggle("selected", h === s.head)); // outline the selected head
+      watch(body, ["run", "step"], async (s) => {
         const net = await model(runOf(ds), s.step);
         grid.replaceChildren();
         for (let h = 0; h < net.H; h++) {
@@ -111,8 +117,10 @@ export const figures = {
           f.style.cursor = "pointer";
           f.onclick = () => set({ head: h });
         }
-        info.textContent = `step ${net.step}: attention from '=' to a for all four heads (rows a, columns b, yellow = 1, purple = 0).`;
-      });
+        mark(s);
+        info.textContent = `step ${net.step}: attention from '=' to a for all four heads (rows a, columns b, yellow = 1, purple = 0). Click a head to select it (outlined).`;
+      }, { dedupe: frameKey(ds, "weight_steps"), theme: false });
+      follow(body, ["head"], mark);
     },
   },
 
@@ -120,13 +128,13 @@ export const figures = {
     async render(body, ds) {
       body.innerHTML = "";
       const plot = new Plot(body, { height: 230 });
-      watch(["run", "step"], async (s) => {
+      watch(body, ["run", "step"], async (s) => {
         const id = runOf(ds), r = await run(id), a = await array(id, "avg_attn");
         const t = nearestIndex(r.ckpt_steps, s.step), v = row(a, t);
         const heads = [0, 1, 2, 3];
         await plot.draw(["a (position 0)", "b (position 1)", "= (position 2)"].map((name, j) => ({ x: heads.map((h) => `head ${h}`), y: heads.map((h) => v[h * 3 + j]), name, type: "bar" })),
           { barmode: "stack", yaxis: { title: { text: "mean attention from '='" }, range: [0, 1] }, hovermode: "closest" });
-      });
+      }, { dedupe: frameKey(ds, "ckpt_steps") });
     },
   },
 
@@ -139,9 +147,9 @@ export const figures = {
       el(right, "p", "fig-note", "same grid in the 2D Fourier basis (rows: component in a, columns: component in b)");
       const hm = new Heatmap(left, { rows: 113, cols: 113, size: 300, diverging: false, format: (v) => v.toFixed(3), onClick: (a, b) => set({ a, b }) });
       const hf = new Heatmap(right, { rows: 113, cols: 113, size: 300, diverging: true, format: (v) => v.toFixed(3),
-        label: (i, j) => `${basisLabel(i)} (in a) × ${basisLabel(j)} (in b)`, onClick: (i) => { if (i > 0) set({ freq: Math.ceil(i / 2) }); } });
+        label: (i, j) => `${basisName(i)} (in a) × ${basisName(j)} (in b)`, onClick: (i) => { if (i > 0) set({ freq: Math.ceil(i / 2) }); } });
       const info = note(body);
-      watch(["run", "step", "neuron"], async (s) => {
+      watch(body, ["run", "step", "neuron"], async (s) => {
         const id = runOf(ds), r = await run(id), net = await model(id, s.step);
         const g = net.neuronGrid(s.neuron, true);
         hm.draw(g);
@@ -149,7 +157,8 @@ export const figures = {
         const t = nearestIndex(r.ckpt_steps, net.step);
         const f = row(await array(id, "neuron_freq"), t)[s.neuron], v = row(await array(id, "neuron_fve"), t)[s.neuron];
         info.textContent = `neuron ${s.neuron}, step ${net.step}: best frequency k = ${f}, which explains ${(100 * v).toFixed(1)} % of its variance (constant removed before the transform).`;
-      });
+      }, { dedupe: frameKey(ds, "weight_steps", "neuron"), theme: false });
+      follow(body, ["a", "b"], (s) => hm.marks.set("input", { row: s.a, col: s.b }));
     },
   },
 
@@ -158,7 +167,8 @@ export const figures = {
       body.innerHTML = "";
       const grid = el(body, "div", "small-multiples");
       const info = note(body);
-      watch(["run", "step"], async (s) => {
+      const mark = (s) => [...grid.children].forEach((f) => f.classList.toggle("selected", Number(f.dataset.neuron) === s.neuron));
+      watch(body, ["run", "step"], async (s) => {
         const id = runOf(ds), r = await run(id), net = await model(id, s.step);
         const t = nearestIndex(r.ckpt_steps, net.step);
         const freqs = row(await array(id, "neuron_freq"), t), fve = row(await array(id, "neuron_fve"), t);
@@ -173,18 +183,21 @@ export const figures = {
           f.append(miniHeatmap(net.neuronGrid(i, true), 113, 113, false));
           el(f, "figcaption", "", `neuron ${i} · k=${freqs[i]} · ${(100 * fve[i]).toFixed(0)} %`);
           f.style.cursor = "pointer";
+          f.dataset.neuron = i;
           f.onclick = () => set({ neuron: i });
         }
-        info.textContent = `step ${net.step}: example neurons from each frequency cluster (chosen at this step). Click one to inspect it.`;
-      });
+        mark(s);
+        info.textContent = `step ${net.step}: example neurons from each frequency cluster (chosen at this step). Click one to inspect it (outlined).`;
+      }, { dedupe: frameKey(ds, "weight_steps"), theme: false });
+      follow(body, ["neuron"], mark);
     },
   },
 
   "neuron-freq-scatter": {
     async render(body, ds) {
       body.innerHTML = "";
-      const plot = new Plot(body, { height: 300 });
-      watch(["run", "step"], async (s) => {
+      const plot = new Plot(body, { height: 300 }).on("plotly_click", (ev) => set({ neuron: ev.points[0].pointIndex })); // bound once (was once per redraw)
+      watch(body, ["run", "step"], async (s) => {
         const id = runOf(ds), r = await run(id);
         const t = nearestIndex(r.ckpt_steps, s.step);
         const f = Array.from(row(await array(id, "neuron_freq"), t)), v = Array.from(row(await array(id, "neuron_fve"), t));
@@ -193,8 +206,7 @@ export const figures = {
           marker: { size: 6, color: act, colorscale: "Viridis", cmin: 0, cmax: 1, colorbar: { title: { text: "fraction of inputs<br>where active", side: "right" }, thickness: 10 } } }],
         { xaxis: { title: { text: "best frequency k" }, range: [0, 57] }, yaxis: { title: { text: "fraction of variance explained" }, range: [0, 1.02] }, hovermode: "closest",
           shapes: [{ type: "line", xref: "paper", x0: 0, x1: 1, y0: 0.85, y1: 0.85, line: { dash: "dot", width: 1 } }] });
-        plot.el.on?.("plotly_click", (ev) => set({ neuron: ev.points[0].pointIndex }));
-      });
+      }, { dedupe: frameKey(ds, "ckpt_steps") });
     },
   },
 
@@ -202,7 +214,7 @@ export const figures = {
     async render(body, ds) {
       body.innerHTML = "";
       const plot = new Plot(body, { height: 300 });
-      watch(["run", "step"], async (s) => {
+      watch(body, ["run", "step"], async (s) => {
         const id = runOf(ds), r = await run(id);
         const t = nearestIndex(r.ckpt_steps, s.step);
         const pre = Array.from(row(await array(id, "neuron_quad_pre"), t)), post = Array.from(row(await array(id, "neuron_quad_post"), t));
@@ -210,7 +222,7 @@ export const figures = {
         await plot.draw([{ x: pre, y: post, mode: "markers", type: "scatter", text: f.map((k, i) => `neuron ${i}, k=${k}`), marker: { size: 6, color: f.map((k) => freqColor(k)) } }],
           { xaxis: { title: { text: "quadratic share before ReLU" }, range: [0, 1] }, yaxis: { title: { text: "quadratic share after ReLU" }, range: [0, 1] }, hovermode: "closest",
             shapes: [{ type: "line", x0: 0, y0: 0, x1: 1, y1: 1, line: { dash: "dot", width: 1 } }] });
-      });
+      }, { dedupe: frameKey(ds, "ckpt_steps") });
     },
   },
 
@@ -219,7 +231,7 @@ export const figures = {
       body.innerHTML = "";
       const plot = new Plot(body, { height: 260, stepAxis: true });
       let shown = null;
-      watch(["run", "step"], async (s) => {
+      watch(body, ["run", "step"], async (s) => {
         const id = runOf(ds), r = await run(id);
         if (shown !== id) {
           shown = id;
@@ -234,7 +246,3 @@ export const figures = {
     },
   },
 };
-
-/** Basis index → name (0 Const, 2k−1 cos k, 2k sin k). */
-export const basisLabel = (i) => (i === 0 ? "Const" : `${i % 2 ? "cos" : "sin"} ${Math.ceil(i / 2)}`);
-void state;

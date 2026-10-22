@@ -11,7 +11,7 @@
 import { array, nearestIndex, row, run, trainMask } from "../core/data.js";
 import { Plot } from "../viz/plot.js";
 import { Heatmap } from "../viz/heatmap.js";
-import { el, note, runOf, set, watch } from "./common.js";
+import { el, follow, frameKey, note, runOf, set, watch } from "./common.js";
 
 const P = 113;
 const hue = (i, n = P) => `hsl(${Math.round((360 * i) / n)}, 70%, 50%)`; // cyclic colour for number i
@@ -40,7 +40,7 @@ function planes(arrayName, what) {
       const info = note(body);
       let plots = [];
       let shown = null;
-      watch(["run", "step"], async (s) => {
+      watch(body, ["run", "step"], async (s) => {
         const id = runOf(ds), r = await run(id);
         if (!r.geometry_steps) { info.textContent = "no geometry frames for this run"; return; }
         const a = await array(id, arrayName);
@@ -59,7 +59,7 @@ function planes(arrayName, what) {
             yaxis: { zeroline: false, showticklabels: false, range: rng, scaleanchor: "x" }, hovermode: "closest" });
         }));
         info.textContent = `step ${r.geometry_steps[f]}: ${what}. Colour = predicted clock position k·n mod 113; a smooth rainbow around the circle means number n sits at angle w_k·n (K = ${K} key frequencies).`;
-      });
+      }, { dedupe: frameKey(ds, "geometry_steps") });
     },
   };
 }
@@ -71,7 +71,7 @@ function pcaScatter(arrayName, varName, what) {
       body.innerHTML = "";
       const plot = new Plot(body, { height: 280 });
       const info = note(body);
-      watch(["run", "step"], async (s) => {
+      watch(body, ["run", "step"], async (s) => {
         const id = runOf(ds), r = await run(id);
         if (!r.geometry_steps) return;
         const f = nearestIndex(r.geometry_steps, s.step);
@@ -80,7 +80,7 @@ function pcaScatter(arrayName, varName, what) {
         await plot.draw([tr], { xaxis: { title: { text: `PC1 (${(100 * ev[0]).toFixed(0)} %)` }, zeroline: false },
           yaxis: { title: { text: `PC2 (${(100 * ev[1]).toFixed(0)} %)` }, zeroline: false, scaleanchor: "x" }, hovermode: "closest" });
         info.textContent = `step ${r.geometry_steps[f]}: ${what}; first two principal components.`;
-      });
+      }, { dedupe: frameKey(ds, "geometry_steps") });
     },
   };
 }
@@ -92,17 +92,17 @@ function inputGrid(arrayName, what, diverging = false) {
       body.innerHTML = "";
       const hm = new Heatmap(body, { rows: P, cols: P, size: 300, diverging, format: (v) => v.toFixed(3), onClick: (a, b) => set({ a, b }) });
       const info = note(body);
-      watch(["run", "step"], async (s) => {
+      watch(body, ["run", "step"], async (s) => {
         const id = runOf(ds), r = await run(id);
         if (!r.geometry_steps) return;
         const f = nearestIndex(r.geometry_steps, s.step);
-        hm.draw(row(await array(id, arrayName), f), { min: 0, max: 1 });
-        const mask = await trainMask(r.split_seed);
+        const v = row(await array(id, arrayName), f), mask = await trainMask(r.split_seed);
+        hm.draw(v, { min: 0, max: 1 });
         let tr = 0, te = 0, nt = 0, ne = 0;
-        const v = row(await array(id, arrayName), f);
         for (let i = 0; i < v.length; i++) if (mask[i]) { tr += v[i]; nt++; } else { te += v[i]; ne++; }
-        info.textContent = `step ${r.geometry_steps[f]}: ${what}. Mean on training pairs ${(tr / nt).toFixed(3)}, on test pairs ${(te / ne).toFixed(3)}.`;
-      });
+        info.textContent = `step ${r.geometry_steps[f]}: ${what}. Mean on training pairs ${(tr / nt).toFixed(3)}, on test pairs ${(te / ne).toFixed(3)}. Outlined: the selected input (click a cell to select).`;
+      }, { dedupe: frameKey(ds, "geometry_steps"), theme: false });
+      follow(body, ["a", "b"], (s) => hm.marks.set("input", { row: s.a, col: s.b }));
     },
   };
 }
@@ -120,13 +120,14 @@ export const figures = {
       body.innerHTML = "";
       const hm = new Heatmap(body, { rows: P, cols: P, size: 300, diverging: false, format: (v) => (v ? "training pair" : "test pair"), onClick: (a, b) => set({ a, b }) });
       const info = note(body);
-      watch(["run"], async () => {
+      watch(body, ["run"], async () => {
         const r = await run(runOf(ds));
         const mask = await trainMask(r.split_seed);
         hm.draw(Float32Array.from(mask), { min: 0, max: 1 });
         const n = mask.reduce((x, y) => x + y, 0);
         info.textContent = `${n} training pairs (yellow) and ${mask.length - n} test pairs (purple); split seed ${r.split_seed}.`;
-      });
+      }, { theme: false });
+      follow(body, ["a", "b"], (s) => hm.marks.set("input", { row: s.a, col: s.b }));
     },
   },
 };

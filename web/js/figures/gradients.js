@@ -8,11 +8,11 @@
 // Global context: links the progress measures to their cause — the paper attributes circuit formation and
 // cleanup to weight decay (Sec. 5.2–5.3); these plots show the forces directly.
 // Sources: paper Sec. 5.2–5.3 (https://arxiv.org/abs/2301.05217); AdamW (https://arxiv.org/abs/1711.05101).
-import { array, column, run, row } from "../core/data.js";
+import { array, column, run } from "../core/data.js";
 import { Plot, phaseShapes } from "../viz/plot.js";
-import { Heatmap } from "../viz/heatmap.js";
 import { cssVar } from "../viz/colors.js";
-import { note, runOf, set, watch } from "./common.js";
+import { stepByFreq } from "./weights.js";
+import { note, runOf, watch } from "./common.js";
 
 /** Metric-over-training plot for gradient arrays (same pattern as curves.js); `needs` = the array it plots.
  * Charts with one line per parameter (11 legend entries) pass a taller `height` so the plot keeps its room. */
@@ -23,7 +23,7 @@ function overTraining(traces, layout, needs = "grad_scalars", missing = "No grad
       const plot = new Plot(body, { height, stepAxis: true });
       const info = note(body);
       let shown = null;
-      watch(["run", "step"], async (s, changed) => {
+      watch(body, ["run", "step"], async (s, changed) => {
         const id = runOf(ds), r = await run(id);
         // hide (not destroy) the plot when a run has no gradients, so switching back to one that has them redraws it
         plot.el.hidden = !r.arrays[needs];
@@ -72,32 +72,11 @@ export const figures = {
   }, { yaxis: { type: "log", title: { text: "‖update‖ (log)" }, exponentformat: "power" } }, "update_norm",
   "Update sizes were logged only for our retrained runs.", 400),
 
-  "grad-we-fourier-heatmap": {
-    async render(body, ds) {
-      body.innerHTML = "";
-      let hm = null, shown = null;
-      const info = note(body);
-      watch(["run", "step"], async (s) => {
-        const id = runOf(ds), r = await run(id);
-        if (!r.arrays.grad_we_fourier) return;
-        if (shown !== id) {
-          shown = id;
-          const a = await array(id, "grad_we_fourier");
-          const T = a.shape[0], K = 56, grid = new Float32Array(K * T);
-          for (let t = 0; t < T; t++) {
-            const v = row(a, t);
-            let tot = 0;
-            for (let k = 1; k <= K; k++) tot += v[2 * k - 1] ** 2 + v[2 * k] ** 2;
-            for (let k = 1; k <= K; k++) grid[(K - k) * T + t] = (v[2 * k - 1] ** 2 + v[2 * k] ** 2) / (tot || 1); // share of gradient energy
-          }
-          body.querySelector(".heatmap-wrap")?.remove();
-          hm = new Heatmap(body, { rows: K, cols: T, size: 640, height: 240, diverging: false, format: (v) => `${(100 * v).toFixed(1)} %`,
-            label: (rr, cc) => `k = ${K - rr}, step ${r.ckpt_steps[cc]}`, onClick: (rr, cc) => set({ step: r.ckpt_steps[cc], freq: K - rr }) });
-          body.append(info);
-          hm.draw(grid);
-        }
-        info.textContent = `Share of the embedding gradient's energy in each frequency (rows k = 1 bottom … 56 top) at every checkpoint (columns). Current step ${s.step}.`;
-      });
+  "grad-we-fourier-heatmap": stepByFreq("grad_we_fourier", {
+    perFreq: (v) => { // share of the gradient's energy (cos² + sin², constant excluded) in each frequency
+      const e = Array.from({ length: 56 }, (_, i) => v[2 * i + 1] ** 2 + v[2 * i + 2] ** 2), tot = e.reduce((x, y) => x + y, 0) || 1;
+      return e.map((x) => x / tot);
     },
-  },
+    format: (v) => `${(100 * v).toFixed(1)} %`, what: "Share of the embedding gradient's energy in each frequency at every checkpoint.",
+  }),
 };

@@ -30,6 +30,9 @@ export function slider(parent, label, min, max, step, value, onInput) {
   return input;
 }
 
+/** Redraw a widget when the reader switches light/dark mode (its colours are read from CSS variables at draw time). */
+export const onTheme = (draw) => window.addEventListener("grokviz-theme", () => draw());
+
 const f3 = (x) => (Math.abs(x) < 5e-4 ? "0.000" : x.toFixed(3));
 const NS = "http://www.w3.org/2000/svg";
 /** Create an SVG element with attributes. */
@@ -61,6 +64,7 @@ export const widgets = {
         const q = Math.floor((a + b) / p);
         work.textContent = `${a} + ${b} = ${a + b} = ${q} × ${p} + ${(a + b) % p}\nso (${a} + ${b}) mod ${p} = ${(a + b) % p}   (blue hand: a, orange hand: the answer)`;
       };
+      onTheme(draw);
       const pa = slider(controls, "p", 2, 113, 1, p, (v) => { p = v; pa2.max = p - 1; pb.max = p - 1; a = Math.min(a, p - 1); b = Math.min(b, p - 1); draw(); });
       const pa2 = slider(controls, "a", 0, p - 1, 1, a, (v) => { a = v; draw(); });
       const pb = slider(controls, "b", 0, p - 1, 1, b, (v) => { b = v; draw(); });
@@ -86,6 +90,7 @@ export const widgets = {
         svg("line", { x1: 0, y1: 0, x2: pr * v.vx, y2: -pr * v.vy, stroke: cssVar("--restricted"), "stroke-width": 0.08, "stroke-dasharray": "0.2 0.15" }, s);
         work.textContent = `u = (${v.ux}, ${v.uy})  v = (${v.vx}, ${v.vy})\nu·v = ${v.ux}·${v.vx} + ${v.uy}·${v.vy} = ${dot}\n‖u‖ = ${f3(nu)}  ‖v‖ = ${f3(nv)}  cos(angle) = u·v/(‖u‖‖v‖) = ${f3(cos)}\nprojection of u on v (green, dashed) = (u·v/‖v‖²)·v = ${f3(pr)}·v`;
       };
+      onTheme(draw);
       for (const k of ["ux", "uy", "vx", "vy"]) slider(controls, k.replace("x", "₁").replace("y", "₂"), -5, 5, 1, v[k], (x) => { v[k] = x; draw(); });
     },
   },
@@ -103,6 +108,7 @@ export const widgets = {
         const ex = L.map((x) => Math.exp(x * temp)), z = ex.reduce((a, b) => a + b, 0);
         work.textContent = `logits × ${temp}: (${L.map((x) => f3(x * temp)).join(", ")})\nexp: (${ex.map(f3).join(", ")}), sum ${f3(z)}\nprobabilities: (${p.map(f3).join(", ")})  — they add up to 1\ncross-entropy for correct answer ${correct}: −ln(${f3(p[correct])}) = ${f3(-Math.log(p[correct]))}   (uniform guess over 4: ln 4 = 1.386)`;
       };
+      onTheme(draw);
       L.forEach((x, i) => slider(controls, `logit ${i}`, -4, 4, 0.5, x, (v) => { L[i] = v; draw(); }));
       slider(controls, "scale all logits", 0, 5, 0.25, 1, (v) => { temp = v; draw(); });
       slider(controls, "correct answer", 0, 3, 1, 0, (v) => { correct = v; draw(); });
@@ -126,6 +132,7 @@ export const widgets = {
         work.textContent = path.slice(0, 5).map((w, i) => `step ${i}: w = ${f3(w)}, slope 2(w−3) = ${f3(2 * (w - 3))}`).join("\n") +
           `\n…\nafter ${steps} steps: w = ${f3(path.at(-1))}` + (wd ? `   (weight decay pulls the answer below 3, toward 0: it settles at 3/(1 + λ/2) = ${f3(3 / (1 + wd / 2))})` : "");
       };
+      onTheme(draw);
       slider(controls, "learning rate γ", 0.05, 0.95, 0.05, lr, (v) => { lr = v; draw(); });
       slider(controls, "weight decay λ", 0, 2, 0.1, wd, (v) => { wd = v; draw(); });
       slider(controls, "start w", -1, 7, 0.5, start, (v) => { start = v; draw(); });
@@ -144,6 +151,7 @@ export const widgets = {
         plot.draw([{ x: c.map((_, i) => `c${i + 1}`), y: c, type: "bar", marker: { color: cssVar("--train") } }], { yaxis: { range: [0, 10] }, hovermode: "closest" });
         work.textContent = `sorted: (${sorted.join(", ")}), total ${tot}\nG = 1 − 2 Σ_k (c_(k)/total)·(N − k + ½)/N = ${f3(G)}   (0 = all equal, max 1 − 1/N = 0.875)`;
       };
+      onTheme(draw);
       c.forEach((x, i) => slider(controls, `c${i + 1}`, 0, 10, 1, x, (v) => { c[i] = v; draw(); }));
     },
   },

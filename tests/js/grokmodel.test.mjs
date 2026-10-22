@@ -41,3 +41,12 @@ test("float16 decoding reproduces the half-precision model", () => {
   const m16 = new GrokModel(decodeF16(u16), ref.layout, ref.p);
   for (const { a, b, logits_f16 } of ref.samples) assert.ok(maxAbs(m16.logits(a, b), logits_f16) < 1e-4, `f16 logits (${a},${b})`);
 });
+
+test("tables round trip: a model rebuilt from toTables() (as the web worker returns them) gives the same outputs", () => {
+  const copy = GrokModel.fromTables(f32, ref.layout, ref.p, structuredClone(model.toTables())); // structured clone = postMessage
+  for (const { a, b } of ref.samples.slice(0, 8)) {
+    assert.ok(maxAbs(copy.logits(a, b), model.logits(a, b)) === 0, `logits (${a},${b})`);
+    assert.ok(maxAbs(copy.forwardDetailed(a, b).logits, model.logits(a, b)) < 1e-4, `detailed (${a},${b})`);
+  }
+  assert.ok(maxAbs(copy.neuronGrid(7), model.neuronGrid(7)) === 0, "neuron grid");
+});

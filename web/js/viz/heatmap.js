@@ -68,18 +68,7 @@ export class Heatmap {
   /** Draw `values` (length rows*cols, row-major; NaN cells stay transparent). Optional fixed limits {min, max}. */
   draw(values, limits = null) {
     this.values = values;
-    let lo = Infinity, hi = -Infinity;
-    for (const v of values) { if (v < lo) lo = v; if (v > hi) hi = v; }
-    if (limits) ({ min: lo, max: hi } = { min: limits.min ?? lo, max: limits.max ?? hi });
-    if (this.o.diverging) { const m = Math.max(Math.abs(lo), Math.abs(hi)) || 1; lo = -m; hi = m; } // symmetric around 0
-    const span = hi - lo || 1;
-    const img = this.ctx.createImageData(this.o.cols, this.o.rows);
-    const cmap = this.o.diverging ? rdbu : viridis;
-    for (let i = 0; i < values.length; i++) {
-      const [r, g, b] = cmap((values[i] - lo) / span);
-      img.data[4 * i] = r; img.data[4 * i + 1] = g; img.data[4 * i + 2] = b; img.data[4 * i + 3] = Number.isNaN(values[i]) ? 0 : 255; // NaN = not shown (transparent)
-    }
-    this.ctx.putImageData(img, 0, 0);
+    const { lo, hi, cmap } = paint(this.ctx, values, this.o.rows, this.o.cols, this.o.diverging, limits);
     this._colorbar(lo, hi, cmap);
   }
 
@@ -94,16 +83,28 @@ export class Heatmap {
   }
 }
 
-/** Draw a grid into a bare canvas (for small multiples); returns the canvas. */
-export function miniHeatmap(values, rows, cols, diverging = true) {
+/**
+ * Paint `values` (rows × cols, row-major) one pixel per cell: diverging map centred at 0 or sequential map, colour
+ * limits from the data unless `limits` {min, max} fixes them; NaN cells stay transparent. Returns {lo, hi, cmap}.
+ */
+function paint(ctx, values, rows, cols, diverging, limits = null) {
+  let lo = Infinity, hi = -Infinity;
+  for (const v of values) { if (v < lo) lo = v; if (v > hi) hi = v; } // NaN never compares true: skipped
+  if (limits) ({ min: lo, max: hi } = { min: limits.min ?? lo, max: limits.max ?? hi });
+  if (diverging) { const m = Math.max(Math.abs(lo), Math.abs(hi)) || 1; lo = -m; hi = m; } // symmetric around 0
+  const span = hi - lo || 1, cmap = diverging ? rdbu : viridis, img = ctx.createImageData(cols, rows);
+  for (let i = 0; i < values.length; i++) {
+    const [r, g, b] = cmap((values[i] - lo) / span);
+    img.data[4 * i] = r; img.data[4 * i + 1] = g; img.data[4 * i + 2] = b; img.data[4 * i + 3] = Number.isNaN(values[i]) ? 0 : 255;
+  }
+  ctx.putImageData(img, 0, 0);
+  return { lo, hi, cmap };
+}
+
+/** Draw a grid into a bare canvas (for small multiples), optionally with fixed colour limits; returns the canvas. */
+export function miniHeatmap(values, rows, cols, diverging = true, limits = null) {
   const c = document.createElement("canvas");
   c.width = cols; c.height = rows;
-  const ctx = c.getContext("2d"), img = ctx.createImageData(cols, rows);
-  let lo = Infinity, hi = -Infinity;
-  for (const v of values) { if (v < lo) lo = v; if (v > hi) hi = v; }
-  if (diverging) { const m = Math.max(Math.abs(lo), Math.abs(hi)) || 1; lo = -m; hi = m; }
-  const cmap = diverging ? rdbu : viridis, span = hi - lo || 1;
-  for (let i = 0; i < values.length; i++) { const [r, g, b] = cmap((values[i] - lo) / span); img.data.set([r, g, b, 255], 4 * i); }
-  ctx.putImageData(img, 0, 0);
+  paint(c.getContext("2d"), values, rows, cols, diverging, limits);
   return c;
 }

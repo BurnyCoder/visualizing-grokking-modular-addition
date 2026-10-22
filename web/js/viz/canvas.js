@@ -2,8 +2,9 @@
 //
 // Local explanation: `CanvasPlot` owns one <canvas> sized to its CSS box at the device pixel ratio (sharp on high-DPI
 // screens) and redrawn on resize; `draw(scene)` maps a data domain onto the box (optionally with equal x/y scale, for
-// circles), draws line segments, filled points with a thin outline and text labels; hovering shows the nearest
-// point's label in the shared #tooltip and clicking reports its index.
+// circles), draws rectangles (bars), line segments, filled points with a thin outline and text labels; hovering shows
+// the label of the point (nearest, within a few px) or rectangle under the mouse in the shared #tooltip, and clicking
+// reports the point's index or the rectangle's `id`.
 // Global context: the dashboard hero's embedding clock and other per-frame scatters, where a Plotly redraw per frame
 // would be too slow (docs/architecture.md, render pipeline).
 // Sources: canvas scaling for devicePixelRatio (https://developer.mozilla.org/docs/Web/API/Window/devicePixelRatio);
@@ -30,8 +31,9 @@ export class CanvasPlot {
   }
 
   /**
-   * Draw a scene: {domain: [x0, x1, y0, y1], equal (same scale on both axes), points: {x, y, color(i), r, label(i)},
-   * segments: [{x0, y0, x1, y1, color, width}], labels: [{x, y, text, color}]}.
+   * Draw a scene: {domain: [x0, x1, y0, y1], equal (same scale on both axes), rects: [{x0, y0, x1, y1, fill, stroke,
+   * id, label}], segments: [{x0, y0, x1, y1, color, width}], points: {x, y, color(i), r, label(i)},
+   * labels: [{x, y, text, color, align ("center" | "left" | "right")}]}.
    */
   draw(scene) {
     this.scene = scene;
@@ -48,6 +50,11 @@ export class CanvasPlot {
     if (scene.equal) sx = sy = Math.min(sx, sy);
     const cx = w / 2, cy = h / 2, mx = (x0 + x1) / 2, my = (y0 + y1) / 2;
     this.px = (x, y) => [cx + (x - mx) * sx, cy - (y - my) * sy]; // data → canvas pixels (y up)
+    for (const q of scene.rects || []) {
+      const [a, b] = this.px(q.x0, q.y0), [c, d] = this.px(q.x1, q.y1);
+      if (q.fill) { ctx.fillStyle = q.fill; ctx.fillRect(Math.min(a, c), Math.min(b, d), Math.abs(c - a), Math.abs(d - b)); }
+      if (q.stroke) { ctx.strokeStyle = q.stroke; ctx.lineWidth = 1; ctx.strokeRect(Math.min(a, c) + 0.5, Math.min(b, d) + 0.5, Math.abs(c - a), Math.abs(d - b)); }
+    }
     for (const s of scene.segments || []) {
       const [a, b] = this.px(s.x0, s.y0), [c, d] = this.px(s.x1, s.y1);
       ctx.strokeStyle = s.color; ctx.lineWidth = s.width || 1.5; ctx.lineCap = "round";
@@ -64,31 +71,38 @@ export class CanvasPlot {
       }
     }
     ctx.font = "600 11px Inter, sans-serif";
-    ctx.textAlign = "center";
     for (const l of scene.labels || []) {
       const [u, v] = this.px(l.x, l.y);
+      ctx.textAlign = l.align || "center";
       ctx.fillStyle = l.color;
       ctx.fillText(l.text, u, v + 4);
     }
   }
 
-  /** Index of the point nearest the mouse within HIT px, or null. */
-  hit(e) {
-    const pts = this.scene?.points;
-    if (!pts || !this.px) return null;
-    const r = this.canvas.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
+  /** What is under the mouse: the nearest point within HIT px ({i, label}), else a rectangle ({i: its id, label}), or null. */
+  target(e) {
+    if (!this.scene || !this.px) return null;
+    const r = this.canvas.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top, pts = this.scene.points;
     let best = null, bd = HIT * HIT;
-    for (let i = 0; i < pts.x.length; i++) {
+    for (let i = 0; pts && i < pts.x.length; i++) {
       const [u, v] = this.px(pts.x[i], pts.y[i]), d = (u - mx) ** 2 + (v - my) ** 2;
-      if (d < bd) { bd = d; best = i; }
+      if (d < bd) { bd = d; best = { i, label: pts.label?.(i) }; }
     }
-    return best;
+    if (best) return best;
+    for (const q of this.scene.rects || []) {
+      const [a, b] = this.px(q.x0, q.y0), [c, d] = this.px(q.x1, q.y1);
+      if (q.id != null && mx >= Math.min(a, c) && mx <= Math.max(a, c) && my >= Math.min(b, d) && my <= Math.max(b, d)) return { i: q.id, label: q.label };
+    }
+    return null;
   }
 
+  /** Point index or rectangle id under the mouse, or null. */
+  hit(e) { return this.target(e)?.i ?? null; }
+
   hover(e) {
-    const i = this.hit(e), tt = tooltip(), label = this.scene?.points?.label;
-    if (i == null || !label) { tt.hidden = true; return; }
-    tt.innerHTML = label(i);
+    const t = this.target(e), tt = tooltip();
+    if (!t?.label) { tt.hidden = true; return; }
+    tt.innerHTML = t.label;
     tt.hidden = false;
     tt.style.left = `${e.clientX + 14}px`;
     tt.style.top = `${e.clientY + 14}px`;

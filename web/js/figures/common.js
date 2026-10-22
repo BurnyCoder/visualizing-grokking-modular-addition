@@ -9,6 +9,7 @@
 // → the figure's draw function; offscreen figures only remember that they are dirty and draw when scrolled back.
 import { state, set, storeOf } from "../core/state.js";
 import { latestWins } from "../core/store.js";
+import { frameAt, lerpInto } from "../core/anim.js";
 import { onVisibility } from "../core/visibility.js";
 import { countRender, track } from "../core/hooks.js";
 import { nearestIndex, run } from "../core/data.js";
@@ -26,8 +27,10 @@ const union = (a, b) => [...new Set([...a, ...b])]; // merge changed-key lists
  * (it draws once when it comes back), and none when `dedupe(state)` (optional, may be async) returns the same key as
  * for the last draw — e.g. the same stored checkpoint while the step moves between two snapshots. `theme: false` for
  * figures whose colours do not depend on the theme (canvas heatmaps), so a theme switch does not recompute them.
+ * `minGap` (ms) is for expensive figures (thousands of SVG points, many grids): while a run plays they redraw at most
+ * that often, always ending with the latest state, so they never hold up the frames of the rest of the page.
  */
-export function watch(body, keys, fn, { dedupe = null, theme = true } = {}) {
+export function watch(body, keys, fn, { dedupe = null, theme = true, minGap = 0 } = {}) {
   const st = storeOf(body); // global store or the figure's animation scope
   const id = body.closest?.("[data-fig]")?.dataset.fig || body.dataset?.widget || "?"; // for render statistics
   let lastKey; // dedupe key of the last draw
@@ -45,8 +48,16 @@ export function watch(body, keys, fn, { dedupe = null, theme = true } = {}) {
     countRender(id, performance.now() - t0);
   }, union);
   const gate = onVisibility(body, () => { if (dirty) { const c = dirty; dirty = null; track(draw(c)); } });
+  let lastStart = -Infinity, held = null, timer = null; // minGap throttling while playing
   const trigger = (changed) => {
     if (!gate.visible()) { dirty = union(dirty || [], changed); return; }
+    const wait = minGap && st.state.playing ? lastStart + minGap - performance.now() : 0;
+    if (wait > 0) { // too soon: remember the change and draw once the gap has passed (the latest state wins)
+      held = union(held || [], changed);
+      timer ||= setTimeout(() => { timer = null; const c = held; held = null; trigger(c); }, wait);
+      return;
+    }
+    lastStart = performance.now();
     track(draw(changed));
   };
   const unsub = st.subscribe(keys, (_, changed) => trigger(changed));
@@ -93,3 +104,21 @@ export function note(parent) {
  */
 export const clusterOrder = (freq, fve, n = freq.length) =>
   Array.from({ length: n }, (_, i) => i).sort((x, y) => ((fve[x] > 0.85 ? freq[x] : 99) - (fve[y] > 0.85 ? freq[y] : 99)) || x - y);
+
+/**
+ * Fill `out` with frame data at the store's position `s`: each stored frame of `a` (one per entry of `steps`) holds
+ * `out.length` numbers at `offset`. Paused: the nearest stored frame. Playing: `lerp` of the two stored frames around
+ * the fractional step (core/anim.js). Returns a label saying which, so a blended picture is always disclosed.
+ */
+export function fill(out, a, steps, s, { offset = 0, lerp = lerpInto } = {}) {
+  const size = a.data.length / steps.length, frame = (f) => a.data.subarray(f * size + offset, f * size + offset + out.length);
+  const fmt = (x) => x.toLocaleString("en-US");
+  if (s.playing && s.stepf != null) {
+    const { i, j, t } = frameAt(steps, s.stepf);
+    lerp(out, frame(i), frame(j), t);
+    return t > 0 ? `step ≈ ${fmt(Math.round(s.stepf))}, blended between the stored frames at ${fmt(steps[i])} and ${fmt(steps[j])}` : `step ${fmt(steps[i])}`;
+  }
+  const f = nearestIndex(steps, s.step);
+  out.set(frame(f));
+  return `step ${fmt(steps[f])} (stored frame)`;
+}

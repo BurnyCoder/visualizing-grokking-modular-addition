@@ -50,6 +50,9 @@ Treat it as read-only reference: port code from it with `Source:` links instead 
   `core/player.js` (one Player per store; the page's is `ui/page-player.js`) and its controls through `ui/player-bar.js`.
   Add browser tests for new animations in `tests/test_site_browser.py`.
 - **Prose numbers.** Every number in the prose comes from `summary.py`, referenced as `{{num:key}}`; never type one by hand.
+- **Clips.** `render_media` (`src/grokviz/media.py`) records the entries of `media.CLIPS` from the built site: a figure
+  selector plus either a range of stored steps or a slider sweep. It needs ffmpeg (`uv sync --extra media`). Committed
+  GIFs must stay within `tests/test_media.py`'s budget (≤ 4 MB each, ≤ 15 MB in all); re-render with `--force`.
 - **Preview.** Preview with `uv run python -m grokviz.serve --dir site --port 8766` (no-cache headers, so edited ES
   modules reload). This server is also the "site" entry in `.claude/launch.json`.
 - **Edits to `web/`.** After editing `web/`, rebuild (`python -m grokviz.site_build`) or copy the file into `site/assets/`.

@@ -13,7 +13,7 @@ The phase-by-phase diagram is in the README ([What happens when you run it](../R
 | Core math | `task.py`, `model.py`, `losses.py`, `fourier.py` | dataset/split, paper-layout transformer with hooks, float64 losses, Fourier basis, Gini |
 | Runs | `runstore.py`, `sources.py`, `train.py` | on-disk run format; paper checkpoints; resumable vmap-batched training |
 | Analysis | `metrics.py`, `interventions.py`, `patching.py`, `checkpoint_metrics.py`, `gradients.py`, `geometry.py`, `phases.py`, `rchecks.py`, `hypotheses.py`, `stats.py` | every measurement on the site and in the reports |
-| Output | `export.py`, `summary.py`, `formatting.py`, `site_build.py`, `quotes.py`, `hf_publish.py`, `serve.py`, `figures.py`, `paper.py` | binary site data, prose numbers and their formatting, HTML build with content/link/forward-use checks, quote verification, Hub uploads, preview server, report figures rendered from the site, Typst paper |
+| Output | `export.py`, `summary.py`, `formatting.py`, `site_build.py`, `quotes.py`, `hf_publish.py`, `serve.py`, `figures.py`, `media.py`, `paper.py` | binary site data, prose numbers and their formatting, HTML build with content/link/forward-use checks, quote verification, Hub uploads, preview server, report figures and animation clips rendered from the site, Typst paper |
 | Website | `content/`, `templates/`, `web/` | chapters/glossary/symbols/quotes/figures metadata; Jinja templates; ES-module figures, widgets, in-browser model |
 
 ## Design choices (and why)
@@ -47,3 +47,7 @@ The phase-by-phase diagram is in the README ([What happens when you run it](../R
   Each weight snapshot's per-token tables (~45 million multiply-adds) are built in a web worker (`model/worker.js`,
   `model/client.js`, main-thread fallback). The attention patterns of all 12,769 inputs are cached once per snapshot,
   so many grids per frame stay cheap. While the page player plays, the next snapshots are prefetched.
+- **Clips are recorded from the site.** `render_media` (`src/grokviz/media.py`) opens the dashboard with `?still=1`,
+  sets one stored step (or slider value) per frame, waits for `window.grokviz.anim.settled()` and screenshots one
+  figure. ffmpeg turns the frames into an MP4, a GIF with one palette for the whole clip, and a 5-frame film strip.
+  The README clips and the paper strips therefore show the same figures as the site, at stored checkpoints only.

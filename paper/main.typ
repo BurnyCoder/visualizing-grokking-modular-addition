@@ -129,7 +129,11 @@ The site is generated from Markdown with macros: `[[dfn:…]]` defines a term, `
 if any term or symbol is used before its definition in reading order, if a quote does not match its PDF page, or if a
 number is not bound to `summary.json`. Every figure is one JavaScript module shared by the chapters and the dashboard;
 per-input views run a JavaScript copy of the model on float16 weights, tested against PyTorch. The figures in this paper
-are screenshots of the same modules.
+are screenshots of the same modules. Clips of the animated figures are recorded the same way, one stored checkpoint per frame
+(@fig-strip).
+
+#fig("torus-grokking-strip", [All 12,769 inputs of the paper run on a torus at angles $(w_14 a, w_14 b)$, coloured by
+the probability of the right answer, at steps 1, 3,801, 7,601, 11,601 and 15,401 (frames of a website clip).]) <fig-strip>
 
 = Results <sec-results>
 

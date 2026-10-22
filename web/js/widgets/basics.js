@@ -11,6 +11,7 @@
 import { Plot } from "../viz/plot.js";
 import { cssVar } from "../viz/colors.js";
 import { softmax } from "../model/grokmodel.js";
+import { reducedMotion } from "../core/motion.js";
 
 /** Build a widget frame: title, controls row, output area. */
 export function frame(el, title) {
@@ -32,6 +33,38 @@ export function slider(parent, label, min, max, step, value, onInput) {
 
 /** Redraw a widget when the reader switches light/dark mode (its colours are read from CSS variables at draw time). */
 export const onTheme = (draw) => window.addEventListener("grokviz-theme", () => draw());
+
+/**
+ * A ▶ button after a slider that sweeps it from its minimum to its maximum over `seconds`, firing the same input
+ * events as dragging (so the widget redraws as usual); pressing it again stops. Under reduced motion it steps through
+ * the range in about ten jumps, two per second, instead of gliding.
+ */
+export function sweep(input, { seconds = 6, label = "▶" } = {}) {
+  const btn = Object.assign(document.createElement("button"), { type: "button", className: "btn sweep", textContent: label, title: "Animate this slider" });
+  input.closest("label").after(btn);
+  let raf = null, timer = null;
+  const put = (v) => { input.value = String(v); input.dispatchEvent(new Event("input")); };
+  const stop = () => { cancelAnimationFrame(raf); clearInterval(timer); raf = timer = null; btn.textContent = label; };
+  btn.onclick = () => {
+    if (raf || timer) { stop(); return; }
+    const lo = Number(input.min), hi = Number(input.max), step = Number(input.step) || 1;
+    btn.textContent = "❚❚";
+    if (reducedMotion()) { // discrete steps, no gliding
+      let v = lo;
+      const jump = Math.max(step, Math.round((hi - lo) / 10 / step) * step);
+      timer = setInterval(() => { put(Math.min(hi, v)); v += jump; if (v > hi + 1e-9) stop(); }, 500);
+      return;
+    }
+    const t0 = performance.now();
+    const tick = (t) => {
+      const f = Math.min(1, (t - t0) / (seconds * 1000));
+      put(lo + Math.round((f * (hi - lo)) / step) * step);
+      if (f < 1) raf = requestAnimationFrame(tick); else stop();
+    };
+    raf = requestAnimationFrame(tick);
+  };
+  return btn;
+}
 
 const f3 = (x) => (Math.abs(x) < 5e-4 ? "0.000" : x.toFixed(3));
 const NS = "http://www.w3.org/2000/svg";
@@ -68,6 +101,7 @@ export const widgets = {
       const pa = slider(controls, "p", 2, 113, 1, p, (v) => { p = v; pa2.max = p - 1; pb.max = p - 1; a = Math.min(a, p - 1); b = Math.min(b, p - 1); draw(); });
       const pa2 = slider(controls, "a", 0, p - 1, 1, a, (v) => { a = v; draw(); });
       const pb = slider(controls, "b", 0, p - 1, 1, b, (v) => { b = v; draw(); });
+      sweep(pb, { seconds: 8 }); // b ticks round the clock: watch the answer wrap past 0
       void pa;
     },
   },
@@ -95,6 +129,24 @@ export const widgets = {
     },
   },
 
+  "matmul-anim": {
+    render(el) {
+      const { controls, out, work } = frame(el, "A matrix times a one-hot vector picks out one column");
+      const W = [[2, -1, 0, 3, 1], [0, 4, 1, -2, 5], [1, 1, -3, 0, 2]]; // a small 3 × 5 matrix
+      let t = 3, i = 0;
+      const draw = () => {
+        const e = W[0].map((_, j) => (j === t ? 1 : 0)), y = W.map((r) => r.reduce((s, w, j) => s + w * e[j], 0));
+        const cell = (v, cls) => `<td class="${cls}">${v}</td>`;
+        out.innerHTML = `<div class="mm"><table class="mm-mat">${W.map((r, ri) => `<tr>${r.map((w, j) => cell(w, `${j === t ? "mm-col" : ""} ${ri === i ? "mm-row" : ""}`)).join("")}</tr>`).join("")}</table>
+          <span class="mm-op">×</span><table class="mm-vec">${e.map((v, j) => `<tr>${cell(v, j === t ? "mm-col" : "")}</tr>`).join("")}</table>
+          <span class="mm-op">=</span><table class="mm-vec">${y.map((v, ri) => `<tr>${cell(ri <= i ? v : "?", ri === i ? "mm-row mm-col" : "")}</tr>`).join("")}</table></div>`;
+        work.textContent = `Row ${i} times the vector: ${W[i].map((w, j) => `${w}·${e[j]}`).join(" + ")} = ${y[i]}. Every term but one is multiplied by 0, so the result is the entry of row ${i} in column ${t}. Doing this for every row copies column ${t}: this is how the network looks up a token's embedding (chapter 5).`;
+      };
+      slider(controls, "one-hot position t", 0, 4, 1, t, (v) => { t = v; draw(); });
+      sweep(slider(controls, "row", 0, 2, 1, i, (v) => { i = v; draw(); }), { seconds: 3 });
+    },
+  },
+
   softmax: {
     render(el) {
       const { controls, out, work } = frame(el, "From logits to probabilities to loss");
@@ -110,7 +162,7 @@ export const widgets = {
       };
       onTheme(draw);
       L.forEach((x, i) => slider(controls, `logit ${i}`, -4, 4, 0.5, x, (v) => { L[i] = v; draw(); }));
-      slider(controls, "scale all logits", 0, 5, 0.25, 1, (v) => { temp = v; draw(); });
+      sweep(slider(controls, "scale all logits", 0, 5, 0.25, 1, (v) => { temp = v; draw(); }), { seconds: 5 });
       slider(controls, "correct answer", 0, 3, 1, 0, (v) => { correct = v; draw(); });
     },
   },
@@ -136,7 +188,46 @@ export const widgets = {
       slider(controls, "learning rate γ", 0.05, 0.95, 0.05, lr, (v) => { lr = v; draw(); });
       slider(controls, "weight decay λ", 0, 2, 0.1, wd, (v) => { wd = v; draw(); });
       slider(controls, "start w", -1, 7, 0.5, start, (v) => { start = v; draw(); });
-      slider(controls, "steps", 1, 40, 1, steps, (v) => { steps = v; draw(); });
+      sweep(slider(controls, "steps", 1, 40, 1, steps, (v) => { steps = v; draw(); }), { seconds: 6 }); // the path grows step by step
+    },
+  },
+
+  "adamw-toy": {
+    render(el) {
+      const { controls, out, work } = frame(el, "Gradient descent, Adam and AdamW in a long valley");
+      const plot = new Plot(out, { height: 320 });
+      let steps = 40, lam = 0.3;
+      const loss = (x, y) => (x - 2) ** 2 + 8 * (y - 1) ** 2, grad = (x, y) => [2 * (x - 2), 16 * (y - 1)]; // minimum at (2, 1)
+      const run = (kind) => { // optimiser paths from (−1.5, −0.5); AdamW as PyTorch: θ ← θ(1 − γλ), then the Adam step
+        let [x, y] = [-1.5, -0.5], m = [0, 0], v = [0, 0];
+        const path = [[x, y]], g0 = kind === "gd" ? 0.11 : 0.08;
+        for (let t = 1; t <= steps; t++) {
+          const g = grad(x, y);
+          if (kind === "gd") { x -= g0 * g[0]; y -= g0 * g[1]; } else {
+            if (kind === "adamw") { x *= 1 - g0 * lam; y *= 1 - g0 * lam; }
+            m = m.map((mi, i) => 0.9 * mi + 0.1 * g[i]); v = v.map((vi, i) => 0.98 * vi + 0.02 * g[i] ** 2); // β = (0.9, 0.98), the run's setting (chapter 7 table)
+            const step = m.map((mi, i) => (mi / (1 - 0.9 ** t)) / (Math.sqrt(v[i] / (1 - 0.98 ** t)) + 1e-8));
+            x -= g0 * step[0]; y -= g0 * step[1];
+          }
+          path.push([x, y]);
+        }
+        return path;
+      };
+      const draw = () => {
+        const xs = Array.from({ length: 61 }, (_, i) => -2 + i * 0.075), ys = Array.from({ length: 41 }, (_, i) => -1 + i * 0.075);
+        const paths = { gd: run("gd"), adam: run("adam"), adamw: run("adamw") };
+        const names = { gd: "gradient descent (γ = 0.11)", adam: "Adam (γ = 0.08)", adamw: `AdamW (γ = 0.08, λ = ${lam})` };
+        const colors = { gd: cssVar("--ink-soft"), adam: cssVar("--train"), adamw: cssVar("--accent") };
+        plot.draw([{ x: xs, y: ys, z: ys.map((y) => xs.map((x) => Math.log10(loss(x, y) + 1e-3))), type: "contour", showscale: false, colorscale: "Greys", reversescale: true, opacity: 0.45, hoverinfo: "skip", contours: { coloring: "lines" } },
+          ...Object.keys(paths).map((kk) => ({ x: paths[kk].map((p) => p[0]), y: paths[kk].map((p) => p[1]), type: "scatter", mode: "lines+markers", name: names[kk], line: { color: colors[kk], width: 2 }, marker: { size: 4 } })),
+          { x: [2], y: [1], type: "scatter", mode: "markers", name: "lowest loss", marker: { symbol: "x", size: 12, color: cssVar("--ink") } }],
+        { xaxis: { title: { text: "parameter 1" }, range: [-2, 2.5] }, yaxis: { title: { text: "parameter 2" }, range: [-1, 2] }, hovermode: "closest" });
+        const end = (kk) => paths[kk].at(-1).map((v) => v.toFixed(2)).join(", ");
+        work.textContent = `After ${steps} steps — gradient descent: (${end("gd")}), Adam: (${end("adam")}), AdamW: (${end("adamw")}); the lowest loss is at (2, 1).\nGradient descent zig-zags across the steep direction; Adam rescales each parameter's step, so both coordinates move at a similar pace. AdamW also shrinks every parameter by the factor (1 − γλ) each step, so it settles where that pull toward 0 balances the loss, short of (2, 1): weight decay trades a little loss for smaller weights.`;
+      };
+      onTheme(draw);
+      sweep(slider(controls, "steps", 1, 120, 1, steps, (v) => { steps = v; draw(); }), { seconds: 6 });
+      slider(controls, "weight decay λ", 0, 1, 0.05, lam, (v) => { lam = v; draw(); });
     },
   },
 

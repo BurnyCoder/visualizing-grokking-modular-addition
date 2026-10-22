@@ -14,7 +14,7 @@ import { Heatmap } from "../viz/heatmap.js";
 import { cssVar } from "../viz/colors.js";
 import { fft2, fourierBasis } from "../model/fourier.js";
 import { basisName as name } from "../figures/common.js";
-import { frame, onTheme, slider } from "./basics.js";
+import { frame, onTheme, slider, sweep } from "./basics.js";
 
 const f3 = (x) => (Math.abs(x) < 5e-4 ? "0.000" : x.toFixed(3));
 
@@ -60,7 +60,7 @@ export const widgets = {
       };
       onTheme(draw);
       slider(controls, "frequency k", 1, 56, 1, k, (val) => { k = val; draw(); });
-      slider(controls, "phase shift", 0, 6.28, 0.05, phase, (val) => { phase = val; draw(); });
+      sweep(slider(controls, "phase shift", 0, 6.28, 0.05, phase, (val) => { phase = val; draw(); }), { seconds: 6 }); // the wave moves, its coefficients stay on cos k and sin k
       slider(controls, "noise", 0, 2, 0.05, noise, (val) => { noise = val; draw(); });
     },
   },
@@ -84,7 +84,7 @@ export const widgets = {
         }
         hm.draw(g);
       };
-      slider(controls, "index in a (0 = Const, 2k−1 = cos k, 2k = sin k)", 0, 112, 1, i, (v) => { i = v; draw(); });
+      sweep(slider(controls, "index in a (0 = Const, 2k−1 = cos k, 2k = sin k)", 0, 112, 1, i, (v) => { i = v; draw(); }), { seconds: 12 });
       slider(controls, "index in b", 0, 112, 1, j, (v) => { j = v; draw(); });
       slider(controls, "show cos(w(a+b)) instead", 0, 1, 1, combo, (v) => { combo = v; draw(); });
     },

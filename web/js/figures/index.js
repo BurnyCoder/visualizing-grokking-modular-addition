@@ -38,6 +38,7 @@ export const FIGURES = {
   "wlogit-sorted": mod("./weights.js", "wlogit-sorted"),
   "pos-embed": mod("./weights.js", "pos-embed"),
   "wneur-fourier": mod("./weights.js", "wneur-fourier"),
+  "neuron-stars": mod("./weights.js", "neuron-stars"),
   "attn-grid": mod("./activations.js", "attn-grid"),
   "attn-grids-all": mod("./activations.js", "attn-grids-all"),
   "avg-attn": mod("./activations.js", "avg-attn"),

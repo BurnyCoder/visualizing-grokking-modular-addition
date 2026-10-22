@@ -19,7 +19,7 @@ groups:
   - id: weights
     title: "B. Weights seen through the Fourier basis"
     blurb: "The learned matrices, written in the basis of waves. Sparsity here — a few frequencies, nothing else — is the first clue to the algorithm."
-    panels: [freq-norm-race, we-fourier-bars, wl-fourier-bars, we-fourier-heatmap, wl-fourier-heatmap, we-svals, svals-over-training, attn-C-fourier, ov-fourier, head-spectra-over-training, wlogit-sorted, wneur-fourier, pos-embed]
+    panels: [freq-norm-race, we-fourier-bars, wl-fourier-bars, we-fourier-heatmap, wl-fourier-heatmap, we-svals, svals-over-training, attn-C-fourier, ov-fourier, head-spectra-over-training, wlogit-sorted, wneur-fourier, neuron-stars, pos-embed]
   - id: activations
     title: "C. Activations on every input"
     blurb: "What the attention heads and MLP neurons compute for each of the 12,769 inputs, computed live in your browser from the selected checkpoint's weights."

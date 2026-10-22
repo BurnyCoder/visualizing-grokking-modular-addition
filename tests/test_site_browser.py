@@ -175,3 +175,21 @@ def test_hero_and_tour(browser_page):
     assert page.locator("#tour .tour-text [data-num='task.n_train']").count() == 1
     assert page.inner_text("#ctl-player .pb-label").startswith("step 1,601")
     page.click("#tour .tour-close")
+
+
+def test_new_panels_show_the_trained_network(browser_page):
+    """At the end of the paper's run the forward-flow diagram answers 100 + 50 = 37 (mod 113) correctly, the sigmoid
+    panel reports its fits, and alpha-growth recognises k = 14 as a key frequency."""
+    import re
+
+    page, base = browser_page
+    page.goto("about:blank")
+    page.goto(f"{base}/dashboard.html#step=40001&a=100&b=50&freq=14")
+    for fid in ("forward-flow", "sigmoid-linearisation", "alpha-growth"):
+        page.evaluate(f"document.querySelector('#fig-{fid}').scrollIntoView()")
+        page.wait_for_function(f"document.querySelector('#fig-{fid} .fig-note')?.textContent.length > 20", timeout=30_000)
+    page.evaluate(SETTLED)
+    flow = page.evaluate("document.querySelector('#fig-forward-flow svg').textContent")  # SVG: no innerText
+    assert "answer 37" in flow and "✓ correct" in flow, flow[-200:]
+    assert re.search(r"σ\(s₀ − s₁\) explains \d+\.\d %", page.inner_text("#fig-sigmoid-linearisation .fig-note"))
+    assert "a key frequency of this run" in page.inner_text("#fig-alpha-growth .fig-body > .fig-note")

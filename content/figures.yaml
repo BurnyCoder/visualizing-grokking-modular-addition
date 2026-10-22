@@ -285,6 +285,7 @@ pcorrect-grid:
   expect: "During memorisation the training pairs are bright and the test pairs dark (a speckle pattern = the random split); after grokking everything is bright."
   chapter: "18-watch-it-form.html"
   producer: "geometry.frame"
+  anim: {run: paper, range: grokking, speed: 1, loop: loop}  # {{anim:pcorrect-grid}}: 0 to 1.1·t3, poster = end of range
 entropy-grid:
   title: "Uncertainty on every input"
   what: "Normalised entropy of the prediction (0 = certain, 1 = uniform guess) for all (a, b)."

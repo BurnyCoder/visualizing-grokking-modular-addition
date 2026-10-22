@@ -1,15 +1,16 @@
 // dashboard.js — controller of the Big Dashboard's control bar and guided tour.
 //
-// Local explanation: fills the run selector from the manifest, binds the step slider (snapping to stored
-// checkpoints of the selected run, with the phase bands drawn underneath), the play button, the a/b/a′/head/
-// neuron/frequency inputs and keyboard ←/→, all two-way bound to the shared state; the tour steps through
-// content/tour.yaml, setting the state and highlighting one panel at a time.
+// Local explanation: fills the run selector from the manifest, mounts the full player bar (ui/player-bar.js: play,
+// scrubber with phase bands, speed, loop, range chips, keyboard) on the page's Player, binds the a/b/a′/head/neuron/
+// frequency inputs two-way to the shared state; the tour steps through content/tour.yaml, setting the state and
+// highlighting one panel at a time.
 // Global context: the panels themselves are ordinary figures that subscribe to the same state.
-// Source: HTML range input (https://developer.mozilla.org/docs/Web/HTML/Element/input/range).
-import { manifest, nearestIndex as nearest, run } from "./core/data.js";
-import { set, state, subscribe } from "./core/state.js";
+// Source: HTML number input (https://developer.mozilla.org/docs/Web/HTML/Element/input/number).
+import { manifest, run } from "./core/data.js";
+import { set, subscribe } from "./core/state.js";
 import { reducedMotion } from "./core/motion.js";
-import { cssVar } from "./viz/colors.js";
+import { pagePlayer } from "./ui/page-player.js";
+import { playerBar } from "./ui/player-bar.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -18,28 +19,12 @@ export async function initDashboard() {
   const sel = $("ctl-run");
   for (const r of m.runs) sel.append(new Option(`${r.id} — ${r.title}`, r.id));
   sel.onchange = () => set({ run: sel.value });
-  const slider = $("ctl-step"), label = $("ctl-step-label");
-  let steps = [];
-  let showStep = () => {};
+  playerBar($("ctl-player"), pagePlayer(), { variant: "full", keys: true });
   subscribe(["run"], async (s) => {
     sel.value = s.run;
     const r = await run(s.run);
-    steps = r.ckpt_steps;
-    slider.max = String(steps.length - 1);
-    drawPhases(r);
-    $("ctl-freq").value = String(s.freq);
     setStatus(`run ${r.id}: key frequencies ${r.key_freqs.join(", ")}; phases ${fmtPhases(r.phases)}`);
-    set({ step: steps[nearest(steps, s.step)] });
-    showStep(s); // also when the step value itself did not change
   });
-  showStep = (s) => { // move the slider/label to the stored checkpoint nearest to s.step
-    if (!steps.length) return;
-    const i = nearest(steps, s.step);
-    slider.value = String(i);
-    label.textContent = `step ${steps[i].toLocaleString()}`;
-  };
-  subscribe(["step"], showStep);
-  slider.oninput = () => set({ step: steps[Number(slider.value)] });
   for (const [id, key, max] of [["ctl-a", "a", 112], ["ctl-b", "b", 112], ["ctl-ap", "ap", 112], ["ctl-neuron", "neuron", 511], ["ctl-freq", "freq", 56]]) {
     const input = $(id);
     subscribe([key], (s) => { input.value = String(s[key]); });
@@ -48,22 +33,6 @@ export async function initDashboard() {
   const head = $("ctl-head");
   subscribe(["head"], (s) => { head.value = String(s.head); });
   head.onchange = () => set({ head: Number(head.value) });
-  let timer = null; // play/pause through checkpoints
-  $("ctl-play").onclick = (e) => {
-    if (timer) { clearInterval(timer); timer = null; e.target.textContent = "▶"; return; }
-    e.target.textContent = "❚❚";
-    timer = setInterval(() => {
-      const i = nearest(steps, state.step);
-      if (i >= steps.length - 1) { clearInterval(timer); timer = null; e.target.textContent = "▶"; return; }
-      set({ step: steps[i + 1] });
-    }, 220);
-  };
-  document.addEventListener("keydown", (e) => {
-    if (e.target.matches("input, select, textarea")) return;
-    const i = nearest(steps, state.step);
-    if (e.key === "ArrowRight") set({ step: steps[Math.min(i + 1, steps.length - 1)] });
-    if (e.key === "ArrowLeft") set({ step: steps[Math.max(i - 1, 0)] });
-  });
   initTour();
 }
 
@@ -73,22 +42,6 @@ function fmtPhases(ph) {
 }
 
 function setStatus(t) { $("ctl-status").textContent = t; }
-
-/** Colour bands under the slider for the three phases of the selected run. */
-function drawPhases(r) {
-  const strip = $("ctl-phases");
-  strip.replaceChildren();
-  const ph = r.phases, end = r.ckpt_steps.at(-1);
-  if (!ph || !ph.t1) return;
-  for (const [a, b, c] of [[0, ph.t1, "--phase1"], [ph.t1, ph.t2, "--phase2"], [ph.t2, ph.t3, "--phase3"]]) {
-    if (a == null || b == null) continue;
-    const span = document.createElement("span");
-    span.style.left = `${(100 * a) / end}%`;
-    span.style.width = `${(100 * (b - a)) / end}%`;
-    span.style.background = cssVar(c).replace(/0\.\d+\)$/, "0.45)");
-    strip.append(span);
-  }
-}
 
 /** Guided tour through content/tour.yaml steps. */
 function initTour() {

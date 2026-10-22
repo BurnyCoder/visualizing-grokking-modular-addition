@@ -49,3 +49,25 @@ def test_figures_use_gated_watch():
     old = [f"{p.name}:{i}" for p in (REPO_ROOT / "web" / "js").rglob("*.js")
            for i, line in enumerate(p.read_text(encoding="utf-8").splitlines(), 1) if re.search(r"\bwatch\(\s*\[", line)]
     assert not old, f"two-argument watch( calls left: {old}"
+
+
+def test_anim_and_scene_macros():
+    """{{anim:id}} renders the figure as a scoped, scroll-played animation configured by its `anim:` block in
+    figures.yaml; {{scene:id}} renders a scrollytelling marker from content/scenes.yaml; unknown ids and figures
+    without an `anim:` block are build errors."""
+    from grokviz import site_build as sb
+
+    sb._md = sb.markdown()
+    figs = {"f": {"title": "F", "what": "w", "anim": {"run": "wd1_s0", "range": "grokking", "poster": 15400}}, "g": {"title": "G", "what": "w"}}
+    b = sb.Build(glossary={}, symbols={}, quotes={}, refs={}, figures=figs, summary={}, js_figures={"f", "g"}, js_widgets=set(),
+                 scenes={"s1": {"play": {"from": 1000, "to": 15000}}})
+    html = sb.expand("{{anim:f}}", b, "p")
+    assert "data-scope" in html and 'data-run="wd1_s0"' in html and 'data-step="15400"' in html and 'class="anim-bar"' in html
+    anim = json.loads(re.search(r"data-anim='([^']*)'", html).group(1))
+    assert anim["range"] == "grokking"
+    scene = sb.expand("{{scene:s1}}", b, "p")
+    assert scene.startswith('<div class="scene"') and json.loads(re.search(r"data-scene='([^']*)'", scene).group(1))["play"]["to"] == 15000
+    assert "fig-expand" in sb.expand("{{fig:g}}", b, "p"), "every figure has an enlarge button"
+    assert not b.errors
+    sb.expand("{{anim:g}} {{anim:missing}} {{scene:missing}}", b, "p")
+    assert len(b.errors) == 3, b.errors

@@ -34,5 +34,10 @@ The phase-by-phase diagram is in the README ([What happens when you run it](../R
   - the step cursor (`viz/overlay.js`) and heatmap marks are overlays moved with CSS, not chart redraws;
   - an element inside `[data-scope]` gets its own step (`core/state.js` `storeOf`), so an animated figure can play
     without moving the rest of the page.
+- **Playback.** A Player (`web/js/core/player.js`) moves a fractional checkpoint index by elapsed time × speed
+  (10 checkpoints per second at 1×), so slow frames are skipped rather than queued. It publishes the nearest stored
+  step plus the interpolated `stepf` while playing, and the stored frame when paused. The page has one Player
+  (`ui/page-player.js`) shared by the dashboard's player bar, the chapter scrubber, scenes and the tour; each
+  `{{anim:id}}` figure has its own, started by `ui/scrollplay.js` when on screen.
 - **Heavy compute in Python, per-input compute in the browser.** Curves, spectra and geometry are precomputed; any
   (a, b) / neuron / head view is computed from float16 weights by `web/js/model/grokmodel.js` (tested against torch).

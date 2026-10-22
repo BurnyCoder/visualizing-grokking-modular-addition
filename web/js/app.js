@@ -1,8 +1,9 @@
 // app.js — bootstrap loaded by every page (ES module).
 //
 // Local explanation: (1) theme toggle, (2) render every math element with KaTeX, (3) glossary/symbol tooltips,
-// (4) lazily create each figure ([data-fig]) and widget ([data-widget]) when it scrolls into view, (5) start the
-// dashboard controller on the dashboard page.
+// (4) lazily create each figure ([data-fig]) and widget ([data-widget]) when it scrolls into view — an {{anim:id}}
+// figure also gets its own player (ui/anim-figure.js), (5) the ⤢ enlarge overlay, (6) scrollytelling scenes, (7) start
+// the dashboard controller on the dashboard page.
 // Global context: pages are static HTML produced by site_build.py; all interactivity is attached here.
 // Sources: IntersectionObserver (https://developer.mozilla.org/docs/Web/API/Intersection_Observer_API);
 // katex.render (https://katex.org/docs/api).
@@ -11,6 +12,7 @@ import { FIGURES } from "./figures/index.js";
 import { WIDGETS } from "./widgets/index.js";
 import "./core/motion.js"; // sets html.still for ?still=1 captures before anything draws
 import "./core/hooks.js"; // window.grokviz.anim test/capture hooks on every page
+import { initExpand } from "./ui/expand.js";
 
 const cfg = window.GROKVIZ || {}; // per-page settings injected by the build (root path, page kind)
 
@@ -50,6 +52,7 @@ function initLazy(selector, registry, attr) {
       const body = e.target.querySelector(".fig-body") || e.target;
       if (!loader) { body.innerHTML = `<p class="loading">Unknown ${attr} “${id}”.</p>`; continue; }
       loader().then((mod) => mod.render(body, e.target.dataset)).then(() => renderMath(e.target))
+        .then(() => e.target.dataset.anim && import("./ui/anim-figure.js").then((m) => m.mountAnim(e.target)))
         .catch((err) => { console.error(err); body.innerHTML = `<p class="draw-error">Could not draw this (${err.message}).</p>`; });
     }
   }, { rootMargin: "400px 0px" });
@@ -61,6 +64,8 @@ renderMath();
 initTooltips(cfg.root || "./");
 initLazy("[data-fig]", FIGURES, "fig");
 initLazy("[data-widget]", WIDGETS, "widget");
+initExpand();
+if (document.querySelector(".scene")) import("./ui/scrollplay.js").then((m) => m.initScenes());
 // The chapter list is a <details>: open beside the text on wide screens, collapsed above it on phones (same breakpoint as main.css).
 document.querySelectorAll("details.toc").forEach((d) => { d.open = matchMedia("(min-width: 52.01rem)").matches; });
 if (document.body.classList.contains("dashboard-page")) import("./dashboard.js").then((m) => m.initDashboard());

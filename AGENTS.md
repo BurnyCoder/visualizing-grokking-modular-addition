@@ -43,6 +43,11 @@ Treat it as read-only reference: port code from it with `Source:` links instead 
   when the figure shows a stored frame, and `theme: false` when its colours do not depend on the theme. Move cursors
   and marks with `Plot.cursor`, `Heatmap.marks` and `follow(body, keys, fn)`; never call `Plotly.relayout` per frame.
   Bind Plotly events with `Plot.on`.
+- **Animated figures.** Any figure can be placed as an animation with `{{anim:id}}` once it has an `anim:` block in
+  `content/figures.yaml` (rules in `docs/content-style.md`). The figure itself needs no player code: it reads `step`
+  (the stored frame), `stepf` (fractional step, only while playing) and `playing` from its store. Playback goes through
+  `core/player.js` (one Player per store; the page's is `ui/page-player.js`) and its controls through `ui/player-bar.js`.
+  Add browser tests for new animations in `tests/test_site_browser.py`.
 - **Prose numbers.** Every number in the prose comes from `summary.py`, referenced as `{{num:key}}`; never type one by hand.
 - **Preview.** Preview with `uv run python -m grokviz.serve --dir site --port 8766` (no-cache headers, so edited ES
   modules reload). This server is also the "site" entry in `.claude/launch.json`.

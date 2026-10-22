@@ -107,7 +107,21 @@ th, td { border: 1px solid var(--line); padding: 0.3rem 0.6rem; text-align: left
 th { background: var(--bg-soft); }
 
 /* ---------- figures ---------- */
-.fig { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 0.9rem 1rem 0.6rem; margin: 1.6rem 0; min-width: 0; }
+.fig { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 0.9rem 1rem 0.6rem; margin: 1.6rem 0; min-width: 0; position: relative; }
+/* ⤢ enlarge button (web/js/ui/expand.js); hidden in ?still=1 captures */
+.fig-expand { position: absolute; top: 0.55rem; right: 0.6rem; font: inherit; font-size: 0.95rem; line-height: 1; background: transparent; color: var(--ink-soft); border: 1px solid transparent; border-radius: 6px; padding: 0.15rem 0.35rem; cursor: pointer; opacity: 0.6; }
+.fig:hover .fig-expand, .fig-expand:focus-visible { opacity: 1; border-color: var(--line); }
+.fig figcaption { padding-right: 2rem; } /* room for the button */
+html.still .fig-expand, .fig-modal .fig-expand { display: none; }
+.fig-modal { position: fixed; inset: 0; z-index: 80; background: rgba(0, 0, 0, 0.55); display: flex; align-items: center; justify-content: center; padding: 1.5vh 2vw; }
+.fig-modal-box { position: relative; background: var(--card); width: min(1500px, 96vw); max-height: 100%; overflow: auto; border-radius: 12px; padding: 0.4rem; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35); }
+.fig-modal-close { position: sticky; top: 0.3rem; float: right; z-index: 2; }
+.fig-modal .fig { margin: 0; border: none; }
+.fig-modal .heatmap-stage { width: min(100%, 72vh) !important; } /* enlarged grids, still fitting the screen */
+.fig-modal .fig-body > .plot { height: min(62vh, 640px) !important; }
+body.modal-open { overflow: hidden; }
+@media (max-width: 52rem) { .fig-modal { padding: 0; } .fig-modal-box { width: 100vw; height: 100%; border-radius: 0; } }
+.anim-bar:empty { display: none; }
 /* large figures break out of the 48rem text column to 62rem, but only where the window has room for it */
 @media (min-width: 80rem) { .chapter .fig.l, .chapter .fig.xl { margin-left: calc((48rem - 62rem) / 2); margin-right: calc((48rem - 62rem) / 2); } }
 .fig figcaption { margin-bottom: 0.4rem; }
@@ -148,6 +162,24 @@ th { background: var(--bg-soft); }
 .scrubber-wrap input[type=range] { width: 100%; position: relative; z-index: 2; background: transparent; }
 .phase-strip { position: absolute; left: 0; right: 0; top: 50%; height: 14px; transform: translateY(-50%); z-index: 1; border-radius: 4px; overflow: hidden; }
 .phase-strip span { position: absolute; top: 0; bottom: 0; }
+/* player bar (web/js/ui/player-bar.js): full on the dashboard, compact in chapters, mini inside animated figures */
+.player-bar { flex: 1 1 32rem; min-width: 0; }
+.pb-main { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem 0.5rem; }
+.pb-main .scrubber-wrap { flex: 1 1 14rem; }
+.pb-icon { padding: 0.15rem 0.4rem; font-size: 0.8rem; }
+.pb-play { min-width: 2.4rem; }
+.pb-label { font-size: 0.85rem; white-space: nowrap; }
+.pb-speed { font: inherit; font-size: 0.82rem; }
+.pb-range { position: absolute; bottom: -3px; height: 3px; background: var(--accent); border-radius: 2px; pointer-events: none; } /* the play range under the scrubber */
+.pb-chips { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.3rem; }
+.chip { font: inherit; font-size: 0.74rem; background: transparent; color: var(--ink-soft); border: 1px solid var(--line); border-radius: 999px; padding: 0.05rem 0.55rem; cursor: pointer; }
+.chip:hover, .chip.active { border-color: var(--accent); color: var(--ink); }
+.chip.active { background: color-mix(in srgb, var(--accent) 15%, transparent); }
+.pb-help { font-size: 0.78rem; color: var(--ink-soft); margin-top: 0.3rem; }
+.pb-help kbd { font-family: var(--mono); border: 1px solid var(--line); border-radius: 4px; padding: 0 0.3rem; }
+.player-bar.mini { margin-top: 0.4rem; }
+.player-bar.mini .pb-label { font-size: 0.78rem; }
+.pb-slot { flex: 1 1 20rem; display: flex; }
 .btn { font: inherit; background: var(--bg-soft); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 0.15rem 0.6rem; cursor: pointer; }
 .btn:hover { border-color: var(--accent); }
 .status { font-size: 0.78rem; color: var(--ink-soft); }

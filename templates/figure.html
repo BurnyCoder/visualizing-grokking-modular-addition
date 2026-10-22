@@ -1,13 +1,20 @@
 {#- figure.html — one figure/panel: title, one-sentence description, live render area, expandable explanation.
-    Local: `fig` comes from content/figures.yaml; the JS registry (assets/js/figures/) fills `.fig-body`.
+    Local: `fig` comes from content/figures.yaml; the JS registry (assets/js/figures/) fills `.fig-body`. With
+    `fig.anim` ({{anim:id}}) the figure is a scope with its own step (data-scope, data-step = poster frame), plays
+    the fixed run `fig.anim.run`, and gets a mini player bar (web/js/ui/anim-figure.js). The ⤢ button enlarges any
+    figure in an overlay (web/js/ui/expand.js).
     Global: identical markup inside chapters and dashboard panels; Playwright screenshots of figure.html?id=...
     become the report figures, so every figure has exactly one implementation. -#}
-<figure class="fig {{ fig.size or 'm' }}" id="fig-{{ fig.id }}" data-fig="{{ fig.id }}" {% if fig.run %}data-run="{{ fig.run }}"{% endif %}>
+<figure class="fig {{ fig.size or 'm' }}{% if fig.anim %} anim{% endif %}" id="fig-{{ fig.id }}" data-fig="{{ fig.id }}"
+  {%- if fig.anim %} data-run="{{ fig.anim.run }}" data-scope data-anim='{{ fig.anim | tojson }}'{% if fig.anim.poster %} data-step="{{ fig.anim.poster }}"{% endif %}
+  {%- elif fig.run %} data-run="{{ fig.run }}"{% endif %}>
   <figcaption>
     <h3 class="fig-title">{{ fig.title }}</h3>
+    <button type="button" class="fig-expand" aria-label="Enlarge this figure" title="Enlarge">⤢</button>
     <p class="fig-what">{{ fig.what_html | safe }}</p>
   </figcaption>
   <div class="fig-body" aria-live="polite"><p class="loading">Loading…</p></div>
+  {% if fig.anim %}<div class="anim-bar"></div>{% endif %}
   <details class="fig-more">
     <summary>How to read it{% if fig.eq %} · the math{% endif %}</summary>
     {% if fig.eq %}<div class="fig-eq">{{ fig.eq_html | safe }}</div>{% endif %}

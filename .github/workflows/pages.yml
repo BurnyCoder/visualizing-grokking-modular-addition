@@ -1,6 +1,7 @@
 # pages.yml — build the website on GitHub Actions and publish it to GitHub Pages.
 # Global context: the site's HTML is generated from content/ by src/grokviz/site_build.py (no torch needed); its data
-# (≈250 MB of arrays and weights) lives in a Hugging Face dataset pinned by site-data.lock and is downloaded here.
+# (≈640 MB of arrays and weights, docs/deployment.md) lives in a Hugging Face dataset pinned by site-data.lock and is
+# downloaded here.
 # Sources: actions/upload-pages-artifact + actions/deploy-pages
 # (https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages);
 # astral-sh/setup-uv (https://github.com/astral-sh/setup-uv).

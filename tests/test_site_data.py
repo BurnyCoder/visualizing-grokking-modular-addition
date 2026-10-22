@@ -37,3 +37,17 @@ def test_every_prose_number_is_in_the_summary():
     """summary.json holds a value for every number key (the site build fails otherwise; this pins the data side)."""
     summary = json.loads((DATA / "summary.json").read_text(encoding="utf-8"))
     assert all("value" in v for v in summary.values()) and "rchecks.n_match" in summary and "hyp.summary" in summary
+
+
+def test_every_run_can_animate_and_the_budget_holds():
+    """Every run ships weight snapshots across training (export.snapshot_steps), the attention lookup tables and no
+    unused reference weights, and the whole site data stays under the project's 0.8 GB budget (docs/deployment.md)."""
+    manifest = json.loads((DATA / "manifest.json").read_text(encoding="utf-8"))
+    total = sum(f.stat().st_size for f in DATA.rglob("*") if f.is_file())
+    assert total < 0.8e9, f"site data {total / 1e6:.0f} MB exceeds the 0.8 GB budget"
+    for run in manifest["runs"]:
+        grokked = bool(run["phases"].get("t3"))
+        assert len(run["weight_steps"]) >= (15 if grokked else 10), f"{run['id']}: {len(run['weight_steps'])} weight snapshots"
+        assert "attn_C" in run["arrays"] and "w_ref_f32" not in run["arrays"], run["id"]
+    summary = json.loads((DATA / "summary.json").read_text(encoding="utf-8"))
+    assert {"wd1_s0", "wd1_s10"} <= set(summary["hypotheses.per_run"]["value"]) and summary["hypotheses.per_run"]["fmt"] == "json"

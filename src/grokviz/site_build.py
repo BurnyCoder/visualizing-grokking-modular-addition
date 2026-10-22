@@ -147,6 +147,9 @@ def expand(text: str, b: Build, page: str) -> str:
             if key not in b.summary:
                 b.errors.append(f"{page}: number '{key}' missing from summary.json")
                 return "?"
+            if b.summary[key].get("fmt") == "json":  # structured data for the figures, not a number for prose
+                b.errors.append(f"{page}: '{key}' is figure data (fmt json), not a prose number")
+                return "?"
             return f'<span class="num" data-num="{key}">{fmt_number(b.summary[key])}</span>'
         if kind in ("fig", "anim"):
             if key not in b.figures:

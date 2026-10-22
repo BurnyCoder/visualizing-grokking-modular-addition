@@ -4,7 +4,9 @@ Local explanation: every array the site plots is written as a little-endian bina
 `site/data/runs/<run_id>/<name>.bin` with an entry in `site/data/manifest.json` describing its dtype, shape,
 optional linear quantisation (uint8 with min/max) and a one-line description; numbers that appear in the
 prose go to `site/data/summary.json`. Weights for the in-browser model are exported as float16 vectors in the
-model's state_dict order (layout in the manifest), for hero checkpoints of the paper run and of seed 0.
+model's state_dict order (layout in the manifest): densely for the two showcase runs (paper, seed 0) and, for every
+other run, at the checkpoints chosen by `snapshot_steps` (dense through cleanup, sparse afterwards), so every run can
+be animated in the browser.
 Global context: the website is static, so all heavy computation happens here once; the browser only fetches
 and draws (or runs the tiny model for per-input views). The data folder is published to a Hugging Face dataset
 and downloaded by the Pages deploy (docs/deployment.md).
@@ -14,6 +16,7 @@ IEEE-754 half precision (https://en.wikipedia.org/wiki/Half-precision_floating-p
 
 from __future__ import annotations  # postponed annotations
 
+import bisect  # nearest checkpoint to a target step
 import hashlib  # file digests
 import json  # manifest
 import logging  # module logger
@@ -77,8 +80,28 @@ def weight_vector(state: dict[str, torch.Tensor], names: list[str]) -> np.ndarra
     return np.concatenate([state[n].detach().cpu().numpy().reshape(-1) for n in names])
 
 
-def export_run(root: Path, store: RunStore, p: int, weight_every: int | None) -> dict:
-    """Export one run; return its manifest entry."""
+def snapshot_steps(ckpt_steps: list[int], t3: int | None, fine: int, coarse: int, margin: int = 2000) -> list[int]:
+    """Indices of the checkpoints whose weights are exported for a non-showcase run: one every `fine` steps up to
+    t3 + `margin` (memorisation, circuit formation and cleanup, where the network changes most), then one every `coarse`
+    steps; only the coarse grid when no t3 was detected (runs that never grok); the final checkpoint always, and only it
+    when both spacings are 0."""
+    last = ckpt_steps[-1]
+    targets: set[int] = set()
+    if fine and t3 is not None:
+        targets |= set(range(0, min(last, t3 + margin) + 1, fine))
+    if coarse:
+        targets |= set(range(0, last + 1, coarse))
+
+    def nearest(s: int) -> int:  # index of the stored checkpoint closest to step s (ckpt_steps is sorted)
+        i = bisect.bisect_left(ckpt_steps, s)
+        return min((j for j in (i - 1, i) if 0 <= j < len(ckpt_steps)), key=lambda j: abs(ckpt_steps[j] - s))
+
+    return sorted({nearest(s) for s in targets} | {len(ckpt_steps) - 1})
+
+
+def export_run(root: Path, store: RunStore, p: int, weight_every: int | None, snapshots: tuple[int, int] = (0, 0)) -> dict:
+    """Export one run; return its manifest entry. Weights: every `weight_every`-th checkpoint (showcase runs), else
+    the checkpoints `snapshot_steps` picks with the (fine, coarse) spacing `snapshots`."""
     w = Writer(root, store.run_id)
     a = store.dir / "analysis"
     m = np.load(a / "ckpt_metrics.npz")
@@ -102,6 +125,7 @@ def export_run(root: Path, store: RunStore, p: int, weight_every: int | None) ->
     w.add("we_svals", m["we_svals"], "singular values of W_E (d x p)")
     w.add("ssw", m["ssw"], "sum of squared weights per parameter", columns=[str(x) for x in m["param_names"]])
     w.add("avg_attn", m["avg_attn"], "mean attention from '=' to (a, b, =) per head")
+    w.add("attn_C", m["attn_C"], "attention score lookup C_j[t] per head (paper App. C.1.3)", dtype="f16")
     w.add("attn_C_fourier", m["attn_C_fourier"], "attention lookup C_j in the Fourier basis", dtype="f16")
     w.add("ov_fourier", m["ov_fourier"], "Fourier norms of each head's OV output", dtype="f16")
     w.add("neuron_freq", m["neuron_freq"], "best frequency of each neuron", dtype="i16")
@@ -144,14 +168,11 @@ def export_run(root: Path, store: RunStore, p: int, weight_every: int | None) ->
     names = list(store.state_dict(0).keys())
     shapes = {k: list(v.shape) for k, v in store.state_dict(0).items()}
     weight_steps = []
-    idx = list(range(0, len(store.ckpt_steps), weight_every)) if weight_every else []
-    if len(store.ckpt_steps) - 1 not in idx:
-        idx.append(len(store.ckpt_steps) - 1)
+    n = len(store.ckpt_steps)
+    idx = sorted(set(range(0, n, weight_every)) | {n - 1}) if weight_every else snapshot_steps(store.ckpt_steps, ph.get("t3"), *snapshots)
     for t in idx:
         w.add(f"w_{store.ckpt_steps[t]}", weight_vector(store.state_dict(t), names), f"weights at step {store.ckpt_steps[t]}", dtype="f16")
         weight_steps.append(store.ckpt_steps[t])
-    final_f32 = store.meta.get("paper_analysis_index", len(store.ckpt_steps) - 1)
-    w.add("w_ref_f32", weight_vector(store.state_dict(final_f32), names), "reference weights (float32)", step=store.ckpt_steps[final_f32])
     return {
         "id": store.run_id, "title": store.meta.get("title", store.run_id), "kind": store.meta["kind"],
         "group": store.meta.get("group", "paper"), "split_seed": store.meta["split_seed"], "init_seed": store.meta.get("init_seed"),
@@ -173,8 +194,9 @@ def export_site_data(ctx: PipelineContext) -> None:
         if not (run_dir / "analysis" / "ckpt_metrics.npz").exists():
             continue
         store = RunStore(run_dir)
-        weight_every = (2 if store.run_id == "paper" else 5) if store.run_id in HERO_RUNS else None  # showcase runs only
-        runs.append(export_run(root, store, ctx.cfg.p, weight_every))
+        weight_every = (2 if store.run_id == "paper" else 5) if store.run_id in HERO_RUNS else None  # showcase runs: dense
+        snapshots = tuple((ctx.cfg.site_weight_snapshots + [0, 0])[:2])  # (fine, coarse) spacing for the other runs
+        runs.append(export_run(root, store, ctx.cfg.p, weight_every, snapshots))
         log.info("exported %s (%d arrays)", store.run_id, len(runs[-1]["arrays"]))
     _, names = fourier.fourier_basis(ctx.cfg.p)
     masks = {}

@@ -22,8 +22,13 @@ Step semantics: checkpoint t holds the parameters after `ckpt_steps[t]` optimize
   (frames of the 2D-Fourier maps `spec_*`); other runs have these maps at their final checkpoint only.
   `adam_scalars` (with `steps`) and `update_norm` exist for our retrained runs only.
 - Array files `runs/<id>/<name>.bin`: little-endian; `dtype` ∈ `f32`, `f16`, `i16`, `u8q` (uint8, value = min + q/255·(max − min)).
-  Shapes are row-major; e.g. `we_fourier` is `[T, 113]` (Const, cos 1, sin 1, …, sin 56).
-- Weights `w_<step>.bin`: float16 flat vector of the state_dict in `param_layout` order (in-browser model);
-  `w_ref_f32.bin`: float32 reference checkpoint.
+  Shapes are row-major; e.g. `we_fourier` is `[T, 113]` (Const, cos 1, sin 1, …, sin 56); `attn_C` is `[T, 4, 113]`, each head's
+  attention score lookup C_j[t] (paper App. C.1.3), float16.
+- Weights `w_<step>.bin`: float16 flat vector of the state_dict in `param_layout` order (in-browser model). Showcase runs
+  store every 2nd (`paper`) or 5th (`wd1_s0`) checkpoint. Every other run stores the checkpoints chosen by `export.snapshot_steps`:
+  every `fine` steps up to t3 + 2,000, then every `coarse` steps (only the coarse grid when no t3 was detected), plus the
+  final weights. Spacing comes from `GROKVIZ_SITE_WEIGHT_SNAPSHOTS` (default `1000,4000`).
 - `train_mask_seed<s>.bin`: 12,769 bytes, 1 = training pair (row a·113 + b).
-- `summary.json`: `{key: {value, fmt}}`, every number quoted in the prose (`src/grokviz/summary.py`).
+- `summary.json`: `{key: {value, fmt}}`, every number quoted in the prose (`src/grokviz/summary.py`). Entries with
+  `fmt: "json"` are structured data for the figures (`hypotheses.verdict`, `hypotheses.per_run`, `hypotheses.controls`
+  from `reports/tables/hypotheses.json`); the site build rejects them in `{{num:}}`.

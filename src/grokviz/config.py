@@ -101,6 +101,8 @@ class Config:
     hf_runs_repo: str = _setting("GROKVIZ_HF_RUNS_REPO", str)
     hf_site_data_repo: str = _setting("GROKVIZ_HF_SITE_DATA_REPO", str)
     hf_collection_title: str = _setting("GROKVIZ_HF_COLLECTION_TITLE", str)
+    # --- website data ---
+    site_weight_snapshots: list = _setting("GROKVIZ_SITE_WEIGHT_SNAPSHOTS", parse_seed_list)  # [fine, coarse] spacing (steps) of exported weights
 
 
 def export_process_env(env_file: Path | None = None) -> None:

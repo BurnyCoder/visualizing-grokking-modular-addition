@@ -1,13 +1,15 @@
 // heatmap.js — fast canvas heatmaps for 113×113 grids (and other small matrices) with hover and click.
 //
 // Local explanation: `Heatmap` draws a rows×cols array into an offscreen canvas one pixel per cell, scales it up
-// with pixelated rendering, shows a tooltip "(row, col): value" on hover and calls `onClick(row, col)` on click.
+// with pixelated rendering, shows a tooltip "(row, col): value" on hover and calls `onClick(row, col)` on click;
+// `marks` (viz/overlay.js GridMarks) outlines a selected cell, column or row on top without redrawing the canvas.
 // Colour scale: diverging (centred at 0, symmetric limits) for signed data or sequential for non-negative data,
 // with a small colour bar. Convention throughout the site (as in the paper's Fig. 4): rows = a, columns = b.
 // Global context: neuron grids, attention grids, logit grids, Fourier-coefficient maps and train/test masks
 // all use this; canvas instead of Plotly keeps redraws fast while scrubbing through training.
 // Source: Canvas ImageData (https://developer.mozilla.org/docs/Web/API/ImageData).
-import { rdbu, viridis, cssVar } from "./colors.js";
+import { rdbu, viridis } from "./colors.js";
+import { GridMarks } from "./overlay.js";
 
 const tooltip = () => document.getElementById("tooltip");
 
@@ -20,15 +22,19 @@ export class Heatmap {
     this.o = { size: 260, diverging: true, rowLabel: "a", colLabel: "b", format: (v) => v.toPrecision(3), ...o };
     const wrap = document.createElement("div");
     wrap.className = "heatmap-wrap";
+    const stage = document.createElement("div"); // positioned box exactly around the canvas, holds the marks
+    stage.className = "heatmap-stage";
+    stage.style.width = `${this.o.size}px`;
     this.canvas = document.createElement("canvas");
     this.canvas.width = this.o.cols; // one canvas pixel per cell
     this.canvas.height = this.o.rows;
-    this.canvas.style.width = `${this.o.size}px`;
     if (this.o.height) this.canvas.style.height = `${this.o.height}px`; // very wide matrices (steps × frequencies): fixed height
     else this.canvas.style.aspectRatio = `${this.o.cols} / ${this.o.rows}`; // otherwise keep cells square when the width shrinks
+    stage.append(this.canvas);
+    this.marks = new GridMarks(stage, this.o.rows, this.o.cols);
     this.bar = document.createElement("div");
     this.bar.className = "colorbar";
-    wrap.append(this.canvas, this.bar);
+    wrap.append(stage, this.bar);
     parent.append(wrap);
     this.ctx = this.canvas.getContext("2d");
     this.values = null;
@@ -84,7 +90,6 @@ export class Heatmap {
     cx.putImageData(img, 0, 0);
     this.bar.replaceChildren(Object.assign(document.createElement("span"), { textContent: this.o.format(lo) }), c,
       Object.assign(document.createElement("span"), { textContent: this.o.format(hi) }));
-    this.bar.style.color = cssVar("--ink-soft");
   }
 }
 

@@ -68,6 +68,7 @@ export const FIGURES = {
   "logit-fourier-2d": mod("./output.js", "logit-fourier-2d"),
   "clock-vs-pizza": mod("./output.js", "clock-vs-pizza"),
   "grad-norms": mod("./gradients.js", "grad-norms"),
+  "weight-norms": mod("./gradients.js", "weight-norms"),
   "loss-vs-norm": mod("./gradients.js", "loss-vs-norm"),
   "grad-alignment": mod("./gradients.js", "grad-alignment"),
   "adam-alignment": mod("./gradients.js", "adam-alignment"),

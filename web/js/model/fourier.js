@@ -2,7 +2,8 @@
 //
 // Local explanation: `fourierBasis(p)` returns the p × p matrix F whose rows are the constant vector and, for each
 // frequency k = 1 … (p − 1)/2, cos(2πkx/p) and sin(2πkx/p), each scaled to length 1 (paper order: Const, cos 1,
-// sin 1, cos 2, …); `fft2(G, p)` returns C = F G Fᵀ, the coefficients of a grid G over (a, b) on the 2D basis F_i ⊗ F_j.
+// sin 1, cos 2, …); `fft2(G, p)` returns C = F G Fᵀ, the coefficients of a grid G over (a, b) on the 2D basis F_i ⊗ F_j;
+// `freqCoeffs` projects many units on one frequency's cos/sin pair; `torusPoints` places inputs at their frequency-k angles.
 // Global context: the same basis as src/grokviz/fourier.py, used by every Fourier view on the site, the ablation
 // playground (model/ablation.js) and the teaching widgets. Pure module, testable with Node.
 // Sources: paper Sec. 4 and code `fourier_basis` (https://arxiv.org/abs/2301.05217); unitary DFT
@@ -36,6 +37,20 @@ export function freqCoeffs(vectors, p, k) {
     for (let j = 0; j < n; j++) { x[j] += c * v[j]; y[j] += s * v[j]; }
   }
   return [x, y];
+}
+
+/**
+ * Every input (a, b) on a torus (flat [x, y, z] per input, index a·p + b): angle w_k·a around the ring (radius `ring`),
+ * angle w_k·b around the tube (radius `tube`), so inputs with one answer a + b lie on one helix (figure `torus-3d`).
+ * Source: torus parametrisation (https://en.wikipedia.org/wiki/Torus#Geometry).
+ */
+export function torusPoints(p, k, ring, tube) {
+  const xyz = new Float32Array(3 * p * p), w = (2 * Math.PI * k) / p;
+  for (let a = 0; a < p; a++) for (let b = 0; b < p; b++) {
+    const i = 3 * (a * p + b), r = ring + tube * Math.cos(w * b); // distance from the torus axis
+    xyz[i] = r * Math.cos(w * a); xyz[i + 1] = tube * Math.sin(w * b); xyz[i + 2] = r * Math.sin(w * a);
+  }
+  return xyz;
 }
 
 /** 2D Fourier transform of a p×p grid (rows a, cols b): C = F G Fᵀ (orthonormal basis). */

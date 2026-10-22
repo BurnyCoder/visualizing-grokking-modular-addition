@@ -38,7 +38,8 @@ export async function initDashboard() {
 
 function fmtPhases(ph) {
   if (!ph || !ph.t1) return "not detected";
-  return `memorisation ends ≈${ph.t1}, circuit formation ends ≈${ph.t2 ?? "—"}, cleanup ends ≈${ph.t3 ?? "—"}`;
+  const pb = ph.paper_boundaries; // the paper run also carries its authors' boundaries (dashed on the scrubber)
+  return `memorisation ends ≈${ph.t1}, circuit formation ends ≈${ph.t2 ?? "—"}, cleanup ends ≈${ph.t3 ?? "—"}${pb ? ` (dashed: the paper's own ${pb.t1}, ${pb.t2}, ${pb.t3})` : ""}`;
 }
 
 function setStatus(t) { $("ctl-status").textContent = t; }

@@ -52,4 +52,6 @@ The paper does not print the formula; we use Hurley and Rickard's definition, wh
 **Gini of four values.** Equal values (1, 1, 1, 1): G = **0**. All mass in one (0, 0, 0, 4): G = 1 − 1/4 = **0.75** (the maximum for N = 4 is 1 − 1/N). Steadily increasing (1, 2, 3, 4): G = **0.25**. Scaling all values by the same factor never changes G.
 :::
 
+Press ▶ next to “units moved onto c1” to move the eight units onto one number, one at a time: G climbs from 0 to its maximum 1 − 1/8 = 0.875.
+
 {{widget:gini-toy}}

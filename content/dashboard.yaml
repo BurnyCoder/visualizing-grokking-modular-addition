@@ -35,7 +35,7 @@ groups:
   - id: gradients
     title: "F. Gradients and weight decay"
     blurb: "The forces acting on the weights at each checkpoint, recomputed exactly (training is full-batch)."
-    panels: [loss-vs-norm, grad-alignment, grad-we-fourier-heatmap, grad-norms, adam-alignment, adam-vs-decay, update-norms]
+    panels: [loss-vs-norm, grad-alignment, grad-we-fourier-heatmap, grad-norms, weight-norms, adam-alignment, adam-vs-decay, update-norms]
   - id: interventions
     title: "G. Causal tests"
     blurb: "Change one part of the computation and watch the output: ablations and counterfactual patching."

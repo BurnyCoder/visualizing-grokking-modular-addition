@@ -16,6 +16,10 @@ At the end of training only six frequencies carry visible weight in the paper's 
 
 (The sixth, k = 31, shows up in the embedding but not in the later layers; the paper notes it without naming it, and ARENA's text lists it {{cite:arena152}}.) Out of 56 possible frequencies the network uses 5 — and *which* five is arbitrary: other random seeds pick different ones (chapter 20).
 
+What does a key frequency mean for the numbers themselves? Project every number's embedding onto the plane that carries cos(w_k a) and sin(w_k a): the 113 numbers lie on a circle, in the order k·a mod 113. Hover a number to find it on every circle.
+
+{{fig:embed-circles}}
+
 ::: check
 **A random control.** Is this sparsity special? A [[dfn:control]] answers that: compute the same spectrum for the network at initialisation (move the slider to step 1 in the dashboard) — every frequency has similar weight. The Gini coefficient of the spectrum is {{num:paper.gini_we_init}} at initialisation and {{num:paper.gini_we}} at step 40,001.
 :::

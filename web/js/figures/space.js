@@ -15,6 +15,7 @@
 import { array, nearestIndex, row, run, trainMask } from "../core/data.js";
 import { alignSigns, lerpInto } from "../core/anim.js";
 import { View3D } from "../viz/view3d.js";
+import { torusPoints } from "../model/fourier.js";
 import { clockColor, cssVar, viridis } from "../viz/colors.js";
 import { el, fill, note, runOf, set, storeOf, watch } from "./common.js";
 
@@ -30,19 +31,17 @@ export const figures = {
       const ctl = el(body, "div", "interf-ctl"), chips = el(ctl, "span", "hero-chips");
       const mode = select(ctl, "colour", [["p", "probability of the right answer"], ["split", "training / test pair"], ["answer", "the answer a + b (clock colour)"]]);
       const view = new View3D(body, { height: 380, onPick: (i) => set({ a: Math.floor(i / P), b: i % P }) });
-      const info = note(body), xyz = new Float32Array(3 * P * P), pc = new Float32Array(P * P), colors = new Array(P * P);
+      const info = note(body), tori = new Map(), pc = new Float32Array(P * P), colors = new Array(P * P); // tori: k → torus coordinates
       let chipsFor = null;
       const draw = async (s) => {
-        const id = runOf(ds), r = await run(id), ks = r.key_freqs, k = ks.includes(s.freq) ? s.freq : ks[0], w = (2 * Math.PI * k) / P;
+        const id = runOf(ds), r = await run(id), ks = r.key_freqs, k = ks.includes(s.freq) ? s.freq : ks[0];
         if (chipsFor !== id) {
           chipsFor = id;
           chips.replaceChildren(...ks.map((f) => Object.assign(document.createElement("button"), { type: "button", className: "chip", textContent: `k = ${f}`, onclick: () => set({ freq: f }) })));
         }
         [...chips.children].forEach((c, i) => c.classList.toggle("active", ks[i] === k));
-        for (let a = 0; a < P; a++) for (let b = 0; b < P; b++) { // a around the ring, b around the tube
-          const i = a * P + b, ring = RING + TUBE * Math.cos(w * b);
-          xyz[3 * i] = ring * Math.cos(w * a); xyz[3 * i + 1] = TUBE * Math.sin(w * b); xyz[3 * i + 2] = ring * Math.sin(w * a);
-        }
+        if (!tori.has(k)) tori.set(k, torusPoints(P, k, RING, TUBE)); // a around the ring, b around the tube
+        const xyz = tori.get(k);
         let label = "";
         if (mode.value === "p" && r.geometry_steps) {
           label = fill(pc, await array(id, "geo_p_correct"), r.geometry_steps, s);

@@ -128,6 +128,7 @@ def test_dashboard_playback(browser_page):
     page.click("#ctl-player .pb-play")
     median = page.evaluate(MEDIAN_FRAME)
     assert "step=" not in page.url, "the URL hash was rewritten while playing"
+    assert page.locator("#ctl-player .phase-strip .pb-paper").count() == 3, "the paper's own phase boundaries on the scrubber"
     page.click("#ctl-player .pb-play")  # pause
     step = int(page.inner_text("#ctl-player .pb-label").split()[1].replace(",", ""))
     assert 1000 <= step <= 3500, f"after ~2 s at 1× the paper run should be ~20 checkpoints (2,000 steps) in, got {step}"
@@ -215,6 +216,23 @@ def test_new_panels_show_the_trained_network(browser_page):
     assert "answer 37" in flow and "✓ correct" in flow, flow[-200:]
     assert re.search(r"σ\(s₀ − s₁\) explains \d+\.\d %", page.inner_text("#fig-sigmoid-linearisation .fig-note"))
     assert "a key frequency of this run" in page.inner_text("#fig-alpha-growth .fig-body > .fig-note")
+
+
+def test_weight_norms_and_gini_sweep(browser_page):
+    """weight-norms draws one line per parameter (11) for the paper run; the Gini widget's ▶ moves the mass and its
+    coefficient rises from 0 (all equal) to the maximum 1 − 1/N = 0.875 (all mass on one number)."""
+    page, base = browser_page
+    page.goto("about:blank")
+    page.goto(f"{base}/dashboard.html#run=paper&step=40001")
+    page.evaluate("document.querySelector('#fig-weight-norms').scrollIntoView()")
+    page.wait_for_function("document.querySelectorAll('#fig-weight-norms .scatterlayer .trace').length > 0", timeout=30_000)
+    assert page.locator("#fig-weight-norms .scatterlayer .trace").count() == 11
+    page.goto(f"{base}/chapters/11-measuring-fit.html")
+    w = "[data-widget='gini-toy']"
+    page.evaluate(f"document.querySelector(\"{w}\").scrollIntoView()")
+    page.wait_for_function(f"document.querySelector(\"{w} .workings\")?.textContent.includes('= 0.000')", timeout=30_000)
+    page.click(f"{w} .btn.sweep")
+    page.wait_for_function(f"document.querySelector(\"{w} .workings\").textContent.includes('= 0.875')", timeout=15_000)
 
 
 def test_neuron_stars_counts_match_the_analysis(browser_page):

@@ -243,7 +243,11 @@ export const widgets = {
         work.textContent = `sorted: (${sorted.join(", ")}), total ${tot}\nG = 1 − 2 Σ_k (c_(k)/total)·(N − k + ½)/N = ${f3(G)}   (0 = all equal, max 1 − 1/N = 0.875)`;
       };
       onTheme(draw);
-      c.forEach((x, i) => slider(controls, `c${i + 1}`, 0, 10, 1, x, (v) => { c[i] = v; draw(); }));
+      const ins = c.map((x, i) => slider(controls, `c${i + 1}`, 0, 10, 1, x, (v) => { c[i] = v; draw(); }));
+      sweep(slider(controls, "units moved onto c1", 0, 7, 1, 0, (t) => { // total stays 8: G climbs from 0 to 1 − 1/8
+        c.forEach((_, i) => { c[i] = i === 0 ? 1 + t : i <= t ? 0 : 1; ins[i].value = String(c[i]); ins[i].nextElementSibling.textContent = c[i]; });
+        draw();
+      }), { seconds: 5 });
     },
   },
 };

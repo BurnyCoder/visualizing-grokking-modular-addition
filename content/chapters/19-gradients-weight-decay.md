@@ -28,6 +28,10 @@ Finally, which frequencies does the gradient push into the embedding at each mom
 
 {{fig:grad-norms}}
 
+And the weights themselves, one line per parameter. On the paper's run most matrices grow while the network memorises and shrink through circuit formation and cleanup, ending smaller than they started; the attention matrices W_K and W_Q shrink the most.
+
+{{fig:weight-norms}}
+
 ## What Adam actually does
 
 The raw gradient is not the step. For our retrained runs we saved Adam's two running averages every 1,000 steps, so we can rebuild the direction Adam really moves in, $\hat m/(\sqrt{\hat v}+\epsilon)$, and compare it with the raw gradient and with the weights:

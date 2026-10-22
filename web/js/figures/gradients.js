@@ -41,6 +41,14 @@ function overTraining(traces, layout, needs = "grad_scalars", missing = "No grad
 
 const ln = (x, y, name, color, extra = {}) => ({ x: Array.from(x), y: Array.from(y), name, type: "scatter", mode: "lines", line: { color, width: 1.8 }, ...extra });
 
+/** Traces of a [T, 11] per-parameter array, one line per parameter. Names come from grad_norm's columns: both arrays
+ * are rows of gradients.npz in its `param_names` order (export.py), and only grad_norm carries the names. */
+const perParam = (arrayName) => async (id, r) => {
+  const g = await array(id, arrayName), names = (await array(id, "grad_norm")).entry.columns, T = g.shape[0], P = g.shape[1];
+  return names.map((name, j) => ln(r.ckpt_steps, Array.from({ length: T }, (_, t) => g.data[t * P + j]), name.replace("blocks.0.", ""), undefined,
+    { line: { width: 1.3, dash: j < 10 ? "solid" : "dash" } })); // Plotly's colorway has 10 colours: the 11th line repeats one, so it is dashed
+};
+
 export const figures = {
   "loss-vs-norm": {
     async render(body, ds) {
@@ -69,11 +77,9 @@ export const figures = {
     },
   },
 
-  "grad-norms": overTraining(async (id, r) => {
-    const g = await array(id, "grad_norm");
-    const T = g.shape[0], P = g.shape[1];
-    return g.entry.columns.map((name, j) => ln(r.ckpt_steps, Array.from({ length: T }, (_, t) => g.data[t * P + j]), name.replace("blocks.0.", ""), undefined, { line: { width: 1.3 } }));
-  }, { yaxis: { type: "log", title: { text: "‖gradient of train loss‖" }, exponentformat: "power" } }, undefined, undefined, 400),
+  "grad-norms": overTraining(perParam("grad_norm"), { yaxis: { type: "log", title: { text: "‖gradient of train loss‖" }, exponentformat: "power" } }, undefined, undefined, 400),
+
+  "weight-norms": overTraining(perParam("weight_norm"), { yaxis: { title: { text: "‖parameter‖ (Frobenius norm)" }, rangemode: "tozero" } }, undefined, undefined, 400), // linear: the biases start at 0
 
   "grad-alignment": overTraining(async (id, r) => [
     ln(r.ckpt_steps, await column(id, "grad_scalars", "cos_grad_weight"), "cos(gradient, weights)", cssVar("--accent")),

@@ -1,5 +1,7 @@
 We now know *what* the trained network computes. The paper's main contribution is to use that knowledge to look *back* at training and see progress that the loss curves hide.
 
+{{widget:scrubber}}
+
 ## Progress measures
 
 Barak et al. (2022) proposed looking for hidden progress {{cite:barak2022}}; Nanda et al. define a [[dfn:progress-measure]] as one of the {{cite:nanda2023}}

@@ -269,7 +269,7 @@ seeds, steps, logging intervals, paths, pinned revisions and Hugging Face repo i
   - a player: play/pause, ¼× to 8× speed (1× = 10 checkpoints per second), loop, ranges (the grokking window, the
     whole run, the late phase, each phase), keyboard shortcuts;
   - a 15-step guided tour, 7 of whose steps play a stretch of training.
-- **75 figures and 19 teaching widgets**, each one module shared by the chapters and the dashboard:
+- **76 figures and 19 teaching widgets**, each one module shared by the chapters and the dashboard:
   - figures off screen do not redraw, and a figure whose stored frame did not change skips the redraw;
   - chapter animations (`{{anim:id}}`) play when scrolled into view; scrollytelling scenes drive the page's player;
   - 3D panels (inputs on a torus, three principal components) drawn by a small canvas renderer;

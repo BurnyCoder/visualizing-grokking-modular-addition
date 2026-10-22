@@ -466,6 +466,13 @@ grad-norms:
   what: "Norm of the exact full-batch gradient of the training loss for each weight matrix, at every checkpoint."
   chapter: "19-gradients-weight-decay.html"
   producer: "gradients.py"
+weight-norms:
+  title: "Size of the weights, per parameter"
+  what: "Frobenius norm (square root of the sum of squared entries) of each weight matrix and bias, at every checkpoint."
+  read: "One line per parameter; the shading marks the three phases. Weight decay pulls every line toward 0, the loss gradient pushes back wherever a weight lowers the training loss."
+  expect: "On the paper's run most matrices grow while the network memorises, then shrink through circuit formation and cleanup; by the end the total size of the weights is below its value at initialisation. The attention matrices W_K and W_Q shrink the most."
+  chapter: "19-gradients-weight-decay.html"
+  producer: "gradients.py"
 grad-alignment:
   title: "Where the gradient points"
   what: "Cosine between the training-loss gradient and the weights, and between the training- and test-loss gradients."

@@ -24,7 +24,7 @@
 - title: "Hidden progress"
   panel: progress-measures
   state: {step: 7001}
-  text: "The restricted loss — the loss using only those few frequencies — is already falling, and the excluded loss is rising: the training answers increasingly come from the Fourier circuit, not memorisation."
+  text: "The restricted loss — the loss using only those few frequencies — is already falling, and the excluded loss is rising: the training answers increasingly come from the Fourier circuit, not memorisation. The restricted loss falls tenfold by step {{num:paper.restricted_drop_step}}; the test loss only by step {{num:paper.test_drop_step}}."
 - title: "Numbers become angles"
   panel: embed-circles
   play: {from: 1000, to: 15000, speed: 2}

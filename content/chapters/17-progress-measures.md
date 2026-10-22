@@ -18,7 +18,7 @@ Both definitions follow the paper's code exactly {{cite:paperrepo}}, and ARENA's
 {{fig:progress-measures}}
 
 ::: example
-**Reading the plot** (paper's run): at step 5,001 the test loss is still ~21 — worse than guessing — but the restricted loss is already down to {{num:paper.restricted_5k}}: the Fourier part alone would already do far better than the whole network on unseen inputs. Meanwhile the excluded loss climbs from {{num:paper.excluded_t1}} at the end of memorisation to {{num:paper.excluded_t2}} at step {{num:paper.t2}}: by then, without its Fourier circuit, the network could no longer even fit its *training* data — the memorised answers have been replaced.
+**Reading the plot** (paper's run): at step 5,001 the test loss is still ~21 — worse than guessing — but the restricted loss is already down to {{num:paper.restricted_5k}}: the Fourier part alone would already do far better than the whole network on unseen inputs. Meanwhile the excluded loss climbs from {{num:paper.excluded_t1}} at the end of memorisation to {{num:paper.excluded_t2}} at step {{num:paper.t2}}: by then, without its Fourier circuit, the network could no longer even fit its *training* data — the memorised answers have been replaced. The restricted loss falls to a tenth of its value at the end of memorisation by step {{num:paper.restricted_drop_step}}; the test loss gets there only at step {{num:paper.test_drop_step}} (the rule of hypothesis H1, chapter 20).
 :::
 
 ## Three phases

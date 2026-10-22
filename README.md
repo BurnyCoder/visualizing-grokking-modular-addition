@@ -13,7 +13,9 @@ addition modulo 113. The network was reverse-engineered by Nanda, Chan, Lieberum
 - **Reports:** [`reports/`](reports/), with one file per experiment, a [summary of all experiments](reports/summary.md) and a
   paper (`reports/paper.pdf`).
 
-![The dashboard at step 9,301 of the paper's run (circuit formation)](docs/images/dashboard.png)
+![Grokking in one view, played over steps 1 to 15,401 of the paper's run: loss curves with the step cursor, which of the 12,769 inputs the network answers correctly, the embedding clock of key frequency 14, and one MLP neuron's activation on every input](docs/images/clips/grokking-one-view.gif)
+
+![The dashboard at step 9,301 of the paper's run, the end of circuit formation](docs/images/dashboard.png)
 
 ## Methodology
 
@@ -85,6 +87,8 @@ All 22 runs train together on one GPU, vectorised with `torch.func.vmap`. This i
 - **Figures.** Every figure is one JavaScript module, used by both the chapters and the dashboard.
 - **In-browser model.** Any per-input view (choose a, b, a neuron or a head) is computed by a JavaScript copy of the
   model from float16 weights. It is tested against PyTorch.
+- **Animation.** Playing a run moves through the stored checkpoints. Positions between two checkpoints are interpolated
+  only while playing, and figures say so; a paused figure always shows a stored frame and its step.
 
 ## Results
 
@@ -133,7 +137,7 @@ flowchart LR
     TR --> CM[compute_checkpoint_metrics] --> GR[compute_gradient_dynamics] --> GEO[compute_geometry]
     GEO --> PH[detect_phases] --> FIN[analyse_final_models] --> HYP[test_hypotheses]
     HYP --> PUB[publish_runs_to_hub] --> EXP[export_site_data] --> PSD[publish_site_data]
-    PSD --> BUILD[build_site] --> FIG[render_report_figures] --> PDF[build_paper_pdf]
+    PSD --> BUILD[build_site] --> FIG[render_report_figures] --> MED[render_media] --> PDF[build_paper_pdf]
   end
   HF --> ACQ
   ARX --> ACQ
@@ -144,6 +148,7 @@ flowchart LR
   EXP --> DATA[(site/data)]
   BUILD --> SITE[(site/)]
   FIG --> PNG[(reports/figures)]
+  MED --> CLIPS[(docs/images/clips, reports/media)]
   PDF --> PAPER[(reports/paper.pdf)]
   PUB --> HFM[(HF model repo)]
   PSD --> HFD[(HF dataset)]
@@ -165,9 +170,11 @@ flowchart LR
 4. **Hypotheses.** Evaluate H1–H5 exactly as preregistered, and write `reports/tables/hypotheses.{json,md}`.
 5. **Publishing.**
    - Upload the runs to Hugging Face.
-   - Export the site data: about 500 MB of binary arrays and float16 weights, plus `summary.json`.
+   - Export the site data: about 640 MB of binary arrays and float16 weights, plus `summary.json`.
    - Upload the site data and pin it in `site-data.lock`.
    - Build `site/` and render the report figures from the site itself (Playwright).
+   - Record the clips below from the site (`render_media`): GIFs for this README, MP4s in `reports/media/` and
+     5-frame film strips for the paper.
    - Compile the paper (`paper/main.typ` → `reports/paper.pdf`, Typst). Its numbers come from the same `summary.json`.
 
 Data formats are documented in [`docs/data-formats.md`](docs/data-formats.md); module responsibilities are in
@@ -185,9 +192,12 @@ Data formats are documented in [`docs/data-formats.md`](docs/data-formats.md); m
 git clone --recurse-submodules https://github.com/BurnyCoder/visualizing-grokking-modular-addition
 cd visualizing-grokking-modular-addition
 uv sync --extra cu130          # NVIDIA GPU; use `uv sync --extra cpu` without one
-uv run playwright install chromium   # only for render_report_figures and browser tests
+uv run playwright install chromium   # only for render_report_figures, render_media and browser tests
 cp .env.example .env           # optional: every setting has a default in .env.example
 ```
+
+`render_media` also needs ffmpeg: add `--extra media` to `uv sync` for a bundled one
+([imageio-ffmpeg](https://github.com/imageio/imageio-ffmpeg)), or it uses `ffmpeg` on your PATH.
 
 On Windows, cloning into a deep folder can fail with "Filename too long" while Git checks out the submodule, whose
 name is long. Add `-c core.longpaths=true` after `git` in the clone command, or clone into a shorter path.
@@ -253,11 +263,21 @@ seeds, steps, logging intervals, paths, pinned revisions and Hugging Face repo i
   - each chapter has worked examples with p = 5 and with the real p = 113;
   - quotes are exact and verified against the PDF page;
   - figures and widgets are interactive.
-- **Dashboard** with 8 panel groups:
+- **Dashboard** with a hero panel ("Grokking in one view") and 8 panel groups:
   - training curves, weights, activations, geometry, output for (a, b), gradients, interventions, and seeds/controls;
   - one control bar (run, step, a, b, a′, head, neuron, frequency), with the state kept in the URL;
-  - a guided tour.
-- **In-browser model.** Per-input attention, neuron and logit views come from the real weights at any stored checkpoint.
+  - a player: play/pause, ¼× to 8× speed (1× = 10 checkpoints per second), loop, ranges (the grokking window, the
+    whole run, the late phase, each phase), keyboard shortcuts;
+  - a 15-step guided tour, 7 of whose steps play a stretch of training.
+- **74 figures and 19 teaching widgets**, each one module shared by the chapters and the dashboard:
+  - figures off screen do not redraw, and a figure whose stored frame did not change skips the redraw;
+  - chapter animations (`{{anim:id}}`) play when scrolled into view; scrollytelling scenes drive the page's player;
+  - 3D panels (inputs on a torus, three principal components) drawn by a small canvas renderer;
+  - an ablation playground: remove or keep frequencies and see loss, accuracy and the correctness grid change;
+  - every figure can be enlarged; `prefers-reduced-motion` (or `?still=1`) turns off autoplay and tweening.
+- **In-browser model.** Per-input attention, neuron and logit views come from the real weights at any stored checkpoint,
+  computed in a web worker.
+- **Clips.** Five short recordings of the site, made by the pipeline (see below).
 - **Reproducible pipeline:**
   - pinned inputs;
   - deterministic, resumable batched training;
@@ -265,14 +285,24 @@ seeds, steps, logging intervals, paths, pinned revisions and Hugging Face repo i
   - every prose number bound to the analysis output.
 - **Reports and paper** generated from the same data and figures.
 
+**Clips.** `render_media` records these from the dashboard. Each frame is a stored checkpoint of the paper's run (every
+200 steps from step 1 to 15,401), and the interference clip sweeps the candidate answer at step 40,001. The hero clip is
+at the top of this page; MP4 versions are in [`reports/media/`](reports/media/).
+
+| Numbers settle onto circles | The frequency race |
+|---|---|
+| ![Each number's embedding projected on the planes of the five key frequencies, coloured by clock position k·n mod 113: a blob at initialisation becomes rings](docs/images/clips/circles-emerge.gif) | ![The 12 largest frequency norms of the embedding W_E, sorted: about equal at initialisation, then the key frequencies pull ahead and most others shrink](docs/images/clips/spectrum-race.gif) |
+| **Every input on a torus** | **Constructive interference** |
+| ![All 12,769 inputs on a torus at angles (w_14·a, w_14·b), coloured by the probability of the right answer: dark at initialisation, training pairs light up during memorisation, every input after cleanup](docs/images/clips/torus-grokking.gif) | ![For a = 100, b = 50: each key frequency's cosine wave over the candidate answers c and their chained hands; only at c = a + b = 37 do all hands point the same way](docs/images/clips/interference-sweep.gif) |
+
 ## Technologies
 
 - **Pipeline:** Python 3.12, uv, PyTorch 2.14 (CUDA 13.0), `torch.func.vmap`, NumPy, SciPy, safetensors, python-dotenv,
   huggingface_hub, PyMuPDF (quote checks).
 - **Website:** Jinja2 and markdown-it-py (static build), Plotly.js 4.1.2 and KaTeX 0.19.0 (from jsDelivr), plain ES
-  modules, and canvas heatmaps.
-- **Figures, paper and CI:** Playwright (figures rendered from the site), Typst (paper PDF), GitHub Actions and Pages,
-  and Hugging Face Hub.
+  modules, a web worker, and canvas heatmaps, scatter plots and 3D point clouds (no WebGL).
+- **Figures, clips, paper and CI:** Playwright (figures and clips rendered from the site), ffmpeg via imageio-ffmpeg
+  (MP4, GIF, film strips), Typst (paper PDF), GitHub Actions and Pages, and Hugging Face Hub.
 
 ## Repository layout
 

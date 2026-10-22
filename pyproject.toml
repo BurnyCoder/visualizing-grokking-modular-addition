@@ -33,6 +33,8 @@ dependencies = [
 [project.optional-dependencies]
 cpu = ["torch>=2.14.1"]
 cu130 = ["torch>=2.14.1"]
+# Optional: bundled ffmpeg for `render_media` (hero clips: MP4, GIF, film strips); falls back to ffmpeg on PATH.
+media = ["imageio-ffmpeg>=0.6"]
 
 # Console entry point: `uv run grokviz --phases ...` dispatches to the pipeline wrapper.
 [project.scripts]

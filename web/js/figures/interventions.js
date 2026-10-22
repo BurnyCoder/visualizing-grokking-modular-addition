@@ -1,20 +1,67 @@
 // interventions.js — dashboard group G: causal tests (ablations, patching) on the trained network.
 //
-// Local explanation: bar charts of exported final-checkpoint experiments (src/grokviz/hypotheses.py and
+// Local explanation: an ablation playground (choose frequencies to remove from, or keep in, the logits of every input
+// and see the loss, accuracy and per-input confidence, computed in the browser; model/ablation.js); bar charts of exported final-checkpoint experiments (src/grokviz/hypotheses.py and
 // rchecks.py): loss after removing each Fourier frequency from the logits, with the random-control range;
 // recovered logit difference when patching the key-frequency part of a's embedding with a′'s (vs controls);
 // plus a live patching demo for the selected (a, a′, b) at the selected step, computed in the browser.
 // Global context: the paper's ablation evidence (Sec. 4.4, Fig. 6) and our counterfactual swap test.
 // Sources: paper Sec. 4.4 (https://arxiv.org/abs/2301.05217); interchange interventions, Geiger et al. 2021
 // (https://arxiv.org/abs/2106.02997).
-import { model, run } from "../core/data.js";
+import { ablationData, model, run } from "../core/data.js";
 import { Plot } from "../viz/plot.js";
+import { Heatmap } from "../viz/heatmap.js";
 import { cssVar } from "../viz/colors.js";
 import { softmax } from "../model/grokmodel.js";
-import { fourierBasis } from "./weights.js";
-import { frameKey, note, runOf, watch } from "./common.js";
+import { fourierBasis } from "../model/fourier.js";
+import { ablate } from "../model/ablation.js";
+import { el, frameKey, note, runOf, set, watch } from "./common.js";
 
 export const figures = {
+  "ablation-playground": {
+    async render(body, ds) {
+      body.innerHTML = "";
+      const P = 113, ctl = el(body, "div", "interf-ctl");
+      const mode = el(ctl, "label", "hero-ctl", 'the chosen frequencies are <select><option value="remove">removed</option><option value="keep">the only ones kept</option></select>').querySelector("select");
+      const presets = el(ctl, "span", "hero-chips");
+      const chips = el(body, "div", "hero-chips abl-chips");
+      const row = el(body, "div", "abl-row"), stats = el(row, "div", "abl-stats");
+      const hm = new Heatmap(row, { rows: P, cols: P, size: 280, diverging: false, format: (v) => v.toFixed(3), onClick: (a, b) => set({ a, b }) });
+      const info = note(body), chosen = new Set();
+      const labels = Uint8Array.from({ length: P * P }, (_, i) => (Math.floor(i / P) + (i % P)) % P); // right answer a + b
+      let data = null, keys = [];
+      const compute = () => {
+        if (!data) return;
+        const base = ablate(data.L, data.blocks, P, labels, { remove: [] });
+        const res = ablate(data.L, data.blocks, P, labels, mode.value === "keep" ? { keep: [...chosen] } : { remove: [...chosen] });
+        stats.innerHTML = `<p class="abl-big">loss ${res.loss.toExponential(2)}</p><p class="fig-note">unablated ${base.loss.toExponential(2)} · ×${(res.loss / base.loss).toPrecision(3)}</p>`
+          + `<p class="abl-big">accuracy ${(100 * res.acc).toFixed(1)} %</p><p class="fig-note">unablated ${(100 * base.acc).toFixed(1)} %</p>`;
+        hm.draw(res.pCorrect, { min: 0, max: 1 });
+        [...chips.children].forEach((c) => c.classList.toggle("active", chosen.has(Number(c.dataset.k))));
+        const what = mode.value === "keep" ? `kept only ${chosen.size ? [...chosen].sort((x, y) => x - y).join(", ") : "nothing"}` : `removed ${chosen.size ? [...chosen].sort((x, y) => x - y).join(", ") : "nothing"}`;
+        info.textContent = `Weights from step ${data.step.toLocaleString("en-US")}, ${what}. Grid: the probability of the right answer for every input after the ablation (rows a, columns b). Computed in your browser from float16 weights, so tiny losses differ a little from the analysis (frequency-ablation panel).`;
+      };
+      const choose = (ks) => { chosen.clear(); ks.forEach((k) => chosen.add(k)); compute(); };
+      for (const [name, pick] of [["the key frequencies", () => keys], ["one key frequency", () => keys.slice(0, 1)], ["five other frequencies", () => Array.from({ length: 56 }, (_, i) => i + 1).filter((k) => !keys.includes(k)).slice(0, 5)], ["none", () => []]]) {
+        presets.append(Object.assign(document.createElement("button"), { type: "button", className: "chip", textContent: name, onclick: () => choose(pick()) }));
+      }
+      mode.onchange = compute;
+      watch(body, ["run", "step"], async (s) => {
+        const id = runOf(ds), r = await run(id);
+        if (r.label_seed != null) { data = null; info.textContent = "This run was trained on random labels, so there is no task answer to ablate against."; return; }
+        if (keys.join() !== r.key_freqs.join()) { // one chip per frequency; the run's key frequencies outlined
+          keys = r.key_freqs;
+          chips.replaceChildren(...Array.from({ length: 56 }, (_, i) => Object.assign(document.createElement("button"), { type: "button", className: `chip${keys.includes(i + 1) ? " key" : ""}`, textContent: String(i + 1),
+            title: `frequency k = ${i + 1}${keys.includes(i + 1) ? " (a key frequency of this run)" : ""}`, onclick: () => { if (chosen.has(i + 1)) chosen.delete(i + 1); else chosen.add(i + 1); compute(); } })));
+          chips.querySelectorAll("button").forEach((b, i) => { b.dataset.k = i + 1; });
+        }
+        info.textContent = "Computing the logits of all 113 answers for all 12,769 inputs (in the background)…";
+        data = await ablationData(id, s.step);
+        compute();
+      }, { dedupe: frameKey(ds, "weight_steps"), theme: false, minGap: 1000 });
+    },
+  },
+
   "freq-ablation-bars": {
     async render(body, ds) {
       body.innerHTML = "";

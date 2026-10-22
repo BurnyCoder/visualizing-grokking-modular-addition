@@ -188,6 +188,13 @@ body.modal-open { overflow: hidden; }
 .interf-ctl .hero-ctl { margin: 0; }
 .interf-row { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 0.6rem; align-items: center; }
 @media (max-width: 40rem) { .interf-row { grid-template-columns: minmax(0, 1fr); } }
+/* ablation playground (web/js/figures/interventions.js) */
+.abl-chips .chip { min-width: 2.1rem; padding: 0.05rem 0.3rem; }
+.abl-chips .chip.key { border-width: 2px; font-weight: 700; }
+.abl-row { display: flex; flex-wrap: wrap; gap: 0.8rem 1.4rem; align-items: flex-start; margin-top: 0.6rem; }
+.abl-stats { min-width: 11rem; }
+.cvp-profile { flex: 1 1 18rem; min-width: 0; } /* clock-vs-pizza profile beside its grid */
+.abl-big { margin: 0.2rem 0 0; font-size: 1.15rem; font-weight: 600; font-family: var(--mono); }
 /* forward-flow diagram (web/js/figures/flow.js) */
 .flow { width: 100%; height: auto; display: block; }
 .flow-edges path { fill: none; stroke: var(--line); stroke-width: 1.2; }

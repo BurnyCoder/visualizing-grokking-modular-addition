@@ -2,7 +2,9 @@
 //
 // Local explanation: runs GrokModel on (a, b), shows the 113 logits next to their best fit by a sum of cosines
 // Σ_k α_k cos(w_k(a+b−c)) over the run's key frequencies (least squares over c), the softmax probabilities, and
-// each frequency's cosine wave separately so the constructive interference at c = a+b is visible. In "interference"
+// each frequency's cosine wave separately so the constructive interference at c = a+b is visible. "clock-vs-pizza"
+// re-arranges the right answer's logit over all inputs by sum and difference and computes Zhong et al.'s (2023)
+// distance irrelevance, which separates their "Clock" from their "Pizza" networks. In "interference"
 // the reader can switch frequencies off and sweep the candidate answer c: an inset chains one hand per frequency,
 // α_k·(cos θ_k, sin θ_k) with θ_k = w_k(a+b−c), tip to tail (a phasor sum); each hand's horizontal part is exactly that
 // frequency's contribution, so the chain stretches straight to the right (all contributions add up) only at c = a + b.
@@ -12,10 +14,11 @@
 import { model, run } from "../core/data.js";
 import { reducedMotion } from "../core/motion.js";
 import { Plot } from "../viz/plot.js";
+import { Heatmap } from "../viz/heatmap.js";
 import { CanvasPlot } from "../viz/canvas.js";
 import { cssVar, freqColor } from "../viz/colors.js";
 import { softmax } from "../model/grokmodel.js";
-import { el, frameKey, note, runOf, watch } from "./common.js";
+import { el, frameKey, note, runOf, set, watch } from "./common.js";
 import { spectrumMap } from "./activations.js";
 
 /** Least-squares α_k (+ intercept) for logits[c] ≈ β + Σ_k α_k cos(w_k(t − c)), t = a + b. */
@@ -37,6 +40,42 @@ export function cosFit(logits, t, freqs, p) {
 }
 
 export const figures = {
+  "clock-vs-pizza": {
+    async render(body, ds) {
+      body.innerHTML = "";
+      const P = 113, inv2 = (P + 1) / 2; // 2·inv2 ≡ 1 (mod p): a = (s − d)/2, b = (s + d)/2
+      const row = el(body, "div", "abl-row");
+      const hm = new Heatmap(row, { rows: P, cols: P, size: 300, diverging: false, format: (v) => v.toFixed(2),
+        label: (r, c) => `b − a ≡ ${P - 1 - r}, a + b ≡ ${c} (mod 113)`, onClick: (r, c) => { const d = P - 1 - r; set({ a: (((c - d) * inv2) % P + P) % P, b: (((c + d) * inv2) % P + P) % P }); } });
+      const plot = new Plot(el(row, "div", "cvp-profile"), { height: 260 });
+      const info = note(body), grid = new Float32Array(P * P);
+      watch(body, ["run", "step"], async (s) => {
+        const net = await model(runOf(ds), s.step), L = net.logitsGrid((a, b) => (a + b) % P); // logit of the right answer
+        const mean = new Float64Array(P), sd = new Float64Array(P);
+        let all = 0, all2 = 0;
+        for (let d = 0; d < P; d++) { // inputs with difference b − a ≡ d (Zhong et al. 2023, Def. 4.2: L[i, i + d])
+          let m = 0, m2 = 0;
+          for (let i = 0; i < P; i++) { const v = L[i * P + ((i + d) % P)]; m += v; m2 += v * v; }
+          mean[d] = m / P; sd[d] = Math.sqrt(Math.max(0, m2 / P - mean[d] ** 2)); all += m; all2 += m2;
+          for (let sIdx = 0; sIdx < P; sIdx++) { // heatmap row: difference d (drawn 0 at the bottom), column: sum
+            const a = (((sIdx - d) * inv2) % P + P) % P, b = (((sIdx + d) * inv2) % P + P) % P;
+            grid[(P - 1 - d) * P + sIdx] = L[a * P + b];
+          }
+        }
+        const muAll = all / (P * P), sdAll = Math.sqrt(Math.max(0, all2 / (P * P) - muAll ** 2));
+        const q = sd.reduce((x, y) => x + y, 0) / P / (sdAll || 1); // distance irrelevance
+        hm.draw(grid);
+        const ds_ = Array.from({ length: P }, (_, d) => d);
+        await plot.draw([
+          { x: ds_, y: Array.from(mean, (m, d) => m + sd[d]), type: "scatter", mode: "lines", line: { width: 0 }, showlegend: false, hoverinfo: "skip" },
+          { x: ds_, y: Array.from(mean, (m, d) => m - sd[d]), type: "scatter", mode: "lines", line: { width: 0 }, fill: "tonexty", fillcolor: "rgba(127,127,127,0.25)", name: "± 1 standard deviation", hoverinfo: "skip" },
+          { x: ds_, y: Array.from(mean), type: "scatter", mode: "lines", name: "mean over all a + b", line: { color: cssVar("--accent"), width: 2 } },
+        ], { xaxis: { title: { text: "difference b − a (mod 113)" } }, yaxis: { title: { text: "logit of the right answer" } }, hovermode: "x unified" });
+        info.textContent = `Weights from step ${net.step.toLocaleString("en-US")}: the right answer's logit for every input, re-arranged by its sum a + b (columns) and difference b − a (rows); right: its mean and spread at each difference. Distance irrelevance q = ${q.toFixed(2)} (Zhong et al. 2023): low q means the logit depends mainly on the difference, as in their "Pizza" networks (q between 0 and 0.4); a "Clock" network's right-answer logit does not depend on the difference, which keeps q high.`;
+      }, { dedupe: frameKey(ds, "weight_steps"), minGap: 500 });
+    },
+  },
+
   "logit-fourier-2d": spectrumMap("spec_logit_fourier2d", "size of each 2D Fourier component of the logits (norm over the 113 answers c, each answer's mean removed)"),
   "output-dist": {
     async render(body, ds) {

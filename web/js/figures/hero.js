@@ -98,7 +98,7 @@ export const figures = {
       watch(t4, ["run", "step", "neuron"], async (s) => {
         const net = await model(runOf(ds), s.step);
         hm4.draw(net.neuronGrid(s.neuron));
-        n4.textContent = `Neuron ${s.neuron} (pick another in the control bar), weights from step ${net.step.toLocaleString("en-US")}: stripes appear when the neuron becomes a wave of one frequency.`;
+        n4.textContent = `Neuron ${s.neuron} (the dashboard's control bar picks another), weights from step ${net.step.toLocaleString("en-US")}: stripes appear when the neuron becomes a wave of one frequency.`;
       }, { dedupe: frameKey(ds, "weight_steps", "neuron"), theme: false });
       follow(t4, ["a", "b"], (s) => hm4.marks.set("input", { row: s.a, col: s.b }));
     },

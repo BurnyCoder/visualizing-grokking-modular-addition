@@ -51,6 +51,15 @@ def test_figures_use_gated_watch():
     assert not old, f"two-argument watch( calls left: {old}"
 
 
+def test_every_figure_has_metadata_and_a_renderer():
+    """content/figures.yaml and web/js/figures/index.js list exactly the same figure ids (no orphan on either side)."""
+    from grokviz import site_build as sb
+
+    meta = set(sb.load_yaml("figures.yaml"))
+    js = sb.js_ids(sb.WEB / "js" / "figures" / "index.js")
+    assert meta == js, {"metadata only": sorted(meta - js), "renderer only": sorted(js - meta)}
+
+
 def test_anim_and_scene_macros():
     """{{anim:id}} renders the figure as a scoped, scroll-played animation configured by its `anim:` block in
     figures.yaml; {{scene:id}} renders a scrollytelling marker from content/scenes.yaml; unknown ids and figures

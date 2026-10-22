@@ -14,7 +14,7 @@ import { Heatmap } from "../viz/heatmap.js";
 import { cssVar, freqColor } from "../viz/colors.js";
 import { clusterOrder, el, fill, follow, frameKey, kstep, note, runOf, set, storeOf, watch } from "./common.js";
 import { CanvasPlot } from "../viz/canvas.js";
-import { fourierBasis } from "../model/fourier.js";
+import { fourierBasis, freqCoeffs } from "../model/fourier.js";
 
 const K = 56; // frequencies 1..56 for p = 113
 
@@ -234,6 +234,39 @@ export const figures = {
         info.textContent = `step ${net.step}, head ${h}: rows = 512 neurons sorted by frequency cluster; columns = Fourier components (Const, cos 1, sin 1, …) over the token a of W_neur = W_in·W_O·W_V·W_E — what head ${h} adds to each neuron's input when it attends fully to a. Other heads: pick one in the dashboard's control bar. Click a row to select a neuron (outlined).`;
       }, { dedupe: frameKey(ds, "weight_steps", "head"), theme: false });
       follow(body, ["neuron"], mark);
+    },
+  },
+
+  "neuron-stars": {
+    async render(body, ds) {
+      body.innerHTML = "";
+      let order = []; // drawing order of neurons (selected frequency's cluster on top); a dot's index → neuron
+      const cp = new CanvasPlot(body, { height: 380, onClick: (i) => set({ neuron: order[i] }) });
+      const info = note(body);
+      const inputs = new WeakMap(), reach = new Map(); // per snapshot: Σ_j W_neur^j rows over a; per run|k: plot radius
+      const coeffs = (net, k) => { // each neuron's (cos k, sin k) coefficients of its input from the token a
+        if (!inputs.has(net)) inputs.set(net, Array.from({ length: net.p }, (_, a) => net.PA.reduce((acc, ph) => acc.map((v, j) => v + ph[a][j]), new Float32Array(net.n))));
+        return freqCoeffs(inputs.get(net), net.p, k);
+      };
+      const radius = ([x, y]) => x.reduce((m, _, j) => Math.max(m, Math.hypot(x[j], y[j])), 0);
+      watch(body, ["run", "step", "freq", "neuron"], async (s) => {
+        const id = runOf(ds), r = await run(id), net = await model(id, s.step), k = Number(s.freq) || 1;
+        const t = nearestIndex(r.ckpt_steps, net.step), nf = row(await array(id, "neuron_freq"), t), nv = row(await array(id, "neuron_fve"), t);
+        const [x, y] = coeffs(net, k), key = `${id}|${k}`;
+        if (!reach.has(key)) reach.set(key, radius(coeffs(await model(id, r.weight_steps.at(-1)), k))); // the run's final weights
+        const R = 1.1 * Math.max(reach.get(key), radius([x, y])) || 1;
+        const inK = (j) => nv[j] > 0.85 && nf[j] === k;
+        const sel = Number(s.neuron);
+        order = Array.from({ length: net.n }, (_, j) => j).sort((u, v) => inK(u) - inK(v) || (u === sel) - (v === sel)); // drawn last = on top
+        cp.draw({ domain: [-R, R, -R, R], equal: true,
+          segments: [{ x0: -R, y0: 0, x1: R, y1: 0, color: cssVar("--line"), width: 1 }, { x0: 0, y0: -R, x1: 0, y1: R, color: cssVar("--line"), width: 1 }],
+          labels: [{ x: R, y: 0.04 * R, text: `cos ${k}`, color: cssVar("--ink-soft"), align: "right" }, { x: 0.03 * R, y: 0.94 * R, text: `sin ${k}`, color: cssVar("--ink-soft"), align: "left" }],
+          points: { x: order.map((j) => x[j]), y: order.map((j) => y[j]),
+            color: (i) => (nv[order[i]] > 0.85 ? freqColor(nf[order[i]]) : cssVar("--ink-soft")), r: (i) => (order[i] === sel ? 6 : inK(order[i]) ? 3.5 : 2),
+            label: (i) => `neuron ${order[i]}: cluster ${nv[order[i]] > 0.85 ? `k = ${nf[order[i]]}` : "none"}, (${x[order[i]].toFixed(2)}, ${y[order[i]].toFixed(2)})` } });
+        const n = order.filter(inK).length;
+        info.textContent = `weights from step ${net.step.toLocaleString("en-US")}: each dot is one of the ${net.n} neurons at the cos ${k} and sin ${k} coefficients of its input from the token a (W_neur = W_in·W_O·W_V·W_E summed over the 4 heads, as if every head attended only to a): distance = the size of its frequency-${k} wave, angle = the wave's phase. ${n ? `${n} neurons are in cluster k = ${k} (larger dots)` : `No neuron is in cluster k = ${k} yet`}; colour = a neuron's cluster, grey = none. Scale fixed per run and frequency. Pick k with the frequency control; click a dot to select its neuron.`;
+      }, { dedupe: frameKey(ds, "weight_steps", "freq", "neuron") });
     },
   },
 

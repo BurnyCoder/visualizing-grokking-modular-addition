@@ -11,6 +11,8 @@ Sources: Playwright for Python events (https://playwright.dev/python/docs/api/cl
 Paint Timing API (https://developer.mozilla.org/docs/Web/API/PerformancePaintTiming).
 """
 
+import json  # summary.json (numbers the analysis wrote)
+
 import pytest  # markers, skip, fixtures
 
 from grokviz.config import load_config  # where site/ lives
@@ -66,6 +68,26 @@ def test_every_page_draws_without_errors(browser_page):
     fcp = page.evaluate("performance.getEntriesByType('paint').find(e => e.name === 'first-contentful-paint')?.startTime ?? 0")
     assert not problems, "\n".join(problems[:30])
     assert fcp < 3000, f"dashboard first contentful paint {fcp:.0f} ms"
+
+
+def test_phone_width_has_no_horizontal_scroll(browser_page):
+    """At 375 px (a common phone width) no page is wider than the screen once its figures have drawn."""
+    page, base = browser_page
+    page.set_viewport_size({"width": 375, "height": 812})
+    try:
+        wide = []
+        for path in ("index.html", "dashboard.html", "chapters/00-overview.html", "chapters/12-fourier-multiplication.html", "chapters/18-watch-it-form.html"):
+            page.goto("about:blank")
+            page.goto(f"{base}/{path}")
+            page.evaluate("async () => { for (let y = 0; y < document.body.scrollHeight; y += 600) { window.scrollTo(0, y); await new Promise((r) => setTimeout(r, 60)); } }")
+            page.evaluate("() => window.grokviz?.anim?.settled()")
+            w = page.evaluate("document.documentElement.scrollWidth")
+            if w > 376:  # 1 px of rounding allowed
+                culprits = page.evaluate("[...document.querySelectorAll('body *')].filter((e) => e.getBoundingClientRect().right > 377).slice(0, 5).map((e) => e.tagName + '.' + e.className)")
+                wide.append(f"{path}: {w} px wide, e.g. {culprits}")
+        assert not wide, "\n".join(wide)
+    finally:
+        page.set_viewport_size({"width": 1400, "height": 900})
 
 
 def test_offscreen_figures_wait_until_visible(browser_page):
@@ -193,6 +215,23 @@ def test_new_panels_show_the_trained_network(browser_page):
     assert "answer 37" in flow and "✓ correct" in flow, flow[-200:]
     assert re.search(r"σ\(s₀ − s₁\) explains \d+\.\d %", page.inner_text("#fig-sigmoid-linearisation .fig-note"))
     assert "a key frequency of this run" in page.inner_text("#fig-alpha-growth .fig-body > .fig-note")
+
+
+def test_neuron_stars_counts_match_the_analysis(browser_page):
+    """neuron-stars has no cluster at initialisation; at the end of the paper's run its cluster counts for k = 14 and
+    k = 42 equal the cluster sizes the Python analysis wrote to summary.json (paper.cluster_sizes)."""
+    import re
+
+    page, base = browser_page
+    sizes = dict(re.findall(r"k = (\d+): (\d+)", json.loads((SITE / "data" / "summary.json").read_text(encoding="utf-8"))["paper.cluster_sizes"]["value"]))
+    fig = "#fig-neuron-stars"
+    for state, expect in (("step=1&freq=14", "No neuron is in cluster k = 14 yet"), ("step=40001&freq=14", f"{sizes['14']} neurons are in cluster k = 14"),
+                          ("step=40001&freq=42", f"{sizes['42']} neurons are in cluster k = 42")):
+        page.goto("about:blank")
+        page.goto(f"{base}/dashboard.html#run=paper&{state}")
+        page.evaluate(f"document.querySelector('{fig}').scrollIntoView()")
+        page.wait_for_function(f"document.querySelector('{fig} .fig-note')?.textContent.includes('weights from step')", timeout=30_000)
+        assert expect in page.inner_text(f"{fig} .fig-note"), page.inner_text(f"{fig} .fig-note")
 
 
 def test_interference_toggles_and_sweep(browser_page):

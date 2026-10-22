@@ -16,6 +16,10 @@ The scatter shows only each neuron's best frequency. The full table — every ne
 
 {{fig:neuron-freq-map}}
 
+How does a cluster form? Below, every neuron is a dot placed by the frequency-k part of its input from the token a — the $W_{neur}$ of chapter 13, summed over the four heads. Distance from the centre is the size of that wave, the angle is its phase. Watch the dots: they start at the centre, spread into a grey cloud while the network memorises, and then most of them shrink back while the neurons of cluster k move out, each at its own angle.
+
+{{anim:neuron-stars}}
+
 ## The ReLU does the multiplication
 
 How can a network built from matrix products and ReLUs multiply two numbers? A ReLU applied to a *sum* of waves produces products. ARENA's example {{cite:arena152}}: take $f(a,b) = \ReLU\big(A + \cos(wa) + \cos(wb)\big)$ with a small constant A, and fit it by least squares with a constant, $\cos(wa)$, $\cos(wb)$ and the product $\cos(wa)\cos(wb)$:

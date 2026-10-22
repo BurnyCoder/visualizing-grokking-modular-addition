@@ -224,6 +224,16 @@ wneur-fourier:
   cite: "{{cite:arena152}} “W_neur in Fourier basis”"
   producer: "browser (GrokModel)"
   size: l
+neuron-stars:
+  title: "Neurons as stars: the frequency-k part of every neuron's input"
+  what: "Each of the 512 MLP neurons as a dot at the cos k and sin k coefficients of its input from the token a: distance = the size of its frequency-k wave, angle = the wave's phase."
+  eq: "\\Big(\\langle F_{\\cos k},\\, \\textstyle\\sum_j W_{neur}^{j}[n,\\cdot]\\rangle,\\ \\langle F_{\\sin k},\\, \\textstyle\\sum_j W_{neur}^{j}[n,\\cdot]\\rangle\\Big), \\quad W_{neur}^{j} = W_{in}\\,W_O^{j}\\,W_V^{j}\\,W_E"
+  read: "One dot per neuron n. Its position is the frequency-k part of what the four heads write into the neuron when they attend to the token a (W_neur of every head, summed: as if every head attended only to a). A neuron whose input over a is one wave r·cos(w_k a + φ) sits at distance r·√(113/2) from the centre, at the angle set by φ. Neurons of the selected frequency's cluster are larger; colour = cluster, grey = none. The scale is fixed per run and frequency, so growth and shrinkage over training are real. Played through training on the paper run: every dot starts at the centre, a grey cloud grows during memorisation, then the cloud shrinks while the cluster's neurons move out, each at its own phase."
+  expect: "At the end of training the neurons of cluster k far from the centre, at many different angles, and every other neuron near the centre. The angles need not be spread evenly: for some frequencies (k = 42 on the paper run) they bunch into a few directions."
+  chapter: "14-evidence-neurons-heads.html"
+  cite: "{{cite:arena152}} “W_neur in Fourier basis”; {{cite:nanda2023}} Sec. 4.2"
+  producer: "browser (GrokModel)"
+  anim: {run: paper, range: grokking, speed: 1, loop: loop}
 pos-embed:
   title: "Positional embeddings"
   what: "The three learned vectors added at positions 0 (a), 1 (b) and 2 (=)."

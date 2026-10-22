@@ -11,7 +11,8 @@ Local explanation: chapters are markdown files with small macros that the build 
                                       (configured by the figure's `anim:` block: run, range, speed, loop, poster)
   {{scene:id}}                      — a scrollytelling marker from scenes.yaml (state / play range for the page)
   {{cite:key}}                      — a numbered link into references.yaml
-and `::: example|nuance|note|object` containers become callout boxes; $…$ and $$…$$ become KaTeX math.
+and `::: example|nuance|note|object` containers become callout boxes; `::: scrolly` keeps its first figure on screen
+while the text after it is read (scrollytelling with {{scene:}} markers); $…$ and $$…$$ become KaTeX math.
 While expanding, the build enforces the reading contract and fails on any violation: every term and symbol is
 defined (dfn/symdef) before it is used in reading order, every glossary entry is one sentence with a source,
 every figure/number/quote/citation exists, and quotes respect the length policy (docs/content-style.md).
@@ -83,6 +84,7 @@ def markdown() -> MarkdownIt:
                 return f'<div class="callout {name}{" objectbox" if name == "object" else ""}">{head}\n'
             return "</div>\n"
         md.use(container_plugin, name, render=render)
+    md.use(container_plugin, "scrolly", render=lambda self, t, i, o, e: '<div class="scrolly">\n' if t[i].nesting == 1 else "</div>\n")  # sticky first figure
     md.add_render_rule("math_inline", lambda self, t, i, o, e: f'<span class="math inline">{_esc(t[i].content)}</span>')
     md.add_render_rule("math_block", lambda self, t, i, o, e: f'<div class="math block">{_esc(t[i].content)}</div>\n')
     md.add_render_rule("math_inline_double", lambda self, t, i, o, e: f'<div class="math block">{_esc(t[i].content)}</div>')

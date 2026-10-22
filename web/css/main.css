@@ -166,6 +166,12 @@ body.modal-open { overflow: hidden; }
 .scrubber-wrap input[type=range] { width: 100%; position: relative; z-index: 2; background: transparent; }
 .phase-strip { position: absolute; left: 0; right: 0; top: 50%; height: 14px; transform: translateY(-50%); z-index: 1; border-radius: 4px; overflow: hidden; }
 .phase-strip span { position: absolute; top: 0; bottom: 0; }
+/* ::: scrolly — the block's first figure stays in view while its sections are read (chapter 5); only where the screen has room */
+@media (min-width: 60rem) and (min-height: 850px) {
+  .scrolly > .fig:first-child { position: sticky; top: 3.1rem; z-index: 6; margin-left: 0; margin-right: 0; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08); } /* in the text column */
+  .scrolly > .fig:first-child :is(.fig-what, .fig-more, .fig-body > .fig-note) { display: none; } /* pinned: diagram, stage formula and player only */
+  .scrolly > .fig:first-child .flow { max-height: 30vh; }
+}
 .phase-strip .pb-paper { width: 0; border-left: 2px dashed var(--ink); opacity: 0.7; } /* the paper's own phase boundaries */
 /* dashboard hero (web/js/figures/hero.js): play button + narration, then four tiles (4 → 2 → 1 columns) */
 .hero-head { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.9rem; margin-bottom: 0.6rem; }

@@ -415,6 +415,7 @@ forward-flow:
   size: xl
   what: "The selected input flowing through the network at the selected step (embeddings, attention, residual stream, neurons, logits and the answer) with the real numbers."
   expect: "After training the correct answer's logit stands out and the prediction is right with probability close to 1."
+  anim: {run: paper, range: grokking, speed: 1, loop: once}  # {{anim:forward-flow}} in chapter 5: one pass through training, ending trained
   chapter: "05-the-model.html"
   cite: "{{cite:nanda2023}} App. A"
   producer: "web/js/model/grokmodel.js"

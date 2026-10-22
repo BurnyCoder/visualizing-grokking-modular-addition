@@ -1,6 +1,6 @@
 # scenes.yaml — scrollytelling markers placed in chapters with {{scene:id}} (web/js/ui/scrollplay.js applies them).
-# Each id maps to {label, state: {key: value, ...}, play: {from: step, to: step, speed}}: when the marker crosses the
-# middle of the screen the page's state is set and, with play, the page's player plays that step range.
+# Each id maps to {label, state: {key: value, ...}, play: {from: step, to: step, speed}}: when the marker becomes the
+# last one above two thirds of the screen height, the page's state is set and, with play, the page's player plays that range.
 # Global context: src/grokviz/site_build.py fails the build on a {{scene:id}} missing here.
 spectrum:
   label: "the spectrum sharpens"
@@ -14,3 +14,16 @@ confidence:
 late:
   label: "the late change in attention"
   play: {from: 40000, to: 50000, speed: 2}
+# Chapter 5: each step section lights up its stage in the forward-flow figure above it (state key `stage`).
+flow-embed:
+  label: "step 1: embeddings"
+  state: {stage: embed}
+flow-attention:
+  label: "step 2: attention"
+  state: {stage: attention}
+flow-mlp:
+  label: "step 3: the MLP"
+  state: {stage: mlp}
+flow-logits:
+  label: "step 4: unembedding"
+  state: {stage: logits}

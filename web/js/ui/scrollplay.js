@@ -3,11 +3,13 @@
 // Local explanation: `scrollPlay(el, player)` registers an animated figure: it starts playing when at least 60 % of
 // it (or of the screen, for figures taller than the screen) is visible and pauses below 20 %; only one animation
 // plays at a time; once the reader touches its controls it no longer starts by itself; nothing autoplays under
-// reduced motion, and a hidden tab pauses everything. `initScenes()` watches the {{scene:id}} markers: when one
-// crosses the middle of the screen, its `state` is set and its `play` range ({from, to, speed} in training steps)
-// is played on the page's Player (under reduced motion it jumps to the end of the range instead).
+// reduced motion, and a hidden tab pauses everything. `initScenes()` keeps one {{scene:id}} marker active: the last
+// one above two thirds of the screen height (rechecked once per frame while scrolling, so jumps via links count
+// too). When the active marker changes, its `state` is set and its `play` range ({from, to, speed} in training
+// steps) is played on the page's Player (under reduced motion it jumps to the end of the range instead).
 // Global context: chapter animations ({{anim:id}}) and scrollytelling chapters; the dashboard never autoplays.
-// Sources: IntersectionObserver thresholds and rootMargin (https://developer.mozilla.org/docs/Web/API/Intersection_Observer_API);
+// Sources: IntersectionObserver thresholds (https://developer.mozilla.org/docs/Web/API/Intersection_Observer_API); the
+// "step enters" pattern of scrollytelling libraries (https://github.com/russellsamora/scrollama);
 // Page Visibility API (https://developer.mozilla.org/docs/Web/API/Page_Visibility_API).
 import { reducedMotion } from "../core/motion.js";
 import { set } from "../core/state.js";
@@ -50,12 +52,17 @@ function applyScene(scene) {
   if (scene.play) playSteps(scene.play);
 }
 
-/** Watch every {{scene:id}} marker on the page. */
+/** Watch every {{scene:id}} marker on the page; apply the active one whenever it changes. */
 export function initScenes() {
-  const markers = document.querySelectorAll(".scene[data-scene]");
+  const markers = [...document.querySelectorAll(".scene[data-scene]")];
   if (!markers.length) return;
-  const sio = new IntersectionObserver((records) => {
-    for (const r of records) if (r.isIntersecting) applyScene(JSON.parse(r.target.dataset.scene));
-  }, { rootMargin: "-50% 0px -50% 0px" }); // a zero-height band across the middle of the screen
-  markers.forEach((m) => sio.observe(m));
+  let current = null, queued = false;
+  const update = () => {
+    queued = false;
+    const active = markers.filter((m) => m.getBoundingClientRect().top < (2 * innerHeight) / 3).at(-1) ?? null;
+    if (active && active !== current) applyScene(JSON.parse(active.dataset.scene));
+    current = active;
+  };
+  addEventListener("scroll", () => { if (!queued) { queued = true; requestAnimationFrame(update); } }, { passive: true });
+  update();
 }

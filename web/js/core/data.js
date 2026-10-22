@@ -3,10 +3,12 @@
 // Local explanation: `manifest()` fetches data/manifest.json once; `array(runId, name)` fetches one .bin file,
 // decodes it according to its manifest entry (f32 | f16 | i16 | u8q = uint8 linearly quantised) and returns
 // {data: Float32Array, shape}; `model(runId, step)` returns a GrokModel for the stored checkpoint nearest to
-// `step`. Results are cached so moving the scrubber back and forth does not refetch.
+// `step` (its tables computed in a web worker, model/client.js); `prefetchModels` warms the next snapshots while a
+// run plays. Results are cached so moving the scrubber back and forth does not refetch.
 // Global context: the only place that knows the data format written by src/grokviz/export.py.
 // Sources: fetch + ArrayBuffer (https://developer.mozilla.org/docs/Web/API/Response/arrayBuffer).
-import { GrokModel, decodeF16 } from "../model/grokmodel.js";
+import { decodeF16 } from "../model/grokmodel.js";
+import { buildModel } from "../model/client.js";
 import { nearest } from "./anim.js";
 
 export { nearest as nearestIndex }; // index of the stored step closest to a step (one implementation, core/anim.js)
@@ -94,7 +96,7 @@ export async function model(runId, step) {
   const s = r.weight_steps[nearest(r.weight_steps, step)];
   const key = `${runId}@${s}`;
   if (!models.has(key)) {
-    models.set(key, array(runId, `w_${s}`).then((a) => Object.assign(new GrokModel(a.data, r.param_layout, r.p || 113), { step: s })));
+    models.set(key, array(runId, `w_${s}`).then(async (a) => Object.assign(await buildModel(a.data, r.param_layout, r.p || 113), { step: s })));
     if (models.size > 24) models.delete(models.keys().next().value); // keep memory bounded (LRU-ish)
   }
   return models.get(key);
@@ -104,4 +106,10 @@ export async function model(runId, step) {
 export async function trainMask(splitSeed) {
   const m = await manifest();
   return new Uint8Array(await once(`data/${m.train_masks[String(splitSeed)]}`, "bin"));
+}
+
+/** Start building the next `ahead` weight snapshots after `step` (called while a run plays, so its frames are ready). */
+export async function prefetchModels(runId, step, ahead = 2) {
+  const r = await run(runId), i = nearest(r.weight_steps, step);
+  for (let k = 1; k <= ahead && i + k < r.weight_steps.length; k++) model(runId, r.weight_steps[i + k]);
 }

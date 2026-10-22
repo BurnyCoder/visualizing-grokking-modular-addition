@@ -1,14 +1,14 @@
 // page-player.js — the one Player of a page, playing the selected run on the page's global state.
 //
 // Local explanation: created on first use; follows the run selection (loads the run's checkpoint steps and phases
-// from the manifest, ignoring answers for a run that is no longer selected) and uses the reader's reduced-motion
-// preference.
+// from the manifest, ignoring answers for a run that is no longer selected), uses the reader's reduced-motion
+// preference, and while playing warms the next weight snapshots (core/data.js prefetchModels) for model-based panels.
 // Global context: the dashboard's player bar, the chapter scrubber widget, scrollytelling scenes and the guided tour
 // all control this same Player, so they never disagree about the step.
 import { Player } from "../core/player.js";
 import { storeOf } from "../core/state.js";
 import { reducedMotion } from "../core/motion.js";
-import { run } from "../core/data.js";
+import { prefetchModels, run } from "../core/data.js";
 
 let player = null;
 
@@ -25,5 +25,6 @@ export function pagePlayer() {
     player.setSteps(r.ckpt_steps, r.phases);
     loaded();
   });
+  store.subscribe(["step"], (s) => { if (s.playing) prefetchModels(s.run, s.step); }, { immediate: false });
   return player;
 }

@@ -5,6 +5,8 @@
 // W_O [d, H*dh], W_in [n, d], W_out [d, n], W_U [d, V]). Because inputs are one-hot tokens, everything before
 // the softmax/ReLU depends on one token at a time, so we precompute per-token tables once per checkpoint and
 // then evaluate any (a, b) cheaply — fast enough to redraw 113×113 grids while the user scrubs through training.
+// The tables can be computed elsewhere (model/worker.js, off the main thread) and handed over with
+// `toTables()` / `GrokModel.fromTables()`.
 // Global context: powers every per-input view on the site (forward walkthrough, attention/neuron grids,
 // output distributions, activation patching); its numbers are tested against PyTorch in tests/js/.
 // Sources: paper App. A equations (https://arxiv.org/abs/2301.05217); src/grokviz/model.py (same maths).
@@ -50,7 +52,7 @@ export class GrokModel {
    * @param {Array<{name:string, shape:number[]}>} layout  parameter layout from manifest.json
    * @param {number} p  modulus (113); token p is '='
    */
-  constructor(flat, layout, p) {
+  constructor(flat, layout, p, tables = null) {
     const P = unpack(flat, layout); // named parameter views
     this.p = p;
     this.WE = P["embed.W_E"]; // [d, V]
@@ -67,7 +69,18 @@ export class GrokModel {
     [this.d, this.V] = this.WE.shape; // residual width, vocabulary size
     [this.H, this.dh] = this.WK.shape; // heads, head size
     this.n = this.Win.shape[0]; // MLP neurons
-    this._precompute();
+    if (tables) Object.assign(this, tables); // computed elsewhere (web worker)
+    else this._precompute();
+  }
+
+  /** A model from weights plus precomputed tables (no precompute on this thread). */
+  static fromTables(flat, layout, p, tables) {
+    return new GrokModel(flat, layout, p, tables);
+  }
+
+  /** The per-checkpoint tables every fast method reads (plain typed arrays: structured-clone friendly). */
+  toTables() {
+    return Object.fromEntries(TABLES.map((k) => [k, this[k]]));
   }
 
   /** Residual vector of token t at position pos: W_E[:, t] + W_pos[pos]. */
@@ -114,51 +127,61 @@ export class GrokModel {
     return y;
   }
 
-  /** Precompute token tables for the '=' position (everything the output at position 2 depends on). */
+  /**
+   * Precompute token tables for the '=' position (everything the output at position 2 depends on). Each head's
+   * output reaches the neurons and the logits linearly, so W_in·W_O^h [n, dh] and W_U^T·W_O^h [V, dh] are formed once
+   * per head and applied to each token's dh-wide value vector — about half the multiply-adds of computing the d-wide
+   * head output W_O^h v first and then W_in and W_U^T of it.
+   */
   _precompute() {
     const { p, H, dh, d, n, V } = this;
     const scale = 1 / Math.sqrt(dh);
-    this.x2 = this.resid0(p, 2); // '=' token at position 2 — the same for every input
-    const qkv2 = this.qkv(this.x2);
-    this.q2 = qkv2.q; // queries from '=' (constant)
-    this.s2 = qkv2.q.map((q, h) => dot(q, qkv2.k[h]) * scale); // score '=' → '='
-    this.OV2 = qkv2.v.map((v, h) => this.ov(h, v)); // what each head writes when attending to '='
-    this.sA = []; this.sB = []; this.OVA = []; this.OVB = []; // per head: scores and OV outputs for tokens at pos 0 / 1
+    const WO = this.WO.data, Win = this.Win.data, WU = this.WU.data;
+    const WUt = new Float32Array(V * d); // W_U transposed [V, d], so logit rows are contiguous
+    for (let i = 0; i < d; i++) for (let c = 0; c < V; c++) WUt[c * d + i] = WU[i * V + c];
+    const inO = [], uO = []; // per head: W_in W_O^h [n, dh] and W_U^T W_O^h [V, dh]
+    for (let h = 0; h < H; h++) {
+      const A = new Float32Array(n * dh), B = new Float32Array(V * dh);
+      for (let j = 0; j < dh; j++) {
+        const col = new Float32Array(d); // column h*dh + j of W_O
+        for (let i = 0; i < d; i++) col[i] = WO[i * H * dh + h * dh + j];
+        for (let m = 0; m < n; m++) { let s = 0; for (let i = 0; i < d; i++) s += Win[m * d + i] * col[i]; A[m * dh + j] = s; }
+        for (let c = 0; c < V; c++) { let s = 0; for (let i = 0; i < d; i++) s += WUt[c * d + i] * col[i]; B[c * dh + j] = s; }
+      }
+      inO.push(A); uO.push(B);
+    }
+    const reach = (h, v) => [GrokModel.matvec(inO[h], 0, n, dh, v), GrokModel.matvec(uO[h], 0, V, dh, v)]; // to neurons, to logits
+    const x2 = this.resid0(p, 2); // '=' token at position 2 — the same for every input
+    const qkv2 = this.qkv(x2);
+    const q2 = qkv2.q; // queries from '=' (constant)
+    this.s2 = q2.map((q, h) => dot(q, qkv2.k[h]) * scale); // score '=' → '='
+    this.P2 = []; this.U2 = []; // what each head adds to the neuron inputs / logits when attending to '='
+    for (let h = 0; h < H; h++) { const [a, b] = reach(h, qkv2.v[h]); this.P2.push(a); this.U2.push(b); }
+    this.sA = []; this.sB = []; this.PA = []; this.PB = []; this.UA = []; this.UB = []; // per head, per token at pos 0 / 1
     for (let h = 0; h < H; h++) {
       this.sA.push(new Float32Array(p)); this.sB.push(new Float32Array(p));
-      this.OVA.push([]); this.OVB.push([]);
+      this.PA.push([]); this.PB.push([]); this.UA.push([]); this.UB.push([]);
     }
     for (let t = 0; t < p; t++) {
-      for (const [pos, S, OV] of [[0, this.sA, this.OVA], [1, this.sB, this.OVB]]) {
-        const x = this.resid0(t, pos);
-        const kv = this.qkv(x);
+      for (const [pos, S, P, U] of [[0, this.sA, this.PA, this.UA], [1, this.sB, this.PB, this.UB]]) {
+        const kv = this.qkv(this.resid0(t, pos));
         for (let h = 0; h < H; h++) {
-          S[h][t] = dot(this.q2[h], kv.k[h]) * scale; // pre-softmax score from '=' to this token
-          OV[h].push(this.ov(h, kv.v[h])); // what head h writes if it attends fully to this token
+          S[h][t] = dot(q2[h], kv.k[h]) * scale; // pre-softmax score from '=' to this token
+          const [a, b] = reach(h, kv.v[h]); // what head h adds to the neuron inputs / logits if it attends fully here
+          P[h].push(a); U[h].push(b);
         }
       }
     }
-    // Neuron-input contributions (linear, so they can be pre-multiplied by W_in).
-    const Win = (x) => GrokModel.matvec(this.Win.data, 0, n, d, x);
-    this.c0 = Win(this.x2).map((v, i) => v + this.bin.data[i]); // W_in x2 + b_in
-    this.PA = this.OVA.map((row) => row.map(Win)); // W_in OV_A[h][a]
-    this.PB = this.OVB.map((row) => row.map(Win));
-    this.P2 = this.OV2.map(Win);
-    // Logit read-out: W_U^T (x2 + b_out + attention + W_out post).
-    const WUT = (x) => { // [V] = W_U^T x
-      const y = new Float32Array(V);
-      for (let c = 0; c < V; c++) { let s = 0; for (let i = 0; i < d; i++) s += this.WU.data[i * V + c] * x[i]; y[c] = s; }
-      return y;
-    };
-    this.U0 = WUT(this.x2.map((v, i) => v + this.bout.data[i]));
-    this.UA = this.OVA.map((row) => row.map(WUT));
-    this.UB = this.OVB.map((row) => row.map(WUT));
-    this.U2 = this.OV2.map(WUT);
-    this.WL = new Float32Array(V * n); // W_U^T W_out [V, n]: the neuron-logit map (incl. the '=' row)
-    for (let c = 0; c < V; c++) for (let m = 0; m < n; m++) {
-      let s = 0; for (let i = 0; i < d; i++) s += this.WU.data[i * V + c] * this.Wout.data[i * n + m];
-      this.WL[c * n + m] = s;
+    this.c0 = GrokModel.matvec(Win, 0, n, d, x2).map((v, i) => v + this.bin.data[i]); // W_in x2 + b_in
+    const U0 = new Float32Array(V); // W_U^T (x2 + b_out): the residual's direct contribution to the logits
+    for (let c = 0; c < V; c++) { let s = 0; for (let i = 0; i < d; i++) s += WU[i * V + c] * (x2[i] + this.bout.data[i]); U0[c] = s; }
+    this.U0 = U0;
+    const WL = new Float64Array(V * n); // W_U^T W_out [V, n]: the neuron-logit map (incl. the '=' row)
+    for (let i = 0; i < d; i++) for (let c = 0; c < V; c++) { // i outermost: the inner loop runs along contiguous rows
+      const u = WU[i * V + c], row = i * n, out = c * n;
+      for (let m = 0; m < n; m++) WL[out + m] += u * this.Wout.data[row + m];
     }
+    this.WL = Float32Array.from(WL);
   }
 
   /** Attention pattern from '=' to (a, b, '=') for every head: [H][3]. */
@@ -195,21 +218,34 @@ export class GrokModel {
 
   /** p×p grid (row a, column b) of attention from '=' to position `key` (0 = a, 1 = b, 2 = '=') for head h. */
   attentionGrid(h, key = 0) {
-    const { p } = this;
-    const g = new Float32Array(p * p);
-    for (let a = 0; a < p; a++) for (let b = 0; b < p; b++) g[a * p + b] = softmax([this.sA[h][a], this.sB[h][b], this.s2[h]])[key];
+    const { p } = this, pat = this.patterns(), g = new Float32Array(p * p), off = h * p * p;
+    for (let i = 0; i < p * p; i++) g[i] = pat[3 * (off + i) + key];
     return g;
+  }
+
+  /**
+   * Attention from '=' to (a, b, '=') for every head and input, Float32Array [H, p·p, 3], computed once per model:
+   * every attention and neuron grid reads it, so drawing many grids per frame costs no softmax at all.
+   */
+  patterns() {
+    if (this._pat) return this._pat;
+    const { p, H } = this, pat = new Float32Array(H * p * p * 3);
+    for (let h = 0; h < H; h++) for (let a = 0; a < p; a++) for (let b = 0; b < p; b++) {
+      const x = this.sA[h][a], y = this.sB[h][b], z = this.s2[h], mx = Math.max(x, y, z); // stable softmax of 3 scores
+      const ex = Math.exp(x - mx), ey = Math.exp(y - mx), ez = Math.exp(z - mx), s = ex + ey + ez, o = 3 * ((h * p + a) * p + b);
+      pat[o] = ex / s; pat[o + 1] = ey / s; pat[o + 2] = ez / s;
+    }
+    return (this._pat = pat);
   }
 
   /** p×p grid of one neuron's activation (post-ReLU by default) at '='. */
   neuronGrid(m, post = true) {
-    const { p, H } = this;
-    const g = new Float32Array(p * p);
+    const { p, H } = this, pat = this.patterns(), g = new Float32Array(p * p);
     for (let a = 0; a < p; a++) for (let b = 0; b < p; b++) {
       let v = this.c0[m];
       for (let h = 0; h < H; h++) {
-        const [pa, pb, p2] = softmax([this.sA[h][a], this.sB[h][b], this.s2[h]]);
-        v += pa * this.PA[h][a][m] + pb * this.PB[h][b][m] + p2 * this.P2[h][m];
+        const o = 3 * ((h * p + a) * p + b);
+        v += pat[o] * this.PA[h][a][m] + pat[o + 1] * this.PB[h][b][m] + pat[o + 2] * this.P2[h][m];
       }
       g[a * p + b] = post ? Math.max(v, 0) : v;
     }
@@ -251,6 +287,9 @@ export class GrokModel {
     return { tokens: toks, resid0: x, qkv: qkvs, patterns, attnOut, residMid, pre, post, mlpOut, residPost, logits };
   }
 }
+
+/** Names of the precomputed tables (see `_precompute`), the state `toTables` / `fromTables` hand over. */
+const TABLES = ["s2", "sA", "sB", "c0", "PA", "PB", "P2", "U0", "UA", "UB", "U2", "WL"];
 
 /** Dot product of two equal-length arrays. */
 export function dot(u, v) {

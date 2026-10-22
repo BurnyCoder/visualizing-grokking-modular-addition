@@ -41,3 +41,6 @@ The phase-by-phase diagram is in the README ([What happens when you run it](../R
   `{{anim:id}}` figure has its own, started by `ui/scrollplay.js` when on screen.
 - **Heavy compute in Python, per-input compute in the browser.** Curves, spectra and geometry are precomputed; any
   (a, b) / neuron / head view is computed from float16 weights by `web/js/model/grokmodel.js` (tested against torch).
+  Each weight snapshot's per-token tables (~45 million multiply-adds) are built in a web worker (`model/worker.js`,
+  `model/client.js`, main-thread fallback). The attention patterns of all 12,769 inputs are cached once per snapshot,
+  so many grids per frame stay cheap. While the page player plays, the next snapshots are prefetched.

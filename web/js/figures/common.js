@@ -40,8 +40,9 @@ export function watch(body, keys, fn, { dedupe = null, theme = true } = {}) {
       lastKey = k;
     }
     if (body.hasAttribute("aria-live")) body.setAttribute("aria-live", s.playing ? "off" : "polite"); // no announcements per played frame
-    countRender(id);
+    const t0 = performance.now();
     await fn(s, changed);
+    countRender(id, performance.now() - t0);
   }, union);
   const gate = onVisibility(body, () => { if (dirty) { const c = dirty; dirty = null; track(draw(c)); } });
   const trigger = (changed) => {

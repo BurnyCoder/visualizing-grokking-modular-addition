@@ -112,6 +112,15 @@ def test_dashboard_playback(browser_page):
     assert median <= 50, f"median frame {median:.0f} ms while playing"
     page.wait_for_timeout(400)  # hash writes are debounced by 150 ms
     assert f"step={step}" in page.url
+    # with the model-driven panels on screen (grids recomputed per weight snapshot, tables built in the web worker)
+    page.evaluate("document.querySelector('#fig-neuron-grid').scrollIntoView({block: 'start'})")
+    page.wait_for_function("!document.querySelector('#fig-neuron-grid .loading')", timeout=30_000)
+    page.evaluate(SETTLED)
+    page.click("#ctl-player .pb-play")
+    median = page.evaluate(MEDIAN_FRAME)
+    page.click("#ctl-player .pb-play")
+    assert median <= 50, f"median frame {median:.0f} ms while playing with model panels on screen"
+    assert page.evaluate("performance.getEntriesByType('resource').some((e) => e.name.includes('model/worker.js'))"), "model tables not built in the worker"
 
 
 def test_chapter_animation_scroll_play_and_reduced_motion(browser_page):

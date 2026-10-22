@@ -3,6 +3,25 @@
 # the same id in web/js/figures/index.js; chapters place a figure with {{fig:id}}, the dashboard via
 # dashboard.yaml. Text may use [[term:..]] macros (terms must be defined in some chapter).
 # ---------------- A. training curves ----------------
+hero-grokking:
+  title: "Grokking in one view"
+  size: xl
+  what: "One moment of training seen four ways: the losses, the probability of the right answer on all 12,769 inputs, the numbers on one frequency's plane, and one neuron's activation. ▶ plays the run through grokking."
+  read: |
+    All four tiles show the same training step (the dotted line in the first tile). **Tile 2**: each pixel is one
+    question a + b (a = row, b = column); yellow means the network gives the right answer probability 1. Choose
+    *training pairs* or *test pairs* to see the two groups separately. **Tile 3**: each dot is a number n, placed by
+    projecting its [[preview:embedding]] on the plane of one frequency's cosine and sine waves and coloured by n's
+    position on that frequency's clock (k·n mod 113); a circle with the colours in order means the network stores n as
+    an angle. The hands point at a, b and a + b. **Tile 4**: the selected neuron's activation on every input,
+    recomputed in your browser from the nearest stored weights. While playing, tiles 2 and 3 blend the two stored
+    frames around the current step (stored every 200 steps for the paper's run); paused, every tile shows a stored
+    frame and its note says which.
+  expect: "During memorisation tile 2 shows a speckle (training pairs right, test pairs wrong); the circle in tile 3 and the stripes in tile 4 form during the plateau; the whole grid turns yellow during cleanup."
+  chapter: "08-grokking.html"
+  cite: "{{cite:nanda2023}} Fig. 1–4"
+  producer: "export.py, geometry.py, web/js/model/grokmodel.js"
+  anim: {run: paper, range: grokking, speed: 1, loop: loop}
 loss-curves:
   title: "Loss during training (log scale)"
   what: "Training loss (blue) and test loss (red) at every 10th step; shaded bands are the three phases."

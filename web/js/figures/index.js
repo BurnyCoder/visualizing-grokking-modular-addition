@@ -11,6 +11,7 @@ const mod = (path, id) => () => import(path).then((m) => {
 });
 
 export const FIGURES = {
+  "hero-grokking": mod("./hero.js", "hero-grokking"),
   "loss-curves": mod("./curves.js", "loss-curves"),
   "loss-curves-linear": mod("./curves.js", "loss-curves-linear"),
   "acc-curves": mod("./curves.js", "acc-curves"),

@@ -8,6 +8,10 @@ intro: >-
   step-by-step chapter that derives it. New here? Press **Guided tour**, or start with the
   [chapters](chapters/00-overview.html).
 groups:
+  - id: hero
+    title: "Grokking in one view"
+    blurb: "Press ▶ and watch one training run from the start to just after grokking: the losses, the confidence on every input, the numbers arranging themselves on a circle and one neuron turning into a wave — four views of the same moment."
+    panels: [hero-grokking]
   - id: training
     title: "A. Training: losses, accuracy and progress measures"
     blurb: "What happens over 40,000+ steps of full-batch training: memorisation, a long plateau, then grokking — and the measurements that reveal the hidden progress during the plateau."

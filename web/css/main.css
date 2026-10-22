@@ -162,6 +162,21 @@ body.modal-open { overflow: hidden; }
 .scrubber-wrap input[type=range] { width: 100%; position: relative; z-index: 2; background: transparent; }
 .phase-strip { position: absolute; left: 0; right: 0; top: 50%; height: 14px; transform: translateY(-50%); z-index: 1; border-radius: 4px; overflow: hidden; }
 .phase-strip span { position: absolute; top: 0; bottom: 0; }
+/* dashboard hero (web/js/figures/hero.js): play button + narration, then four tiles (4 → 2 → 1 columns) */
+.hero-head { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.9rem; margin-bottom: 0.6rem; }
+.hero-play { font-weight: 600; padding: 0.3rem 0.9rem; border-color: var(--accent); }
+.hero-say { margin: 0; flex: 1 1 20rem; font-size: 0.92rem; color: var(--ink); min-height: 1.4em; }
+.hero-tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.9rem; }
+.hero-tile { min-width: 0; }
+.hero-tile h4 { margin: 0 0 0.3rem; font-size: 0.86rem; color: var(--ink-soft); font-weight: 600; }
+.hero-tile .heatmap-wrap { flex-direction: column; gap: 0.3rem; }
+.hero-tile .fig-note { font-size: 0.76rem; }
+.hero-ctl { font-size: 0.78rem; color: var(--ink-soft); display: block; margin-bottom: 0.3rem; }
+.hero-ctl select { font: inherit; background: var(--bg); color: var(--ink); border: 1px solid var(--line); border-radius: 5px; }
+.hero-chips { display: flex; flex-wrap: wrap; gap: 0.25rem; margin-bottom: 0.3rem; }
+.canvas-plot { display: block; width: 100%; }
+@media (max-width: 80rem) { .hero-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 40rem) { .hero-tiles { grid-template-columns: minmax(0, 1fr); } }
 /* player bar (web/js/ui/player-bar.js): full on the dashboard, compact in chapters, mini inside animated figures */
 .player-bar { flex: 1 1 32rem; min-width: 0; }
 .pb-main { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem 0.5rem; }

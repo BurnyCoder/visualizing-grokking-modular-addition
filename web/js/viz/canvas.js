@@ -15,8 +15,8 @@ const tooltip = () => document.getElementById("tooltip");
 const HIT = 8; // px: hover / click radius
 
 export class CanvasPlot {
-  /** @param {HTMLElement} parent  @param {{height?: number, onClick?: (i: number) => void}} o */
-  constructor(parent, { height = 240, onClick = null } = {}) {
+  /** @param {HTMLElement} parent  @param {{height?: number, onClick?: (i) => void, onHover?: (i) => void}} o */
+  constructor(parent, { height = 240, onClick = null, onHover = null } = {}) {
     this.canvas = document.createElement("canvas");
     this.canvas.className = "canvas-plot";
     this.canvas.style.height = `${height}px`;
@@ -24,15 +24,16 @@ export class CanvasPlot {
     this.ctx = this.canvas.getContext("2d");
     this.scene = null;
     this.onClick = onClick;
+    this.onHover = onHover; // called with the point index / rectangle id under the mouse (null when none)
     new ResizeObserver(() => { if (this.scene) this.draw(this.scene); }).observe(this.canvas);
     this.canvas.addEventListener("mousemove", (e) => this.hover(e));
-    this.canvas.addEventListener("mouseleave", () => { tooltip().hidden = true; });
+    this.canvas.addEventListener("mouseleave", () => { tooltip().hidden = true; this.onHover?.(null); });
     this.canvas.addEventListener("click", (e) => { const i = this.hit(e); if (i != null) this.onClick?.(i); });
   }
 
   /**
    * Draw a scene: {domain: [x0, x1, y0, y1], equal (same scale on both axes), rects: [{x0, y0, x1, y1, fill, stroke,
-   * id, label}], segments: [{x0, y0, x1, y1, color, width}], points: {x, y, color(i), r, label(i)},
+   * id, label}], segments: [{x0, y0, x1, y1, color, width}], points: {x, y, color(i), r (number or r(i)), label(i)},
    * labels: [{x, y, text, color, align ("center" | "left" | "right")}]}.
    */
   draw(scene) {
@@ -67,7 +68,7 @@ export class CanvasPlot {
       for (let i = 0; i < pts.x.length; i++) {
         const [u, v] = this.px(pts.x[i], pts.y[i]);
         ctx.fillStyle = pts.color(i);
-        ctx.beginPath(); ctx.arc(u, v, pts.r || 3.5, 0, 2 * Math.PI); ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.arc(u, v, (typeof pts.r === "function" ? pts.r(i) : pts.r) || 3.5, 0, 2 * Math.PI); ctx.fill(); ctx.stroke();
       }
     }
     ctx.font = "600 11px Inter, sans-serif";
@@ -101,6 +102,7 @@ export class CanvasPlot {
 
   hover(e) {
     const t = this.target(e), tt = tooltip();
+    this.onHover?.(t ? t.i : null);
     if (!t?.label) { tt.hidden = true; return; }
     tt.innerHTML = t.label;
     tt.hidden = false;

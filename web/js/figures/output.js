@@ -2,15 +2,20 @@
 //
 // Local explanation: runs GrokModel on (a, b), shows the 113 logits next to their best fit by a sum of cosines
 // Σ_k α_k cos(w_k(a+b−c)) over the run's key frequencies (least squares over c), the softmax probabilities, and
-// each frequency's cosine wave separately so the constructive interference at c = a+b is visible.
+// each frequency's cosine wave separately so the constructive interference at c = a+b is visible. In "interference"
+// the reader can switch frequencies off and sweep the candidate answer c: an inset chains one hand per frequency,
+// α_k·(cos θ_k, sin θ_k) with θ_k = w_k(a+b−c), tip to tail (a phasor sum); each hand's horizontal part is exactly that
+// frequency's contribution, so the chain stretches straight to the right (all contributions add up) only at c = a + b.
 // Global context: the last step of the Fourier multiplication algorithm (paper Sec. 3.1, eq. 1; App. B,
 // Fig. 8) on any concrete input, at any point of training.
 // Sources: paper Sec. 3.1, 4.2 and App. B (https://arxiv.org/abs/2301.05217).
 import { model, run } from "../core/data.js";
+import { reducedMotion } from "../core/motion.js";
 import { Plot } from "../viz/plot.js";
+import { CanvasPlot } from "../viz/canvas.js";
 import { cssVar, freqColor } from "../viz/colors.js";
 import { softmax } from "../model/grokmodel.js";
-import { frameKey, note, runOf, watch } from "./common.js";
+import { el, frameKey, note, runOf, watch } from "./common.js";
 import { spectrumMap } from "./activations.js";
 
 /** Least-squares α_k (+ intercept) for logits[c] ≈ β + Σ_k α_k cos(w_k(t − c)), t = a + b. */
@@ -60,19 +65,71 @@ export const figures = {
   "interference": {
     async render(body, ds) {
       body.innerHTML = "";
-      const plot = new Plot(body, { height: 300 });
+      const ctl = el(body, "div", "interf-ctl");
+      const chips = el(ctl, "span", "hero-chips");
+      const sweep = el(ctl, "button", "btn", "▶ sweep c");
+      sweep.type = "button";
+      const cIn = el(ctl, "label", "hero-ctl", 'candidate answer c <input type="range" min="0" max="112" step="1" value="0">').querySelector("input");
+      const row = el(body, "div", "interf-row");
+      const plot = new Plot(row, { height: 300 });
+      const cp = new CanvasPlot(el(row, "div", "interf-inset"), { height: 240 });
       const info = note(body);
+      let fit = null, ks = [], c = 0, anim = null; // fit: α_k and waves for the current input; anim: sweep in progress
+      const off = new Set(); // frequencies switched off by the reader
+      const sumAt = (x) => ks.reduce((acc, k, j) => acc + (off.has(k) ? 0 : fit.alpha[j] * fit.cols[j][x]), 0);
+      const drawInset = () => { // the hands at the current c, and the plot's cursor
+        if (!fit) return;
+        const on = ks.map((k, j) => [k, j]).filter(([k]) => !off.has(k)), R = 1.08 * ks.reduce((acc, _, j) => acc + Math.abs(fit.alpha[j]), 0) || 1;
+        const segs = [{ x0: -R, y0: 0, x1: R, y1: 0, color: cssVar("--line"), width: 1 }];
+        let x = 0, y = 0;
+        for (const [k, j] of on) { // hands chained tip to tail (a phasor sum): the end's x is the summed contribution
+          const th = (2 * Math.PI * k * (fit.t - c)) / fit.p, nx = x + fit.alpha[j] * Math.cos(th), ny = y + fit.alpha[j] * Math.sin(th);
+          segs.push({ x0: x, y0: y, x1: nx, y1: ny, color: freqColor(k), width: 3 });
+          [x, y] = [nx, ny];
+        }
+        segs.push({ x0: x, y0: y, x1: x, y1: 0, color: cssVar("--ink-soft"), width: 1 }); // drop to the axis: the sum
+        cp.draw({ domain: [-R, R, -R, R], equal: true, segments: segs, labels: [{ x, y: -0.12 * R, text: "sum", color: cssVar("--ink") }] });
+        plot.cursor(c);
+        cIn.value = String(c);
+        const right = fit.t % fit.p;
+        info.textContent = `c = ${c}: the chained hands (one per frequency, coloured as the chips) end at ${sumAt(c).toFixed(1)}, the summed contribution${c === right ? " — every hand points right: c = a + b" : ` (at c = a + b = ${right}: ${sumAt(right).toFixed(1)})`}. Each wave peaks at c = a + b (mod ${fit.p}) but also near other c; only there do the peaks of all switched-on frequencies coincide. Switch frequencies off with the chips: one frequency alone leaves several almost equally good answers.`;
+      };
+      const drawPlot = async () => {
+        if (!fit) return;
+        const cs = Array.from({ length: fit.p }, (_, x) => x);
+        const traces = ks.map((k, j) => ({ x: cs, y: fit.cols[j].map((v) => fit.alpha[j] * v), type: "scatter", mode: "lines", name: `α·cos(w_${k}(a+b−c)), k=${k}`,
+          line: { color: freqColor(k), width: 1.4 }, opacity: off.has(k) ? 0.2 : 1 }));
+        traces.push({ x: cs, y: cs.map(sumAt), type: "scatter", mode: "lines", name: "sum of the switched-on frequencies", line: { color: cssVar("--ink"), width: 3 } });
+        await plot.draw(traces, { xaxis: { title: { text: "candidate answer c" } }, yaxis: { title: { text: "contribution to the logit" } }, hovermode: "x unified" });
+        drawInset();
+      };
       watch(body, ["run", "step", "a", "b"], async (s) => {
         const id = runOf(ds), r = await run(id), net = await model(id, s.step);
         const p = net.p, L = Array.from(net.logits(s.a, s.b)).slice(0, p);
-        const { alpha, cols } = cosFit(L, s.a + s.b, r.key_freqs, p);
-        const cs = Array.from({ length: p }, (_, c) => c);
-        const traces = r.key_freqs.map((k, j) => ({ x: cs, y: cols[j].map((v) => alpha[j] * v), type: "scatter", mode: "lines", name: `α·cos(w_${k}(a+b−c)), k=${k}`, line: { color: freqColor(k), width: 1.4 } }));
-        const sum = cs.map((c) => r.key_freqs.reduce((acc, _, j) => acc + alpha[j] * cols[j][c], 0));
-        traces.push({ x: cs, y: sum, type: "scatter", mode: "lines", name: "sum", line: { color: cssVar("--ink"), width: 3 } });
-        await plot.draw(traces, { xaxis: { title: { text: "candidate answer c" } }, yaxis: { title: { text: "contribution to the logit" } }, hovermode: "x unified" });
-        info.textContent = `Each wave peaks at c = a + b = ${(s.a + s.b) % p} (mod ${p}) but also near other c; only there do all ${r.key_freqs.length} peaks coincide, so the sum stands out (constructive interference).`;
+        if (ks.join() !== r.key_freqs.join()) { // new run: one toggle chip per key frequency
+          ks = r.key_freqs;
+          off.clear();
+          chips.replaceChildren(...ks.map((k) => Object.assign(document.createElement("button"), { type: "button", className: "chip active", textContent: `k = ${k}`, style: `border-color: ${freqColor(k)}`,
+            onclick: (e) => { if (off.has(k)) off.delete(k); else off.add(k); e.target.classList.toggle("active", !off.has(k)); drawPlot(); } })));
+        }
+        fit = { ...cosFit(L, s.a + s.b, ks, p), t: s.a + s.b, p };
+        c = (s.a + s.b) % p;
+        await drawPlot();
       }, { dedupe: frameKey(ds, "weight_steps", "a", "b") });
+      cIn.oninput = () => { c = Number(cIn.value); drawInset(); };
+      sweep.onclick = () => { // sweep c over all answers in 6 s (reduced motion: jump to a + b instead)
+        if (anim) { cancelAnimationFrame(anim); anim = null; sweep.textContent = "▶ sweep c"; return; }
+        if (!fit) return;
+        if (reducedMotion()) { c = fit.t % fit.p; drawInset(); return; }
+        const t0 = performance.now();
+        sweep.textContent = "❚❚ stop";
+        const step = (t) => {
+          c = Math.min(fit.p - 1, Math.floor(((t - t0) / 6000) * fit.p));
+          drawInset();
+          if (c < fit.p - 1) anim = requestAnimationFrame(step); else { anim = null; sweep.textContent = "▶ sweep c"; }
+        };
+        anim = requestAnimationFrame(step);
+      };
     },
   },
 };

@@ -263,7 +263,7 @@ neuron-grid:
   size: l
 neuron-small-multiples:
   title: "Neurons from every frequency cluster"
-  what: "Three example neurons per key-frequency cluster at the selected step."
+  what: "Three neurons from each key-frequency cluster of the final model, shown at the selected step: play the run to watch the same neurons turn into waves."
   chapter: "14-evidence-neurons-heads.html"
   cite: "{{cite:nanda2023}} Fig. 12"
   producer: "browser (GrokModel)"
@@ -308,7 +308,7 @@ neuron-freq-map:
 embed-circles:
   title: "Numbers on circles: the embedding in each key plane"
   what: "Every number's embedding projected onto the 2D plane that carries cos(w_k a) and sin(w_k a), one panel per key frequency."
-  read: "Each number n is coloured by the clock position the algorithm predicts for it at frequency k, namely k·n mod 113. A ring whose colours run smoothly around it means the embedding places n at angle w_k·n — the clock picture."
+  read: "Each number n is coloured by the clock position the algorithm predicts for it at frequency k, namely k·n mod 113. A ring whose colours run smoothly around it means the embedding places n at angle w_k·n — the clock picture. Hands point at a, b and a + b; hovering a number enlarges it on every clock. While playing, the dots move between stored frames along the circle (polar blending); paused, the picture is a stored frame."
   expect: "A cloud early in training that becomes a clean circle during circuit formation."
   chapter: "18-watch-it-form.html"
   cite: "{{cite:nanda2023}} Sec. 3.1; {{cite:video_welch}} “Linear Probes”"
@@ -374,7 +374,8 @@ output-dist:
   size: l
 interference:
   title: "Constructive interference"
-  what: "Each key frequency's cosine wave α_k cos(w_k(a+b−c)) over all candidate answers c, and their sum."
+  what: "Each key frequency's cosine wave α_k cos(w_k(a+b−c)) over all candidate answers c, and their sum; switch frequencies off and sweep c to see where they agree."
+  read: "The inset chains one hand per switched-on frequency, tip to tail. Each hand has length α_k and angle w_k(a+b−c), so its horizontal part is that frequency's contribution to the logit of c, and the chain's end is the sum. At c = a + b every angle is 0: the hands line up and the sum is largest. At other c they point in different directions and largely cancel."
   expect: "Every wave peaks at c = a+b, but each also has other near-peaks; only at c = a+b do they all agree."
   chapter: "12-fourier-multiplication.html"
   cite: "{{cite:nanda2023}} App. B, Fig. 8"

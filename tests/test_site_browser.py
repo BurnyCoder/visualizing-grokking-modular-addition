@@ -193,3 +193,23 @@ def test_new_panels_show_the_trained_network(browser_page):
     assert "answer 37" in flow and "✓ correct" in flow, flow[-200:]
     assert re.search(r"σ\(s₀ − s₁\) explains \d+\.\d %", page.inner_text("#fig-sigmoid-linearisation .fig-note"))
     assert "a key frequency of this run" in page.inner_text("#fig-alpha-growth .fig-body > .fig-note")
+
+
+def test_interference_toggles_and_sweep(browser_page):
+    """The interference panel starts at c = a + b with every hand pointing right, its sweep moves c, a chip switches a
+    frequency off; the embedding clocks are drawn on canvases (one per key frequency of the paper's run)."""
+    page, base = browser_page
+    page.goto("about:blank")
+    page.goto(f"{base}/dashboard.html#step=40001&a=100&b=50")
+    fig = "#fig-interference"
+    page.evaluate(f"document.querySelector('{fig}').scrollIntoView()")
+    page.wait_for_function(f"document.querySelector('{fig} .fig-body > .fig-note')?.textContent.startsWith('c = 37')", timeout=30_000)
+    assert "every hand points right" in page.inner_text(f"{fig} .fig-body > .fig-note")
+    page.click(f"{fig} .interf-ctl .btn")  # sweep c
+    page.wait_for_timeout(1200)
+    assert not page.inner_text(f"{fig} .fig-body > .fig-note").startswith("c = 37")
+    page.click(f"{fig} .interf-ctl .btn")  # stop
+    page.click(f"{fig} .hero-chips .chip >> nth=0")
+    assert page.locator(f"{fig} .hero-chips .chip.active").count() == 4
+    page.evaluate("document.querySelector('#fig-embed-circles').scrollIntoView()")
+    page.wait_for_function("document.querySelectorAll('#fig-embed-circles canvas.canvas-plot').length === 5", timeout=30_000)

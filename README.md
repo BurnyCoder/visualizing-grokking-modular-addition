@@ -271,7 +271,8 @@ seeds, steps, logging intervals, paths, pinned revisions and Hugging Face repo i
   - a 15-step guided tour, 7 of whose steps play a stretch of training.
 - **76 figures and 19 teaching widgets**, each one module shared by the chapters and the dashboard:
   - figures off screen do not redraw, and a figure whose stored frame did not change skips the redraw;
-  - chapter animations (`{{anim:id}}`) play when scrolled into view; scrollytelling scenes drive the page's player;
+  - chapter animations (`{{anim:id}}`) play when scrolled into view; scrollytelling scenes drive the page's player,
+    and in chapter 5 the forward pass stays pinned while each step section lights up its stage;
   - 3D panels (inputs on a torus, three principal components) drawn by a small canvas renderer;
   - an ablation playground: remove or keep frequencies and see loss, accuracy and the correctness grid change;
   - every figure can be enlarged; `prefers-reduced-motion` (or `?still=1`) turns off autoplay and tweening.

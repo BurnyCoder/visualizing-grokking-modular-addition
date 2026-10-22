@@ -11,7 +11,7 @@ weights — never from the progress measures (restricted/excluded loss, Gini) wh
 The constants (1 %, 0.2, 0.05) were calibrated once on the paper run (giving 1.6k / 9.3k / 14.0k vs the
 paper's 1.4k / 9.4k / 14k) and frozen in docs/operationalizations.md before any of our runs was analysed.
 Global context: phase bands shade every training-time plot on the website and define the time points of the
-preregistered hypotheses H1/H2.
+preregistered hypotheses H1/H2; `drop_time` gives H1's tenfold-fall time points.
 Sources: paper Sec. 5.2 phase descriptions (https://arxiv.org/abs/2301.05217).
 """
 
@@ -32,6 +32,14 @@ TRAIN_PLATEAU_REL_DROP = 0.01  # t1: train loss decreases by less than 1 % over 
 GROK_TEST_FRACTION = 0.2  # t2: test loss at 20 % of its post-memorisation plateau
 CLEANUP_SSW_FRACTION = 0.05  # t3: SSW within 5 % of the way from SSW(t2) to its final level
 PAPER_BOUNDARIES = {"t1": 1400, "t2": 9400, "t3": 14000}  # paper Sec. 5.2 (epochs; drawn by eye)
+
+
+def drop_time(steps: np.ndarray, values: np.ndarray, t1: int, factor: float = 0.1) -> int | None:
+    """First checkpoint after t1 where `values` ≤ factor × its value at t1 (None if never): H1's time points
+    (docs/preregistration.md), also quoted in the prose for the paper run (summary.py)."""
+    i1 = int(np.searchsorted(steps, t1))
+    hit = np.nonzero((values <= factor * values[i1]) & (np.arange(len(steps)) > i1))[0]
+    return int(steps[hit[0]]) if len(hit) else None
 
 
 def _first(steps: np.ndarray, condition: np.ndarray, after: int) -> int | None:

@@ -18,6 +18,7 @@ import numpy as np  # arrays
 import torch  # weights
 
 from grokviz import stats, task  # intervals over seeds; split sizes
+from grokviz.phases import drop_time  # tenfold-fall time points (H1's rule)
 from grokviz.runstore import RunStore  # paper run
 from grokviz.sources import PAPER_ANALYSIS_INDEX  # index of the paper's epoch-40k checkpoint
 
@@ -66,6 +67,8 @@ def paper_numbers(runs_dir: Path, p: int, frac: float) -> dict:
     out["paper.key_freqs"] = _v(rc["details"]["key_freqs"])
     for t in ("t1", "t2", "t3", "t_grok"):
         out[f"paper.{t}"] = _v(ph[t], "int")
+    for key, col in (("restricted_drop_step", "restricted_loss"), ("test_drop_step", "loss_test")):  # H1's rule on the paper run
+        out[f"paper.{key}"] = _v(drop_time(m["steps"], m[col], ph["t1"]), "int")
     out["paper.loss40k_test"] = _v(val["epoch40k_loss_test_113"], "sci")
     for row in rc["rows"]:  # rc.R* = our value of each reproduction check
         ours = row["ours"]

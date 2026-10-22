@@ -235,6 +235,37 @@ def test_weight_norms_and_gini_sweep(browser_page):
     page.wait_for_function(f"document.querySelector(\"{w} .workings\").textContent.includes('= 0.875')", timeout=15_000)
 
 
+def test_chapter5_stage_scenes(browser_page):
+    """Chapter 5: the forward-flow animation sits in a ::: scrolly block, and reading each step section lights up its
+    stage (scene markers set `stage`) with that stage's formula; a click on another stage selects that one instead."""
+    page, base = browser_page
+    page.goto("about:blank")
+    page.goto(f"{base}/chapters/05-the-model.html")
+    assert page.locator(".scrolly > figure.fig.anim#fig-forward-flow").count() == 1
+    for scene, stage in (("flow-embed", "embed"), ("flow-attention", "attention"), ("flow-mlp", "mlp"), ("flow-logits", "logits")):
+        page.evaluate(f"document.getElementById('scene-{scene}').scrollIntoView({{block: 'center'}})")
+        page.wait_for_function(f"document.querySelector('#fig-forward-flow .flow-zone.on')?.dataset.stage === '{stage}'", timeout=10_000)
+        assert page.locator("#fig-forward-flow .flow-eq .math").count() == 1
+    page.evaluate("document.querySelector('#fig-forward-flow .flow-zone[data-stage=\"answer\"]').dispatchEvent(new MouseEvent('click', {bubbles: true}))")
+    page.wait_for_function("document.querySelector('#fig-forward-flow .flow-zone.on')?.dataset.stage === 'answer'", timeout=10_000)
+
+
+def test_attention_lookup_signed_view(browser_page):
+    """attn-C-fourier's signed view shows Const plus cos/sin of the 5 key frequencies for the 4 heads; at the end of the
+    paper's run heads 1 and 3 carry k = 42 with opposite signs (mirror-image lookups, as its caption says)."""
+    page, base = browser_page
+    page.goto("about:blank")
+    page.goto(f"{base}/dashboard.html#run=paper&step=40001")
+    fig = "#fig-attn-C-fourier"
+    page.evaluate(f"document.querySelector('{fig}').scrollIntoView()")
+    page.wait_for_function(f"document.querySelector('{fig} .js-plotly-plot')?.data?.length === 4", timeout=30_000)
+    page.select_option(f"{fig} select", "signed")
+    page.wait_for_function(f"document.querySelector('{fig} .js-plotly-plot').data[0].x.length === 11", timeout=10_000)
+    x, y1, y3 = page.evaluate(f"(() => {{ const d = document.querySelector('{fig} .js-plotly-plot').data; return [d[1].x, d[1].y, d[3].y]; }})()")
+    i = x.index("cos 42")
+    assert y1[i] * y3[i] < 0 and abs(y1[i]) > 5 and abs(y3[i]) > 5, (y1[i], y3[i])
+
+
 def test_neuron_stars_counts_match_the_analysis(browser_page):
     """neuron-stars has no cluster at initialisation; at the end of the paper's run its cluster counts for k = 14 and
     k = 42 equal the cluster sizes the Python analysis wrote to summary.json (paper.cluster_sizes)."""

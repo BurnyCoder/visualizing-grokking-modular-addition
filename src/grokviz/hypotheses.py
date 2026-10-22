@@ -26,6 +26,7 @@ from grokviz.checkpoint_metrics import grid_for, reference_index, run_dirs  # sh
 from grokviz.context import PipelineContext  # phase argument
 from grokviz.envcheck import resolve_device  # device
 from grokviz.patching import patch_recovery  # counterfactual swaps
+from grokviz.phases import drop_time  # H1's time points
 from grokviz.runstore import RunStore  # run access
 
 log = logging.getLogger("grokviz.hypotheses")
@@ -109,13 +110,6 @@ def _load(run_dir) -> dict:
     }
 
 
-def _drop_time(steps: np.ndarray, values: np.ndarray, t1: int, factor: float = 0.1) -> int | None:
-    """First checkpoint after t1 where `values` ≤ factor × its value at t1 (None if never)."""
-    i1 = int(np.searchsorted(steps, t1))
-    hit = np.nonzero((values <= factor * values[i1]) & (np.arange(len(steps)) > i1))[0]
-    return int(steps[hit[0]]) if len(hit) else None
-
-
 def evaluate_hypotheses(runs: list[dict]) -> dict:
     """The preregistered tests (docs/preregistration.md) on loaded runs."""
     wd1 = [r for r in runs if r["meta"].get("group") == "wd1"]
@@ -125,8 +119,8 @@ def evaluate_hypotheses(runs: list[dict]) -> dict:
     for r in wd1:
         m, ph, fin = r["m"], r["phases"], r["final"]
         t1, t2 = ph["t1"], ph["t2"]
-        t_test = _drop_time(m["steps"], m["loss_test"], t1) if t1 else None
-        t_restr = _drop_time(m["steps"], m["restricted_loss"], t1) if t1 else None
+        t_test = drop_time(m["steps"], m["loss_test"], t1) if t1 else None
+        t_restr = drop_time(m["steps"], m["restricted_loss"], t1) if t1 else None
         # Δ = t_test − t_restr; if the test loss never drops 10× but the restricted loss does, Δ is +∞ (H1 holds),
         # stored as None so the JSON stays standard (H1_ok below keeps the +∞ meaning)
         delta = None if (t_restr is None or t_test is None) else t_test - t_restr

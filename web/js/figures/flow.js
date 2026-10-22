@@ -5,7 +5,8 @@
 // negative, red positive); each head's attention from '=' to a, b and '='; the residual x⁽¹⁾ at '='; the 512 neuron
 // activations (sorted by frequency cluster, as in the neuron panels); the 113 logits (the correct answer marked) and
 // the answer with its probability. Small pulses run along the edges stage by stage (none under reduced motion);
-// cell colours ease to the new values when a, b or the step changes (CSS transitions). Clicking a stage shows its
+// cell colours ease to the new values when a, b or the step changes (CSS transitions). The state key `stage` (set by
+// clicking a stage, or by chapter 5's scenes while its step sections are read) highlights a stage and shows its
 // equation (chapter 5 notation) below the diagram; clicking a neuron selects it.
 // Global context: the dashboard's picture of "what the network does with one input", tying chapter 5's equations to
 // the live numbers that every other panel aggregates.
@@ -15,7 +16,7 @@ import { reducedMotion } from "../core/motion.js";
 import { softmax } from "../model/grokmodel.js";
 import { rdbu, viridis } from "../viz/colors.js";
 import { svg } from "../widgets/basics.js";
-import { clusterOrder, el, frameKey, note, runOf, set, watch } from "./common.js";
+import { clusterOrder, el, follow, frameKey, note, runOf, set, watch } from "./common.js";
 
 const Y = [90, 200, 310]; // rows of positions 0 (a), 1 (b), 2 (=)
 const HY = [45, 130, 215, 300].map((y) => y + 35); // centres of the four head boxes
@@ -75,12 +76,13 @@ export const figures = {
       });
       const zones = [["embed", 100, 280], ["attention", 320, 460], ["residual", 500, 680], ["mlp", 690, 838], ["logits", 850, 890], ["answer", 895, 1000]];
       zones.forEach(([stage, x0, x1]) => { // transparent click targets per stage
-        const z = svg("rect", { x: x0, y: 30, width: x1 - x0, height: 365, class: "flow-zone" }, zoneG); // under the cells: neurons stay clickable
-        z.addEventListener("click", () => {
-          s0.querySelectorAll(".flow-zone").forEach((q) => q.classList.toggle("on", q === z));
-          eq.innerHTML = `<div class="math block">${STAGES[stage].tex}</div><p class="fig-note">${STAGES[stage].say}</p>`;
-          window.grokvizRenderMath?.(eq);
-        });
+        const z = svg("rect", { x: x0, y: 30, width: x1 - x0, height: 365, class: "flow-zone", "data-stage": stage }, zoneG); // under the cells: neurons stay clickable
+        z.addEventListener("click", () => set({ stage }));
+      });
+      follow(body, ["stage"], (s) => { // highlight the selected stage and show its equation (none: nothing selected)
+        s0.querySelectorAll(".flow-zone").forEach((q) => q.classList.toggle("on", q.dataset.stage === s.stage));
+        eq.innerHTML = STAGES[s.stage] ? `<div class="math block">${STAGES[s.stage].tex}</div><p class="fig-note">${STAGES[s.stage].say}</p>` : "";
+        if (STAGES[s.stage]) window.grokvizRenderMath?.(eq);
       });
       let order = [];
       neu.forEach((cell, i) => cell.addEventListener("click", () => set({ neuron: order[i] })));

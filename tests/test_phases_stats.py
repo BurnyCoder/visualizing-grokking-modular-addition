@@ -35,6 +35,15 @@ def test_no_grokking_gives_none():
     assert out["t2"] is None and out["t3"] is None and out["t_grok"] is None
 
 
+def test_drop_time_is_the_first_tenfold_fall_after_t1():
+    """drop_time (H1's rule, also quoted in the prose): the first checkpoint after t1 at or below a tenth of the value
+    at t1; earlier falls do not count, and a curve that never gets there gives None."""
+    steps = np.arange(0, 1000, 100)
+    v = np.array([5.0, 0.1, 2.0, 1.5, 0.5, 0.21, 0.2, 0.1, 0.05, 0.01])  # value at t1 = 200 is 2.0
+    assert phases.drop_time(steps, v, 200) == 600  # 0.2 ≤ 0.1 × 2.0; the 0.1 at step 100 is before t1
+    assert phases.drop_time(steps, np.full(10, 3.0), 200) is None
+
+
 def test_t_interval_and_bootstrap_contain_mean():
     """Intervals bracket the sample mean and the t-interval matches the textbook formula."""
     x = [1.0, 2.0, 3.0, 4.0, 5.0]

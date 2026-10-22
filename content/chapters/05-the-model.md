@@ -6,11 +6,14 @@ The network studied here is a [[dfn:transformer]], the architecture behind today
 
 {{widget:forward-walkthrough}}
 
-The same pass as a picture: every stage with its numbers for the selected question, and small pulses running from the tokens to the answer. Click a stage to see its formula; the sections below explain each one.
+The same pass as a picture: every stage with its numbers for the selected question, and small pulses running from the tokens to the answer. While you read the four steps below, the picture stays in view and lights up the stage being explained, with its formula; click a stage to see another. When the picture comes into view it also plays the network's [[preview:training|training]] once (chapters 7–8): 100 + 50 is a question the network never trained on, answered wrongly at first and correctly, with near certainty, at the end. ▶ replays it.
 
-{{fig:forward-flow}}
+:::: scrolly
+{{anim:forward-flow}}
 
 ## Step 1 — embeddings: tokens become vectors
+
+{{scene:flow-embed}}
 
 Each token is turned into a vector of dimension [[sym:d]] = 128 by its [[dfn:embedding]]: column t of the matrix [[sym:WE]] (via the one-hot product of chapter 3). A [[dfn:positional-embedding]] — row i of [[sym:Wpos]] — is added so the network knows where each token sits:
 
@@ -21,6 +24,8 @@ For (100, 50, =): $x^{(0)}_0$ = column 100 of $W_E$ + position-0 vector, $x^{(0)
 These three vectors start the [[dfn:residual-stream]]: a running vector at each position that every later step reads from and *adds* its result to {{cite:elhage2021}}.
 
 ## Step 2 — attention: the “=” position gathers information about a and b
+
+{{scene:flow-attention}}
 
 [[dfn:attention|Attention]] lets each position read from positions at or before it. The answer is read at the “=” position (position 2), and only its result matters, so we follow position 2. The model has [[sym:H]] = 4 [[dfn:attention-head|attention heads]], each with its own four matrices. Head j:
 
@@ -41,6 +46,8 @@ $$x^{(1)} = x^{(0)}_2 + \sum_{j=0}^{3} \text{head}_j .$$
 
 ## Step 3 — the MLP: 512 neurons
 
+{{scene:flow-mlp}}
+
 The [[dfn:mlp|MLP]] multiplies $x^{(1)}$ by $W_{in}$ (512 × 128), adds the bias $b_{in}$, and applies the [[dfn:relu|ReLU]], $\ReLU(z) = \max(0, z)$, to each of the 512 entries. Each entry is a [[dfn:neuron]]: its value before the ReLU is its [[dfn:pre-activation]], after the ReLU its [[dfn:activation]].
 
 $$\mathrm{MLP}(a,b) = \ReLU\big(W_{in}x^{(1)} + b_{in}\big), \qquad x^{(2)} = x^{(1)} + W_{out}\,\mathrm{MLP}(a,b) + b_{out}.$$
@@ -51,9 +58,13 @@ $$\mathrm{MLP}(a,b) = \ReLU\big(W_{in}x^{(1)} + b_{in}\big), \qquad x^{(2)} = x^
 
 ## Step 4 — unembedding: one logit per answer
 
+{{scene:flow-logits}}
+
 Finally the [[dfn:unembedding]] matrix $W_U$ turns the 128 numbers of $x^{(2)}$ into 113 logits (the 114th, for “=”, is ignored), and the answer is the argmax:
 
 $$\Logits(a,b) = W_U\,x^{(2)}.$$
+
+::::
 
 ## All the parameters
 

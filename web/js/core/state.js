@@ -24,7 +24,8 @@ function readHash() {
   return out;
 }
 
-const store = createStore({ ...DEFAULTS, ...TRANSIENT, ...readHash() }); // the page's global store
+const store = createStore({ ...DEFAULTS, ...TRANSIENT, stage: null, ...readHash() }); // the page's global store; `stage`:
+// forward-flow's highlighted stage, set by its clicks and chapter 5's scenes (global, so animation scopes forward it)
 export const state = store.state; // current selection (one object, updated in place)
 export const set = store.set;
 export const subscribe = store.subscribe;

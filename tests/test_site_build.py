@@ -41,3 +41,11 @@ def test_scientific_numbers_use_superscript_exponents():
     assert fmt_number({"value": 3.2e5, "fmt": "sci"}) == "3.20×10⁵"
     assert fmt_number({"value": 5.27, "fmt": "sci"}) == "5.27"
     assert fmt_number({"value": 0.9624, "fmt": "pct"}) == "96.2 %"
+
+
+def test_figures_use_gated_watch():
+    """Every figure subscribes through watch(body, keys, fn): the old watch(keys, fn) skipped the visibility gate and
+    the latest-wins coalescing (web/js/figures/common.js), so offscreen panels re-rendered and frames landed out of order."""
+    old = [f"{p.name}:{i}" for p in (REPO_ROOT / "web" / "js").rglob("*.js")
+           for i, line in enumerate(p.read_text(encoding="utf-8").splitlines(), 1) if re.search(r"\bwatch\(\s*\[", line)]
+    assert not old, f"two-argument watch( calls left: {old}"

@@ -26,6 +26,8 @@ The operation [[dfn:modulo]] — written “x mod p” — throws away everythin
 Note that the answer to *every* question is one of only 113 possibilities, 0 … 112.
 :::
 
+Press ▶ next to b to count it up one hour at a time, and watch the answer wrap around past 0.
+
 {{widget:clock}}
 
 ## Why 113?

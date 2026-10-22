@@ -6,6 +6,10 @@ The network studied here is a [[dfn:transformer]], the architecture behind today
 
 {{widget:forward-walkthrough}}
 
+The same pass as a picture: every stage with its numbers for the selected question, and small pulses running from the tokens to the answer. Click a stage to see its formula; the sections below explain each one.
+
+{{fig:forward-flow}}
+
 ## Step 1 — embeddings: tokens become vectors
 
 Each token is turned into a vector of dimension [[sym:d]] = 128 by its [[dfn:embedding]]: column t of the matrix [[sym:WE]] (via the one-hot product of chapter 3). A [[dfn:positional-embedding]] — row i of [[sym:Wpos]] — is added so the network knows where each token sits:

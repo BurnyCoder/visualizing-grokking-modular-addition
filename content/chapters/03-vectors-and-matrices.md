@@ -46,6 +46,10 @@ $$\begin{pmatrix} 7 & 1 & -2 & 0 \\ 3 & 5 & 4 & 9\end{pmatrix}\begin{pmatrix} 0\
 The network does exactly this: token 100 is the one-hot vector with a 1 in entry 100, and $W_E$ times it is column 100 of $W_E$ — the 128 numbers that represent “100”.
 :::
 
+The same computation, row by row: each entry of the result is the dot product of one row with the one-hot vector, and every term but one is multiplied by 0. Press ▶ next to “row” to go through the rows.
+
+{{widget:matmul-anim}}
+
 ## Bases, orthonormal bases and projections
 
 A [[dfn:basis]] is a set of vectors from which every vector can be built as a unique weighted sum. The everyday basis of 2D space is (1, 0) and (0, 1): the vector (3, 4) is 3·(1, 0) + 4·(0, 1). An [[dfn:orthonormal-basis]] is one whose vectors have length 1 and are perpendicular to each other. Its great convenience: **the weights are just dot products**. If $e_1, \ldots, e_n$ is orthonormal, then every v equals $\sum_i (v\cdot e_i)\, e_i$.

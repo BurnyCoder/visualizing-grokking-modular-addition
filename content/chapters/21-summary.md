@@ -12,6 +12,10 @@ $$\underbrace{x^{(1)} = x^{(0)}_2 + \textstyle\sum_j W_O^jW_V^j \sum_i A^j_i x^{
 $$\underbrace{\Logits(a,b) \approx W_L\,\mathrm{MLP}(a,b)}_{\text{skip connection negligible; } W_L = W_UW_{out}}\qquad \text{answer} = \argmax_c\Logits(a,b)_c$$
 :::
 
+And as a picture with the live numbers (click a stage for its formula):
+
+{{fig:forward-flow}}
+
 ::: object
 **2. What the numbers mean** (chapters 9–16).
 
@@ -20,12 +24,20 @@ $$\begin{aligned}&\underbrace{a \mapsto \cos(w_ka),\ \sin(w_ka)}_{\text{step 1: 
 For the paper's network 𝒦 = {{num:paper.key_freqs}}; the cosine formula explains {{num:paper.logit_fve}} of the logits; removing one key frequency multiplies the loss by {{num:paper.key_ablation_ratio_range}}; swapping only the 10 key-frequency directions of a's embedding moves the answer {{num:paper.patch_key}} of the way to a′ + b.
 :::
 
+The core of the algorithm on one clock:
+
+{{widget:add-angles}}
+
 ::: object
 **3. How it got there** (chapters 7, 8, 17–20).
 
 $$\begin{aligned}&\theta \leftarrow \theta(1-\gamma\lambda) - \gamma\,\text{AdamStep}(\nabla_\theta\mathcal L):\\ &\underbrace{\text{memorisation}}_{0\,-\,{\sim}1.5\text{k}} \;\to\; \underbrace{\text{circuit formation}}_{\text{restricted loss}\downarrow,\ \text{excluded loss}\uparrow} \;\to\; \underbrace{\text{cleanup}}_{\text{weights}\downarrow,\ \text{test loss}\downarrow\downarrow}\end{aligned}$$
 
 The generalising circuit forms during the plateau, *before* the test loss drops; weight decay then removes the memorisation.
+
+And the whole story in one view once more:
+
+{{anim:hero-grokking}}
 :::
 
 ## What we learned, in five sentences
@@ -51,5 +63,9 @@ The generalising circuit forms during the plateau, *before* the test loss drops;
 - **Other algorithms:** Zhong et al. found that modified architectures learn a different circuit (“pizza”) instead of this “clock” {{cite:zhong2023}}; Chughtai et al. generalised the Fourier picture to arbitrary finite groups via representation theory {{cite:chughtai2023}}.
 - **Hidden progress:** Barak et al. proposed hidden progress measures for learning parities {{cite:barak2022}}.
 - **Explanations elsewhere:** Neel Nanda's original write-up {{cite:nandapost2022}}, the ARENA course chapter {{cite:arena152}}, Google PAIR's interactive explorable with a smaller MLP {{cite:pair2023}}, and the three videos {{cite:video_replication}} {{cite:video_paper}} {{cite:video_welch}}.
+
+Zhong et al.'s test can be run on this site's networks too: re-arranging the right answer's logit by the sum and the difference of the inputs gives their distance irrelevance, which separates a Clock from a Pizza.
+
+{{fig:clock-vs-pizza}}
 
 Every term used on this site is in the [glossary](../glossary.html); every source in [Sources](../references.html).

@@ -6,6 +6,10 @@ If $\Logits_c \approx \sum_k \cos(w_k c)\,[\ldots] + \sin(w_k c)\,[\ldots]$, the
 
 {{fig:wl-fourier-bars}}
 
+Over the whole run: how strongly each frequency's wave appears in the logits (or how much the training loss rises without it), with the selected frequency drawn below.
+
+{{fig:alpha-growth}}
+
 Only the ten key-frequency components are visible: $W_L$ has [[term:rank]] about 10. Approximating $W_L$ by its projection onto those ten waves leaves a residual whose squared [[dfn:frobenius-norm]] is {{num:paper.wl_resid_sq}} of $W_L$'s (residual norm ratio {{num:paper.wl_resid_norm}}). The paper reports “under 0.55 %”, which matches the *squared* ratio; we flag the wording on the [errata page](../errata.html).
 
 Writing the ten rows as $W_L \approx \sum_{k}\cos(w_k)\,u_k^\top + \sin(w_k)\,v_k^\top$ (paper eq. 2) defines, for each key frequency, two directions [[symdef:uk]] in the 512-dimensional neuron space: whatever lies along $u_k$ is written into the logits as $\cos(w_k c)$, whatever lies along $v_k$ as $\sin(w_k c)$.
@@ -26,7 +30,9 @@ The neurons hold more than the products: chapter 13's 3 × 3 blocks also contain
 
 The same picture for the logits keeps only the products. In the logits, linear terms carry {{num:paper.logit_linear_share}} of the variance: the read-off $W_L$ adds the neurons up so that their linear parts cancel, leaving cos(w_k(a+b)) and sin(w_k(a+b)) — exactly the terms that step 3 of the algorithm needs. The products of the key frequencies hold {{num:paper.logit_key_product_share}} of the logits' variance:
 
-{{fig:logit-fourier-2d}}
+{{anim:logit-fourier-2d}}
+
+Played through training, watch which components light up, and when.
 
 ## The logits are a sum of cos(w_k(a+b−c))
 

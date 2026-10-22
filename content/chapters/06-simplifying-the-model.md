@@ -43,6 +43,14 @@ This is the paper's App. C.1.3 derivation {{cite:nanda2023}}; ARENA calls $C_j$ 
 
 {{fig:avg-attn}}
 
+Here is that two-way choice in the real network. Each dot is one input: its attention to a against the difference of the two scores, with the sigmoid drawn on top (pick another head in the dashboard's control bar).
+
+{{fig:sigmoid-linearisation}}
+
+And the choice on every input at once: for each head, the attention from “=” to a, to b and to itself over all 12,769 questions.
+
+{{fig:attention-heads-grid}}
+
 ## Consequence 3: the input is symmetric in a and b
 
 The problem has [[dfn:commutativity]]: a + b = b + a. A network that has learned the task should treat a and b alike. In the trained network the positional embeddings of positions 0 and 1 are both **small** — length {{num:paper.pos_norm0}} and {{num:paper.pos_norm1}}, against {{num:paper.we_norm_mean}} for a typical token embedding — and point in similar directions ([[preview:cosine|cosine]] similarity {{num:paper.pos_cos01}}), whereas the “=” position's embedding is large ({{num:paper.pos_norm2}}). So whether a number sits at position 0 or 1 barely changes its vector, and a and b are processed (almost) identically:

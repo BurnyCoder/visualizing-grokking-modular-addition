@@ -47,6 +47,10 @@ Per frequency, the excluded loss shows each key frequency taking over part of th
 
 {{fig:excluded-per-freq}}
 
+Computing the restricted loss separately on the training and the test questions shows why it measures hidden progress: the two curves coincide at every step, so the part of the logits that uses only the key frequencies generalises from the start, while the ordinary test loss is still dominated by memorised answers.
+
+{{fig:restricted-split-curves}}
+
 ::: nuance
 **What the progress measures can and cannot do.** They reveal that grokking is gradual and identify the phases *after the fact*. They required knowing the final algorithm, and they do not predict *when* the jump will happen — the paper is explicit: {{quote:nanda-criticality}}
 :::

@@ -36,6 +36,10 @@ Chapter 6 showed $A^j_0(a, b) \approx \sigma\big(C_j[a] - C_j[b]\big)$ with a lo
 
 {{fig:attn-C-fourier}}
 
+How each head's lookup table got there, over the whole run (pick the head in the dashboard's control bar):
+
+{{fig:head-spectra-over-training}}
+
 The paper fits $C_j[a] \approx F_j\cos(w_k a) + G_j\sin(w_k a)$ and finds 92–99 % variance explained for the four heads {{cite:nanda2023}} (App. C.1.3). Two more facts make attention useful for step 2:
 
 - **The sigmoid is in its almost-linear range**: replacing it by its best straight-line fit explains {{num:paper.linear_fve}} of the attention variance (paper: 97.5 %), and the network still works with the linearised softmax — loss {{num:paper.linearised_loss}} (paper: 2.12 × 10⁻⁷).

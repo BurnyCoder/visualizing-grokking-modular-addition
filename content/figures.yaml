@@ -110,6 +110,7 @@ freq-norm-race:
   chapter: "13-evidence-periodicity.html"
   cite: "{{cite:nanda2023}} Fig. 3"
   producer: "checkpoint_metrics.py"
+  anim: {run: paper, range: grokking, speed: 1, loop: loop}
 cos-coeffs:
   title: "Strength of each key frequency in the logits"
   what: "Coefficient of the unit-normalised cube cos(w_k(a+b−c)) in the logits for each key frequency, over training."
@@ -262,7 +263,7 @@ attention-heads-grid:
   producer: "web/js/model/grokmodel.js"
 sigmoid-linearisation:
   title: "Attention as a sigmoid of two scores"
-  what: "For the selected head: attention from '=' to a on 2,000 inputs against the score difference s₀ − s₁, with σ(s₀ − s₁) and the best straight line."
+  what: "For the selected head: attention from '=' to a on 800 sampled inputs against the score difference s₀ − s₁, with σ(s₀ − s₁) and the best straight line."
   eq: "A^j_0 \\approx \\sigma(s_0 - s_1) = \\sigma\\big(C_j[a] - C_j[b] + \\text{const}\\big)"
   expect: "The points follow σ closely, because attention to '=' is negligible, and stay in its nearly straight middle part."
   chapter: "06-simplifying-the-model.html"
@@ -291,6 +292,7 @@ neuron-small-multiples:
   cite: "{{cite:nanda2023}} Fig. 12"
   producer: "browser (GrokModel)"
   size: l
+  anim: {run: paper, range: grokking, speed: 1, loop: loop}
 neuron-freq-scatter:
   title: "Neuron clusters"
   what: "Each dot is a neuron: its best frequency (x) and the fraction of its variance that frequency explains (y); colour = how often it fires."
@@ -439,6 +441,7 @@ logit-fourier-2d:
   chapter: "15-evidence-readoff.html"
   cite: "{{cite:nanda2023}} Sec. 4.2"
   producer: "geometry.spectra"
+  anim: {run: paper, range: grokking, speed: 1, loop: loop}
 # ---------------- F. gradients ----------------
 loss-vs-norm:
   title: "Loss against weight norm"
@@ -447,6 +450,7 @@ loss-vs-norm:
   chapter: "19-gradients-weight-decay.html"
   cite: "{{cite:nanda2023}} Sec. 5.3"
   producer: "checkpoint_metrics.py"
+  anim: {run: paper, range: grokking, speed: 1, loop: loop}
 grad-norms:
   title: "Size of the gradient, per parameter"
   what: "Norm of the exact full-batch gradient of the training loss for each weight matrix, at every checkpoint."
@@ -558,6 +562,7 @@ seed-clocks:
   cite: "{{cite:nanda2023}} App. C.2"
   producer: "geometry.key_plane_coords"
   size: l
+  anim: {run: paper, range: grokking, speed: 1, loop: loop}
 hypothesis-table:
   title: "Preregistered hypotheses"
   what: "Results of the five tests written down before training (docs/preregistration.md)."

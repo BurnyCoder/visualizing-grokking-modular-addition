@@ -2,4 +2,15 @@
 # Each id maps to {label, state: {key: value, ...}, play: {from: step, to: step, speed}}: when the marker crosses the
 # middle of the screen the page's state is set and, with play, the page's player plays that step range.
 # Global context: src/grokviz/site_build.py fails the build on a {{scene:id}} missing here.
-{}
+spectrum:
+  label: "the spectrum sharpens"
+  play: {from: 0, to: 15400, speed: 3}
+circles:
+  label: "numbers spread onto circles"
+  play: {from: 1000, to: 15000, speed: 2}
+confidence:
+  label: "every input lights up"
+  play: {from: 0, to: 15400, speed: 2}
+late:
+  label: "the late change in attention"
+  play: {from: 40000, to: 50000, speed: 2}

@@ -147,7 +147,8 @@ def run_numbers(reports_dir: Path) -> dict:
     hyp = _load(reports_dir / "tables" / "hypotheses.json")
     if hyp is None:
         return {}
-    out: dict = {"hypotheses.verdict": _v(hyp["verdict"], "str")}
+    out: dict = {k: _v(hyp[part], "json") for k, part in  # data for the hypothesis panels (JavaScript), never prose
+                 (("hypotheses.verdict", "verdict"), ("hypotheses.per_run", "per_run"), ("hypotheses.controls", "controls"))}
     sec = hyp["secondary"]
     out["seeds.t1_ci"] = _ci(sec.get("S6_t1"), "int")
     out["seeds.t2_ci"] = _ci(sec.get("S6_t2"), "int")

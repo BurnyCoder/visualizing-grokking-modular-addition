@@ -47,4 +47,8 @@ enforces the mechanical parts of that promise; the rest is editorial.
   `{run, range, speed, loop, poster}`. `range` is a preset (`grokking`, `whole`, `late`, `memorisation`, `circuit`,
   `cleanup`) or `[from, to]` in training steps; `poster` defaults to the end of the range.
 - **Scenes.** `{{scene:id}}` markers (`content/scenes.yaml`: `{label, state, play: {from, to, speed}}`) set the page's
-  state or play a step range when they cross the middle of the screen.
+  state or play a step range when they become the last marker above two thirds of the screen height (rechecked while
+  scrolling, so jumps via links count too). A `state: {stage: …}` scene lights up that stage of `forward-flow`.
+- **Pinned figure.** `:::: scrolly … ::::` keeps the block's first figure on screen (on screens at least 60 rem wide
+  and 850 px tall) while the sections after it are read; while pinned it shows only the picture, its stage formula and
+  its player. Use four colons, so `::: example` boxes inside do not close the block (chapter 5).

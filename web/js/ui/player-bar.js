@@ -3,7 +3,8 @@
 // Local explanation: `playerBar(el, player, {variant, keys})` builds the controls inside `el` and keeps them in sync
 // with the Player:
 //   full    (dashboard)     ⏮ ◀ ▶/❚❚ ▶ ⏭, scrubber over the checkpoints with the phase bands (and, for the paper's run,
-//                           its authors' boundaries dashed) and the play range marked, "step · phase" label, speed, loop mode, range and phase chips, keyboard help;
+//                           its authors' boundaries dashed) and the play range marked, "step · phase" label, speed,
+//                           loop mode, range and phase chips, keyboard help;
 //   compact (chapter bar)   ▶/❚❚, scrubber, label, speed;
 //   mini    (inside an animated figure) ▶/❚❚, scrubber, label.
 // With `keys: true` the page keyboard drives it: Space play/pause, ←/→ one checkpoint (Shift: ten), [ / ] slower /

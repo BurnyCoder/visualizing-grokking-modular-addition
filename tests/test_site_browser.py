@@ -213,3 +213,23 @@ def test_interference_toggles_and_sweep(browser_page):
     assert page.locator(f"{fig} .hero-chips .chip.active").count() == 4
     page.evaluate("document.querySelector('#fig-embed-circles').scrollIntoView()")
     page.wait_for_function("document.querySelectorAll('#fig-embed-circles canvas.canvas-plot').length === 5", timeout=30_000)
+
+
+def test_3d_panels_draw_and_turn(browser_page):
+    """The torus and the 3D principal components are drawn on canvases (no WebGL), and dragging turns them."""
+    page, base = browser_page
+    page.goto("about:blank")
+    page.goto(f"{base}/dashboard.html#step=40001")
+    for fid in ("torus-3d", "pca-3d"):
+        canvas = f"#fig-{fid} canvas.view3d"
+        page.evaluate(f"document.querySelector('#fig-{fid}').scrollIntoView({{block: 'center'}})")
+        page.wait_for_function(f"document.querySelector('{canvas}')?.width > 0", timeout=30_000)
+        page.evaluate(SETTLED)
+        before = page.evaluate(f"document.querySelector('{canvas}').toDataURL()")
+        box = page.locator(canvas).bounding_box()
+        page.mouse.move(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)
+        page.mouse.down()
+        page.mouse.move(box["x"] + box["width"] / 2 + 80, box["y"] + box["height"] / 2 + 20, steps=5)
+        page.mouse.up()
+        after = page.evaluate(f"document.querySelector('{canvas}').toDataURL()")
+        assert len(before) > 3000 and after != before, f"{fid}: nothing drawn or the drag did not turn it"

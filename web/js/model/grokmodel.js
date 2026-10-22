@@ -253,6 +253,32 @@ export class GrokModel {
   }
 
   /**
+   * Logits of the answers c = 0 … p−1 for every input (row a·p + b), from the cached attention patterns: [p·p·p].
+   * `only(a, b)` restricts each row to one answer (returns [p·p] instead), e.g. the right answer for correct logits.
+   */
+  logitsGrid(only = null) {
+    const { p, H, n } = this, pat = this.patterns(), post = new Float32Array(n);
+    const out = new Float32Array(only ? p * p : p * p * p);
+    for (let a = 0; a < p; a++) for (let b = 0; b < p; b++) {
+      for (let m = 0; m < n; m++) { // neuron pre-activation, then ReLU (as `pre` + `logits`, without per-input allocations)
+        let v = this.c0[m];
+        for (let h = 0; h < H; h++) { const o = 3 * ((h * p + a) * p + b); v += pat[o] * this.PA[h][a][m] + pat[o + 1] * this.PB[h][b][m] + pat[o + 2] * this.P2[h][m]; }
+        post[m] = v > 0 ? v : 0;
+      }
+      const cs = only ? [only(a, b)] : null;
+      for (let j = 0; j < (cs ? 1 : p); j++) {
+        const c = cs ? cs[0] : j;
+        let L = this.U0[c];
+        for (let h = 0; h < H; h++) { const o = 3 * ((h * p + a) * p + b); L += pat[o] * this.UA[h][a][c] + pat[o + 1] * this.UB[h][b][c] + pat[o + 2] * this.U2[h][c]; }
+        const w = c * n;
+        for (let m = 0; m < n; m++) L += this.WL[w + m] * post[m];
+        out[cs ? a * p + b : (a * p + b) * p + c] = L;
+      }
+    }
+    return out;
+  }
+
+  /**
    * Full forward pass with every intermediate at every position (for the step-by-step walkthrough).
    * Mirrors src/grokviz/model.py; returns plain arrays for display.
    */

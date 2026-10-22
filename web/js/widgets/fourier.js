@@ -12,8 +12,7 @@
 import { Plot } from "../viz/plot.js";
 import { Heatmap } from "../viz/heatmap.js";
 import { cssVar } from "../viz/colors.js";
-import { fourierBasis } from "../figures/weights.js";
-import { fft2 } from "../figures/activations.js";
+import { fft2, fourierBasis } from "../model/fourier.js";
 import { basisName as name } from "../figures/common.js";
 import { frame, onTheme, slider } from "./basics.js";
 

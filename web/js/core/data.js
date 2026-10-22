@@ -8,7 +8,7 @@
 // Global context: the only place that knows the data format written by src/grokviz/export.py.
 // Sources: fetch + ArrayBuffer (https://developer.mozilla.org/docs/Web/API/Response/arrayBuffer).
 import { decodeF16 } from "../model/grokmodel.js";
-import { buildModel } from "../model/client.js";
+import { ablationBasis, buildModel } from "../model/client.js";
 import { nearest } from "./anim.js";
 
 export { nearest as nearestIndex }; // index of the stored step closest to a step (one implementation, core/anim.js)
@@ -106,6 +106,17 @@ export async function model(runId, step) {
 export async function trainMask(splitSeed) {
   const m = await manifest();
   return new Uint8Array(await once(`data/${m.train_masks[String(splitSeed)]}`, "bin"));
+}
+
+const ablations = new Map(); // "run@step" → Promise<{L, blocks, step}> (the last few only: ~20 MB each)
+/** Logits of every answer for every input and their Fourier blocks, at the weight snapshot nearest `step` (model/ablation.js). */
+export async function ablationData(runId, step) {
+  const r = await run(runId), s = r.weight_steps[nearest(r.weight_steps, step)], key = `${runId}@${s}`;
+  if (!ablations.has(key)) {
+    ablations.set(key, array(runId, `w_${s}`).then(async (a) => ({ ...(await ablationBasis(a.data, r.param_layout, r.p || 113)), step: s })));
+    if (ablations.size > 3) ablations.delete(ablations.keys().next().value);
+  }
+  return ablations.get(key);
 }
 
 /** Start building the next `ahead` weight snapshots after `step` (called while a run plays, so its frames are ready). */

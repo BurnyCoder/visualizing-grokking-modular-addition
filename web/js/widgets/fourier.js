@@ -14,9 +14,9 @@ import { Heatmap } from "../viz/heatmap.js";
 import { cssVar } from "../viz/colors.js";
 import { fourierBasis } from "../figures/weights.js";
 import { fft2 } from "../figures/activations.js";
-import { frame, slider } from "./basics.js";
+import { basisName as name } from "../figures/common.js";
+import { frame, onTheme, slider } from "./basics.js";
 
-const name = (i) => (i === 0 ? "Const" : `${i % 2 ? "cos" : "sin"} ${Math.ceil(i / 2)}`);
 const f3 = (x) => (Math.abs(x) < 5e-4 ? "0.000" : x.toFixed(3));
 
 /** Coefficients F v of a length-p vector. */
@@ -38,6 +38,7 @@ export const widgets = {
         work.textContent = [0, 1, 2, 3, 4].map((i) => `${name(i).padEnd(6)} = ${v.map((x, t) => `${x}·${f3(F[i * 5 + t])}`).join(" + ")} = ${f3(c[i])}`).join("\n") +
           `\nsum of squared coefficients ${f3(c.reduce((s, x) => s + x * x, 0))} = sum of squared entries ${v.reduce((s, x) => s + x * x, 0)}`;
       };
+      onTheme(draw);
       v.forEach((x, i) => slider(controls, `v(${i})`, -5, 5, 1, x, (val) => { v[i] = val; draw(); }));
     },
   },
@@ -58,6 +59,7 @@ export const widgets = {
         const top = c.map((x, i) => [Math.abs(x), i]).sort((a, b) => b[0] - a[0]).slice(0, 3);
         work.textContent = `largest coefficients: ${top.map(([x, i]) => `${name(i)} (${f3(c[i])})`).join(", ")}\nwith no noise only cos ${k} and sin ${k} are non-zero; noise spreads over all 113.`;
       };
+      onTheme(draw);
       slider(controls, "frequency k", 1, 56, 1, k, (val) => { k = val; draw(); });
       slider(controls, "phase shift", 0, 6.28, 0.05, phase, (val) => { phase = val; draw(); });
       slider(controls, "noise", 0, 2, 0.05, noise, (val) => { noise = val; draw(); });

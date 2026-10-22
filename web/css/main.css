@@ -124,13 +124,18 @@ th { background: var(--bg-soft); }
 .fig-controls input[type=range] { width: 10rem; }
 .fig-note { font-size: 0.8rem; color: var(--ink-soft); margin: 0.2rem 0 0; }
 .heatmap-wrap { display: flex; gap: 0.6rem; align-items: flex-start; flex-wrap: wrap; }
-.heatmap-wrap canvas { image-rendering: pixelated; border: 1px solid var(--line); max-width: 100%; cursor: crosshair; }
+.heatmap-stage { position: relative; max-width: 100%; border: 1px solid var(--line); line-height: 0; } /* marks are placed in % of this box */
+.heatmap-stage canvas { display: block; width: 100%; image-rendering: pixelated; cursor: crosshair; }
+.grid-mark { position: absolute; box-sizing: border-box; outline: 1.5px solid var(--ink); pointer-events: none; } /* selected cell / column / row */
+.grid-mark-step { outline: none; background: color-mix(in srgb, var(--accent) 55%, transparent); min-width: 2px; } /* current checkpoint column */
 .small-multiples { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0.6rem; }
 .small-multiples figure { margin: 0; font-size: 0.75rem; color: var(--ink-soft); }
 .small-multiples canvas { width: 100%; height: auto; image-rendering: pixelated; border: 1px solid var(--line); }
+.small-multiples figure.selected canvas { outline: 2px solid var(--accent); outline-offset: 1px; } /* selected head / neuron */
 .colorbar { display: flex; align-items: center; gap: 0.4rem; font-size: 0.75rem; color: var(--ink-soft); font-family: var(--mono); }
 .colorbar canvas { width: 120px; height: 10px; border: 1px solid var(--line); }
-.plot { width: 100%; min-height: 260px; }
+.plot { width: 100%; min-height: 260px; position: relative; } /* positions the step cursor overlay */
+.step-cursor { position: absolute; left: 0; width: 0; border-left: 2px dotted var(--accent); pointer-events: none; will-change: transform; }
 
 /* ---------- dashboard ---------- */
 .controlbar { position: sticky; top: 3rem; z-index: 25; background: var(--card); border-bottom: 1px solid var(--line); padding: 0.5rem 1.2rem; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04); }
@@ -202,3 +207,10 @@ th { background: var(--bg-soft); }
 
 /* in-chapter training scrubber (widget) */
 .widget.chapter-scrubber { position: sticky; top: 3.1rem; z-index: 20; padding: 0.4rem 0.8rem; box-shadow: 0 4px 14px rgba(0,0,0,0.05); }
+
+/* Reduced motion: readers who ask their system for less motion, and ?still=1 captures (core/motion.js), get end states
+   instead of transitions and smooth scrolling. Source: https://developer.mozilla.org/docs/Web/CSS/@media/prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}
+html.still *, html.still *::before, html.still *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }

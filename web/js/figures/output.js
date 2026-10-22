@@ -10,7 +10,7 @@ import { model, run } from "../core/data.js";
 import { Plot } from "../viz/plot.js";
 import { cssVar, freqColor } from "../viz/colors.js";
 import { softmax } from "../model/grokmodel.js";
-import { note, runOf, watch } from "./common.js";
+import { frameKey, note, runOf, watch } from "./common.js";
 import { spectrumMap } from "./activations.js";
 
 /** Least-squares α_k (+ intercept) for logits[c] ≈ β + Σ_k α_k cos(w_k(t − c)), t = a + b. */
@@ -39,7 +39,7 @@ export const figures = {
       const plot = new Plot(body, { height: 280 });
       const plot2 = new Plot(body, { height: 200 });
       const info = note(body);
-      watch(["run", "step", "a", "b"], async (s) => {
+      watch(body, ["run", "step", "a", "b"], async (s) => {
         const id = runOf(ds), r = await run(id), net = await model(id, s.step);
         const p = net.p, L = Array.from(net.logits(s.a, s.b)).slice(0, p);
         const t = (s.a + s.b) % p;
@@ -53,7 +53,7 @@ export const figures = {
         await plot2.draw([{ x: cs, y: prob, type: "bar", name: "probability", marker: { color: cs.map((c) => (c === t ? cssVar("--accent") : cssVar("--train"))) } }],
           { xaxis: { title: { text: "candidate answer c" } }, yaxis: { title: { text: "softmax probability" }, range: [0, 1] }, hovermode: "closest" });
         info.textContent = `step ${net.step}, input ${s.a} + ${s.b} (mod ${p}) = ${t}: the model gives ${(100 * prob[t]).toFixed(1)} % to the right answer; top answer ${prob.indexOf(Math.max(...prob))}.`;
-      });
+      }, { dedupe: frameKey(ds, "weight_steps", "a", "b") });
     },
   },
 
@@ -62,7 +62,7 @@ export const figures = {
       body.innerHTML = "";
       const plot = new Plot(body, { height: 300 });
       const info = note(body);
-      watch(["run", "step", "a", "b"], async (s) => {
+      watch(body, ["run", "step", "a", "b"], async (s) => {
         const id = runOf(ds), r = await run(id), net = await model(id, s.step);
         const p = net.p, L = Array.from(net.logits(s.a, s.b)).slice(0, p);
         const { alpha, cols } = cosFit(L, s.a + s.b, r.key_freqs, p);
@@ -72,7 +72,7 @@ export const figures = {
         traces.push({ x: cs, y: sum, type: "scatter", mode: "lines", name: "sum", line: { color: cssVar("--ink"), width: 3 } });
         await plot.draw(traces, { xaxis: { title: { text: "candidate answer c" } }, yaxis: { title: { text: "contribution to the logit" } }, hovermode: "x unified" });
         info.textContent = `Each wave peaks at c = a + b = ${(s.a + s.b) % p} (mod ${p}) but also near other c; only there do all ${r.key_freqs.length} peaks coincide, so the sum stands out (constructive interference).`;
-      });
+      }, { dedupe: frameKey(ds, "weight_steps", "a", "b") });
     },
   },
 };

@@ -9,6 +9,8 @@
 import { initTooltips } from "./ui/tooltips.js";
 import { FIGURES } from "./figures/index.js";
 import { WIDGETS } from "./widgets/index.js";
+import "./core/motion.js"; // sets html.still for ?still=1 captures before anything draws
+import "./core/hooks.js"; // window.grokviz.anim test/capture hooks on every page
 
 const cfg = window.GROKVIZ || {}; // per-page settings injected by the build (root path, page kind)
 

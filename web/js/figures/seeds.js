@@ -1,12 +1,12 @@
 // seeds.js — dashboard group H: every run side by side (our seeds, the paper's run, the controls).
 //
 // Local explanation: test-loss curves of all runs on one log axis (the selected run highlighted), the key
-// frequencies each run chose, and the preregistered hypothesis results with their statistics (from
-// site/data/summary.json).
+// frequencies each run chose (the selected run's row shaded), and the preregistered hypothesis results with their
+// statistics (from site/data/summary.json).
 // Global context: turns the single-model story into a claim about the setup — does the same mechanism appear
 // in every seed, and do the controls (no weight decay, random labels) behave as predicted?
 // Sources: docs/preregistration.md (tests and thresholds); paper App. C.2 (other seeds), D.1 (weight decay).
-import { array, manifest, run } from "../core/data.js";
+import { array, manifest } from "../core/data.js";
 import { Plot } from "../viz/plot.js";
 import { cssVar, freqColor, runColor } from "../viz/colors.js";
 import { el, note, runOf, set, watch } from "./common.js";
@@ -19,7 +19,7 @@ export const figures = {
       body.innerHTML = "";
       const plot = new Plot(body, { height: 320, stepAxis: true });
       el(body, "p", "fig-note", "Solid: weight decay 1 (paper settings); dashed: no weight decay; dotted: random labels; dash-dot: the paper's data split with a new initialisation. Click a legend entry to hide it; click the curve area to jump to that step.");
-      watch(["run", "step"], async (s, changed) => {
+      watch(body, ["run", "step"], async (s, changed) => {
         const m = await manifest();
         if (!changed.length || changed.includes("run") || changed.includes("theme")) {
           const traces = [];
@@ -32,7 +32,6 @@ export const figures = {
               line: { color: sel ? cssVar("--accent") : runColor(r.id), width: sel ? 3 : 1, dash: style(r.group) }, opacity: sel ? 1 : 0.6 });
           }
           await plot.draw(traces, { yaxis: { type: "log", title: { text: "test loss (log)" }, exponentformat: "power" }, xaxis: { title: { text: "training step" } }, legend: { orientation: "v", x: 1.02, y: 1, font: { size: 10 } }, margin: { r: 120 } });
-          plot.el.on?.("plotly_legendclick", () => true);
         }
         plot.cursor(s.step);
       });
@@ -48,14 +47,19 @@ export const figures = {
       const natural = (a, b) => a.id.localeCompare(b.id, undefined, { numeric: true }); // wd1_s2 before wd1_s10
       const sparse = m.runs.filter((r) => r.key_freqs.length <= 20).sort(natural), dense = m.runs.filter((r) => r.key_freqs.length > 20);
       const fewest = Math.min(...dense.map((r) => r.key_freqs.length));
-      const plot = new Plot(body, { height: 90 + 24 * sparse.length });
+      const rows = sparse.map((r) => r.id).reverse(); // category order bottom → top
+      const plot = new Plot(body, { height: 90 + 24 * sparse.length }).on("plotly_click", (ev) => set({ run: ev.points[0].y }));
       const traces = [];
       sparse.forEach((r) => r.key_freqs.forEach((k) => traces.push({ x: [k], y: [r.id], type: "scatter", mode: "markers", marker: { size: 10, color: freqColor(k) }, showlegend: false, hovertemplate: `${r.id}: k=${k}<extra></extra>` })));
-      await plot.draw(traces, { xaxis: { title: { text: "key frequency k" }, range: [0, 57], dtick: 4 },
-        yaxis: { automargin: true, type: "category", dtick: 1, categoryorder: "array", categoryarray: sparse.map((r) => r.id).reverse() }, hovermode: "closest", margin: { l: 110 } });
-      plot.el.on?.("plotly_click", (ev) => set({ run: ev.points[0].y }));
-      el(body, "p", "fig-note", "Each dot is a key frequency of that run (frequencies whose W_L Fourier norm is at least 25 % of the largest). Click a run to select it everywhere."
-        + (dense.length ? ` Not shown: ${dense.map((r) => r.id).join(", ")} — no frequency stands out in these runs (${fewest === 56 ? "all 56" : `${fewest}–56 of 56`} frequencies pass the rule), i.e. they have no sparse Fourier structure.` : ""));
+      const info = note(body);
+      watch(body, ["run"], async (s) => {
+        const i = rows.indexOf(s.run); // shade the selected run's row (category axes place row i at y = i)
+        await plot.draw(traces, { xaxis: { title: { text: "key frequency k" }, range: [0, 57], dtick: 4 },
+          yaxis: { automargin: true, type: "category", dtick: 1, categoryorder: "array", categoryarray: rows }, hovermode: "closest", margin: { l: 110 },
+          shapes: i < 0 ? [] : [{ type: "rect", xref: "paper", x0: 0, x1: 1, yref: "y", y0: i - 0.5, y1: i + 0.5, fillcolor: cssVar("--accent"), opacity: 0.15, line: { width: 0 }, layer: "below" }] });
+        info.textContent = `Each dot is a key frequency of that run (frequencies whose W_L Fourier norm is at least 25 % of the largest); shaded: the selected run${i < 0 ? ` (${s.run} is not drawn, see below)` : ""}. Click a run to select it everywhere.`
+          + (dense.length ? ` Not shown: ${dense.map((r) => r.id).join(", ")} — no frequency stands out in these runs (${fewest === 56 ? "all 56" : `${fewest}–56 of 56`} frequencies pass the rule), i.e. they have no sparse Fourier structure.` : "");
+      });
     },
   },
 
@@ -73,4 +77,3 @@ export const figures = {
     },
   },
 };
-void note;

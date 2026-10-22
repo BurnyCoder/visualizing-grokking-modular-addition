@@ -6,8 +6,9 @@
 // content/tour.yaml, setting the state and highlighting one panel at a time.
 // Global context: the panels themselves are ordinary figures that subscribe to the same state.
 // Source: HTML range input (https://developer.mozilla.org/docs/Web/HTML/Element/input/range).
-import { manifest, run } from "./core/data.js";
+import { manifest, nearestIndex as nearest, run } from "./core/data.js";
 import { set, state, subscribe } from "./core/state.js";
+import { reducedMotion } from "./core/motion.js";
 import { cssVar } from "./viz/colors.js";
 
 const $ = (id) => document.getElementById(id);
@@ -66,12 +67,6 @@ export async function initDashboard() {
   initTour();
 }
 
-function nearest(steps, s) {
-  let best = 0;
-  for (let i = 1; i < steps.length; i++) if (Math.abs(steps[i] - s) < Math.abs(steps[best] - s)) best = i;
-  return best;
-}
-
 function fmtPhases(ph) {
   if (!ph || !ph.t1) return "not detected";
   return `memorisation ends ≈${ph.t1}, circuit formation ends ≈${ph.t2 ?? "—"}, cleanup ends ≈${ph.t3 ?? "—"}`;
@@ -105,7 +100,7 @@ function initTour() {
     document.querySelectorAll(".fig.tour-focus").forEach((f) => f.classList.remove("tour-focus"));
     set({ ...(t.state || {}) });
     const fig = document.getElementById(`fig-${t.panel}`);
-    if (fig) { fig.classList.add("tour-focus"); fig.scrollIntoView({ behavior: "smooth", block: "center" }); }
+    if (fig) { fig.classList.add("tour-focus"); fig.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", block: "center" }); }
     box.querySelector(".tour-step").textContent = `${i + 1} / ${steps.length}`;
     box.querySelector(".tour-title").textContent = t.title;
     box.querySelector(".tour-text").innerHTML = t.text;

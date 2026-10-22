@@ -1,24 +1,70 @@
 // common.js — small helpers shared by the figure modules.
 //
-// Local explanation: which run a figure shows (fixed via data-run, else the global selection), subscription to
-// the global state, a theme-change redraw hook, simple DOM builders and frequency/basis labels.
+// Local explanation: which run a figure shows (fixed via data-run, else the global selection); `watch`, the one way a
+// figure subscribes to the state (gated, coalesced, deduplicated rendering); `follow` for cheap overlay updates; a
+// dedupe key per stored frame; simple DOM builders and frequency/basis labels.
 // Global context: every figure module (curves, weights, activations, geometry, output, gradients, interventions,
-// seeds, teaching) uses these so behaviour is uniform across the dashboard and the chapters.
-import { state, subscribe, set } from "../core/state.js";
-import { run } from "../core/data.js";
+// seeds) uses these so behaviour is uniform across the dashboard and the chapters.
+// Render pipeline: store flush (core/store.js) → visibility gate (core/visibility.js) → latest-wins runner → dedupe
+// → the figure's draw function; offscreen figures only remember that they are dirty and draw when scrolled back.
+import { state, set, storeOf } from "../core/state.js";
+import { latestWins } from "../core/store.js";
+import { onVisibility } from "../core/visibility.js";
+import { countRender, track } from "../core/hooks.js";
+import { nearestIndex, run } from "../core/data.js";
 
-export { state, set };
+export { state, set, storeOf };
 
 /** The run id a figure should display. */
 export const runOf = (ds) => ds.run || state.run;
 
-/** Subscribe `fn(state)` to keys, re-running also when the theme changes (charts read theme colours). */
-export function watch(keys, fn) {
-  const unsub = subscribe(keys, fn);
-  const theme = () => fn(state, ["theme"]);
-  window.addEventListener("grokviz-theme", theme);
-  return () => { unsub(); window.removeEventListener("grokviz-theme", theme); };
+const union = (a, b) => [...new Set([...a, ...b])]; // merge changed-key lists
+
+/**
+ * Draw `fn(state, changedKeys)` now and whenever one of `keys` changes (or the theme does), for the figure whose body
+ * is `body`: one draw at a time with the latest state (no out-of-order frames), none while the figure is offscreen
+ * (it draws once when it comes back), and none when `dedupe(state)` (optional, may be async) returns the same key as
+ * for the last draw — e.g. the same stored checkpoint while the step moves between two snapshots. `theme: false` for
+ * figures whose colours do not depend on the theme (canvas heatmaps), so a theme switch does not recompute them.
+ */
+export function watch(body, keys, fn, { dedupe = null, theme = true } = {}) {
+  const st = storeOf(body); // global store or the figure's animation scope
+  const id = body.closest?.("[data-fig]")?.dataset.fig || body.dataset?.widget || "?"; // for render statistics
+  let lastKey; // dedupe key of the last draw
+  let dirty = null; // changed keys collected while offscreen
+  const draw = latestWins(async (changed) => {
+    const s = st.state;
+    if (dedupe) {
+      const k = await dedupe(s);
+      if (k === lastKey && !changed.includes("theme")) return; // same frame already on screen
+      lastKey = k;
+    }
+    if (body.hasAttribute("aria-live")) body.setAttribute("aria-live", s.playing ? "off" : "polite"); // no announcements per played frame
+    countRender(id);
+    await fn(s, changed);
+  }, union);
+  const gate = onVisibility(body, () => { if (dirty) { const c = dirty; dirty = null; track(draw(c)); } });
+  const trigger = (changed) => {
+    if (!gate.visible()) { dirty = union(dirty || [], changed); return; }
+    track(draw(changed));
+  };
+  const unsub = st.subscribe(keys, (_, changed) => trigger(changed));
+  const onTheme = () => trigger(["theme"]);
+  if (theme) window.addEventListener("grokviz-theme", onTheme);
+  return () => { unsub(); window.removeEventListener("grokviz-theme", onTheme); };
 }
+
+/** Cheap synchronous updates (overlay marks, labels) of the figure's store on `keys`; no gating needed. */
+export const follow = (body, keys, fn) => storeOf(body).subscribe(keys, fn);
+
+/**
+ * Dedupe key for `watch`: the run, the stored frame of `field` (ckpt_steps, weight_steps, geometry_steps, spectra_steps)
+ * nearest the current step, and the values of extra state keys.
+ */
+export const frameKey = (ds, field, ...keys) => async (s) => {
+  const id = runOf(ds), steps = (await run(id))[field];
+  return [id, steps ? steps[nearestIndex(steps, s.step)] : "-", ...keys.map((k) => s[k])].join("|");
+};
 
 /** Create an element with class and optional HTML, append it to parent, return it. */
 export function el(parent, tag, cls = "", html = "") {
@@ -34,9 +80,6 @@ export const basisName = (i) => (i === 0 ? "Const" : `${i % 2 ? "cos" : "sin"} $
 
 /** Format a step number compactly (40001 → "40.0k"). */
 export const kstep = (s) => (s >= 1000 ? `${(s / 1000).toFixed(1)}k` : String(s));
-
-/** Run manifest entry for the figure's run. */
-export const runInfo = (ds) => run(runOf(ds));
 
 /** A note line under a figure (e.g. which checkpoint is displayed). */
 export function note(parent) {

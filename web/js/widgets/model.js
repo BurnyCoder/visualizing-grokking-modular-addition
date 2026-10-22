@@ -7,12 +7,12 @@
 // (embeddings, attention scores and pattern per head, residuals, a few neurons, top logits, probabilities).
 // Global context: lets a reader check every equation of chapter 5 against the actual numbers of the trained model.
 // Source: paper App. A equations (https://arxiv.org/abs/2301.05217).
-import { manifest, model, run } from "../core/data.js";
+import { manifest, model, nearestIndex as nearest, run } from "../core/data.js";
 import { set, state, subscribe } from "../core/state.js";
 import { softmax } from "../model/grokmodel.js";
+import { frameKey, watch } from "../figures/common.js";
 
 const fmt = (xs, n = 4) => `(${Array.from(xs).slice(0, n).map((x) => x.toFixed(3)).join(", ")}, …)`;
-const nearest = (steps, s) => steps.reduce((best, x, i) => (Math.abs(x - s) < Math.abs(steps[best] - s) ? i : best), 0);
 
 export const widgets = {
   scrubber: {
@@ -46,7 +46,7 @@ export const widgets = {
       const wa = el.querySelector(".wa"), wb = el.querySelector(".wb"), out = el.querySelector(".workings"), ws = el.querySelector(".ws");
       wa.onchange = () => set({ a: Math.max(0, Math.min(112, Number(wa.value))) });
       wb.onchange = () => set({ b: Math.max(0, Math.min(112, Number(wb.value))) });
-      subscribe(["run", "step", "a", "b"], async (s) => {
+      watch(el, ["run", "step", "a", "b"], async (s) => { // gated + skipped while the step stays on the same weight snapshot
         wa.value = s.a; wb.value = s.b;
         const net = await model(s.run, s.step);
         ws.textContent = net.step;
@@ -69,7 +69,7 @@ export const widgets = {
           `        prediction = argmax = ${order[0][1]}   ${order[0][1] === (s.a + s.b) % p ? "✓ correct" : "✗ wrong"}`,
         ];
         out.textContent = lines.join("\n");
-      });
+      }, { dedupe: frameKey({}, "weight_steps", "a", "b"), theme: false });
     },
   },
 };

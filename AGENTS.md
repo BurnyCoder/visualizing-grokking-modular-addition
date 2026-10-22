@@ -38,6 +38,11 @@ Treat it as read-only reference: port code from it with `Source:` links instead 
 - **Adding a figure.** Implement `render(body, dataset)` in a module under `web/js/figures/` and register its id in
   `web/js/figures/index.js`. Add its metadata to `content/figures.yaml`, then place it with `{{fig:id}}` or in
   `content/dashboard.yaml`. A figure that needs new data gets an array in `export.py`, documented in `docs/data-formats.md`.
+- **Figure subscriptions.** Subscribe with `watch(body, keys, draw, {dedupe, theme})` from `web/js/figures/common.js`,
+  never with `subscribe` directly (a build test rejects the old `watch(keys, fn)`). Pass `dedupe: frameKey(ds, field, ...keys)`
+  when the figure shows a stored frame, and `theme: false` when its colours do not depend on the theme. Move cursors
+  and marks with `Plot.cursor`, `Heatmap.marks` and `follow(body, keys, fn)`; never call `Plotly.relayout` per frame.
+  Bind Plotly events with `Plot.on`.
 - **Prose numbers.** Every number in the prose comes from `summary.py`, referenced as `{{num:key}}`; never type one by hand.
 - **Preview.** Preview with `uv run python -m grokviz.serve --dir site --port 8766` (no-cache headers, so edited ES
   modules reload). This server is also the "site" entry in `.claude/launch.json`.
@@ -47,7 +52,9 @@ Treat it as read-only reference: port code from it with `Source:` links instead 
 - **TDD.** Write tests first (pytest; tests live in `tests/`).
 - **Markers.** `gpu`, `slow`, `network` and `browser` gate the heavy tests. CI runs
   `-m "not gpu and not network and not slow and not browser"`.
-- **JS parity.** The JavaScript model must match torch: `tests/test_js_model.py` runs `node --test tests/js/`.
+- **JS parity.** The JavaScript model must match torch: `tests/test_js_model.py` runs `tests/js/grokmodel.test.mjs`.
+- **JS unit tests.** Pure front-end modules (no DOM at import time) get Node tests in `tests/js/unit/*.test.mjs`,
+  run by `tests/test_js_unit.py`.
 
 ## Code style
 - **File docstrings.** Every module starts with a docstring holding *Local explanation*, *Global context* and *Sources*.

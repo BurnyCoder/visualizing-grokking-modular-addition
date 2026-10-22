@@ -12,7 +12,7 @@ import { Plot } from "../viz/plot.js";
 import { cssVar } from "../viz/colors.js";
 import { softmax } from "../model/grokmodel.js";
 import { fourierBasis } from "./weights.js";
-import { note, runOf, watch } from "./common.js";
+import { frameKey, note, runOf, watch } from "./common.js";
 
 export const figures = {
   "freq-ablation-bars": {
@@ -20,7 +20,7 @@ export const figures = {
       body.innerHTML = "";
       const plot = new Plot(body, { height: 280 });
       const info = note(body);
-      watch(["run"], async () => {
+      watch(body, ["run"], async () => {
         const r = await run(runOf(ds));
         const fin = r.final;
         if (!fin) { info.textContent = "No final analysis for this run yet."; return; }
@@ -42,7 +42,7 @@ export const figures = {
       body.innerHTML = "";
       const plot = new Plot(body, { height: 260 });
       const info = note(body);
-      watch(["run"], async () => {
+      watch(body, ["run"], async () => {
         const r = await run(runOf(ds));
         const c = r.final?.cluster_ablation;
         if (!c) { info.textContent = "No cluster analysis for this run yet."; return; }
@@ -68,7 +68,7 @@ export const figures = {
     async render(body, ds) {
       body.innerHTML = "";
       const plot = new Plot(body, { height: 240 });
-      watch(["run"], async () => {
+      watch(body, ["run"], async () => {
         const r = await run(runOf(ds));
         const pt = r.final?.patching;
         if (!pt) return;
@@ -85,7 +85,7 @@ export const figures = {
       body.innerHTML = "";
       const plot = new Plot(body, { height: 260 });
       const info = note(body);
-      watch(["run", "step", "a", "b", "ap"], async (s) => {
+      watch(body, ["run", "step", "a", "b", "ap"], async (s) => {
         const id = runOf(ds), r = await run(id), net = await model(id, s.step);
         const p = net.p;
         const clean = Array.from(net.logits(s.a, s.b)).slice(0, p);
@@ -96,7 +96,7 @@ export const figures = {
           { x: cs, y: softmax(patched), type: "scatter", mode: "lines", name: `key part of a swapped with a′ = ${s.ap}`, line: { color: cssVar("--test") } },
         ], { xaxis: { title: { text: "answer c" } }, yaxis: { title: { text: "probability" }, range: [0, 1.02] }, hovermode: "x unified" });
         info.textContent = `Expected answer after the swap: ${s.ap} + ${s.b} = ${(s.ap + s.b) % p} (mod ${p}); original answer ${(s.a + s.b) % p}. Step ${net.step}.`;
-      });
+      }, { dedupe: frameKey(ds, "weight_steps", "a", "b", "ap") });
     },
   },
 };

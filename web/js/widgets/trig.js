@@ -9,7 +9,7 @@
 // and App. B (https://arxiv.org/abs/2301.05217).
 import { Plot } from "../viz/plot.js";
 import { cssVar, freqColor } from "../viz/colors.js";
-import { frame, slider, svg } from "./basics.js";
+import { frame, onTheme, slider, svg } from "./basics.js";
 
 const f4 = (x) => x.toFixed(4);
 
@@ -37,6 +37,7 @@ export const widgets = {
         const w = (2 * Math.PI * k) / P;
         work.textContent = `w_k = 2π·${k}/113 = ${f4(w)} rad\na: angle w·a ↔ position (${k}·${a}) mod 113 = ${(k * a) % P} of 113 → (cos, sin) = (${f4(Math.cos(w * a))}, ${f4(Math.sin(w * a))})\nb: position (${k}·${b}) mod 113 = ${(k * b) % P} → (${f4(Math.cos(w * b))}, ${f4(Math.sin(w * b))})\na+b: position ${((k * a) % P + (k * b) % P) % P} = (${(k * a) % P} + ${(k * b) % P}) mod 113 — the angles add.  Answer (a+b) mod 113 = ${(a + b) % P}`;
       };
+      onTheme(draw);
       slider(controls, "frequency k", 1, 56, 1, k, (v) => { k = v; draw(); });
       slider(controls, "a", 0, 112, 1, a, (v) => { a = v; draw(); });
       slider(controls, "b", 0, 112, 1, b, (v) => { b = v; draw(); });
@@ -78,6 +79,7 @@ export const widgets = {
         const best = sum.map((v, c) => [v, c]).filter(([, c]) => c !== star).sort((u, v) => v[0] - u[0])[0];
         work.textContent = `correct answer c* = ${star}: sum = ${sum[star].toFixed(3)} (every wave equals 1 there)\nbest wrong answer: c = ${best[1]} with sum ${best[0].toFixed(3)}\nTry a single frequency (e.g. 14): several answers score almost as high as c*.`;
       };
+      onTheme(draw);
       input.querySelector("input").addEventListener("change", (e) => { kset = e.target.value; draw(); });
       slider(controls, "a", 0, 112, 1, a, (v) => { a = v; draw(); });
       slider(controls, "b", 0, 112, 1, b, (v) => { b = v; draw(); });

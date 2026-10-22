@@ -81,10 +81,63 @@ def test_offscreen_figures_wait_until_visible(browser_page):
     page.wait_for_timeout(300)  # the visibility observer reports on the next frames
     top = page.evaluate(SETTLED)["loss-curves"]
     for i in (10, 20, 30):  # three different checkpoints via the control bar's slider
-        page.evaluate("i => { const s = document.getElementById('ctl-step'); s.value = String(i); s.dispatchEvent(new Event('input')); }", i)
+        page.evaluate("i => { const s = document.querySelector('#ctl-player input[type=range]'); s.value = String(i); s.dispatchEvent(new Event('input')); }", i)
         renders = page.evaluate(SETTLED)
     assert renders["we-svals"] == seen, "an offscreen figure redrew"
     assert renders["loss-curves"] == top + 3, "a visible figure missed a step"
     page.evaluate("document.querySelector('#fig-we-svals').scrollIntoView()")
     page.wait_for_timeout(300)
     assert page.evaluate(SETTLED)["we-svals"] == seen + 1, "a figure scrolled back did not redraw exactly once"
+
+
+MEDIAN_FRAME = """async () => { const d = []; let last = performance.now(); const t0 = last;
+  await new Promise((done) => { const f = (t) => { d.push(t - last); last = t; if (t - t0 < 2000) requestAnimationFrame(f); else done(); }; requestAnimationFrame(f); });
+  d.sort((a, b) => a - b); return d[d.length >> 1]; }"""  # median animation-frame interval over 2 s, in ms
+
+
+def test_dashboard_playback(browser_page):
+    """▶ plays the selected run from the start of its range (web/js/core/player.js): about 10 checkpoints per second
+    at 1×, smooth frames, and the URL is written only once playback stops."""
+    page, base = browser_page
+    page.goto("about:blank")
+    page.goto(f"{base}/dashboard.html")
+    page.wait_for_function("document.querySelector('#ctl-player .pb-label')?.textContent.startsWith('step')")
+    page.evaluate(SETTLED)
+    page.click("#ctl-player .pb-play")
+    median = page.evaluate(MEDIAN_FRAME)
+    assert "step=" not in page.url, "the URL hash was rewritten while playing"
+    page.click("#ctl-player .pb-play")  # pause
+    step = int(page.inner_text("#ctl-player .pb-label").split()[1].replace(",", ""))
+    assert 1000 <= step <= 3500, f"after ~2 s at 1× the paper run should be ~20 checkpoints (2,000 steps) in, got {step}"
+    assert median <= 50, f"median frame {median:.0f} ms while playing"
+    page.wait_for_timeout(400)  # hash writes are debounced by 150 ms
+    assert f"step={step}" in page.url
+
+
+def test_chapter_animation_scroll_play_and_reduced_motion(browser_page):
+    """An {{anim:id}} figure plays while on screen, pauses when scrolled away, never moves the page's own step, and
+    under prefers-reduced-motion shows its still poster frame without autoplay; ⤢ opens it in a dialog that Esc closes."""
+    page, base = browser_page
+    fig = "#fig-pcorrect-grid"
+    page.goto("about:blank")
+    page.goto(f"{base}/chapters/08-grokking.html")
+    page.evaluate(f"document.querySelector('{fig}').scrollIntoView({{block: 'center'}})")
+    page.wait_for_function(f"document.querySelector('{fig} .pb-play')?.textContent === '❚❚'", timeout=20_000)
+    page.evaluate("window.scrollTo(0, 0)")
+    page.wait_for_function(f"document.querySelector('{fig} .pb-play').textContent === '▶'", timeout=5_000)
+    assert "step=" not in page.url, "the animation moved the page's step"
+    page.click(f"{fig} .fig-expand")
+    assert page.locator(f".fig-modal {fig}").count() == 1 and page.evaluate("document.activeElement.classList.contains('fig-modal-close')")
+    page.keyboard.press("Escape")
+    assert page.locator(".fig-modal").count() == 0
+    page.emulate_media(reduced_motion="reduce")
+    try:
+        page.goto("about:blank")
+        page.goto(f"{base}/chapters/08-grokking.html")
+        page.evaluate(f"document.querySelector('{fig}').scrollIntoView({{block: 'center'}})")
+        page.wait_for_function(f"document.querySelector('{fig} .pb-label')?.textContent.startsWith('step')", timeout=20_000)
+        poster = page.inner_text(f"{fig} .pb-label")
+        page.wait_for_timeout(1500)
+        assert page.inner_text(f"{fig} .pb-play") == "▶" and page.inner_text(f"{fig} .pb-label") == poster, "autoplay under reduced motion"
+    finally:
+        page.emulate_media(reduced_motion="no-preference")

@@ -179,6 +179,8 @@ body.modal-open { overflow: hidden; }
 .hero-ctl select { font: inherit; background: var(--bg); color: var(--ink); border: 1px solid var(--line); border-radius: 5px; }
 .hero-chips { display: flex; flex-wrap: wrap; gap: 0.25rem; margin-bottom: 0.3rem; }
 .canvas-plot { display: block; width: 100%; }
+.view3d { display: block; width: 100%; cursor: grab; touch-action: none; } /* 3D point clouds (web/js/viz/view3d.js) */
+.view3d:active { cursor: grabbing; }
 @media (max-width: 80rem) { .hero-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 40rem) { .hero-tiles { grid-template-columns: minmax(0, 1fr); } }
 /* interference panel (web/js/figures/output.js): controls, then the waves beside the clock inset */

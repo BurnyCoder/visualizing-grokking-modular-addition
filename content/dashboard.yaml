@@ -27,7 +27,7 @@ groups:
   - id: geometry
     title: "D. Geometry: circles, clouds and confidence"
     blurb: "Low-dimensional pictures of the representations: numbers become angles on circles, and the output distribution sharpens."
-    panels: [embed-circles, mlp-circles, embed-pca, logit-pca, prob-pca, pcorrect-grid, entropy-grid, split-grid]
+    panels: [embed-circles, torus-3d, pca-3d, mlp-circles, embed-pca, logit-pca, prob-pca, pcorrect-grid, entropy-grid, split-grid]
   - id: output
     title: "E. The answer for one input"
     blurb: "The selected input (a, b): its 113 logits, their fit by a sum of cosines, and the constructive interference that singles out a + b."

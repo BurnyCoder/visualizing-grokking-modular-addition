@@ -1,6 +1,6 @@
 """Phase `render_media`: record short clips of the website's animations for the README and the paper.
 
-Local explanation: serves site/ locally, opens a page in headless Chromium with `?still=1` (no autoplay, no tweening,
+Local explanation: serves site/ locally, opens the dashboard in headless Chromium with `?still=1` (no autoplay, no tweening,
 no enlarge buttons: web/js/core/motion.js), and for every frame of a clip either sets the page's training step through
 its state module (stored frames only, never blended) or moves a slider, waits until every figure has finished drawing
 (`window.grokviz.anim.settled()`), and screenshots one figure. ffmpeg then turns the frames into an MP4 (H.264),
@@ -28,7 +28,7 @@ from playwright.sync_api import sync_playwright  # headless browser
 
 from grokviz.config import REPO_ROOT  # output folders
 from grokviz.context import PipelineContext  # phase argument
-from grokviz.figures import serve  # quiet local server of site/
+from grokviz.figures import open_figure, serve  # dashboard in capture mode; quiet local server of site/
 
 log = logging.getLogger("grokviz.media")
 FPS = 10  # frames per second of every clip
@@ -37,11 +37,10 @@ GIF_WIDTH = 640  # px; keeps the README GIFs within their size budget
 
 @dataclass(frozen=True)
 class Clip:
-    """One clip: the page, the figure to film, the initial URL-hash state, and what changes from frame to frame —
+    """One clip: the dashboard figure to film, the initial URL-hash state, and what changes from frame to frame —
     `steps` = range(start, stop, step) of training steps, or `slider` = (CSS selector, start, stop, step)."""
 
     name: str
-    page: str
     selector: str
     state: str
     steps: tuple[int, int, int] | None = None
@@ -49,11 +48,11 @@ class Clip:
 
 
 CLIPS = [  # the paper's run; a frame per 200 steps = one stored geometry frame (src/grokviz/geometry.py)
-    Clip("grokking-one-view", "dashboard.html", "#fig-hero-grokking", "run=paper", steps=(1, 15402, 200)),
-    Clip("circles-emerge", "dashboard.html", "#fig-embed-circles", "run=paper", steps=(1, 15402, 200)),
-    Clip("spectrum-race", "dashboard.html", "#fig-freq-norm-race", "run=paper", steps=(1, 15402, 200)),
-    Clip("torus-grokking", "dashboard.html", "#fig-torus-3d", "run=paper", steps=(1, 15402, 200)),
-    Clip("interference-sweep", "dashboard.html", "#fig-interference", "run=paper&a=100&b=50",  # odd c: 37 = a + b is a frame
+    Clip("grokking-one-view", "#fig-hero-grokking", "run=paper", steps=(1, 15402, 200)),
+    Clip("circles-emerge", "#fig-embed-circles", "run=paper", steps=(1, 15402, 200)),
+    Clip("spectrum-race", "#fig-freq-norm-race", "run=paper", steps=(1, 15402, 200)),
+    Clip("torus-grokking", "#fig-torus-3d", "run=paper", steps=(1, 15402, 200)),
+    Clip("interference-sweep", "#fig-interference", "run=paper&a=100&b=50",  # odd c: 37 = a + b is a frame
          slider=("#fig-interference .interf-ctl input[type=range]", 1, 113, 2)),
 ]
 
@@ -92,12 +91,7 @@ def capture(page, base: str, clip: Clip, frames: Path) -> int:
     if frames.exists():
         shutil.rmtree(frames)
     frames.mkdir(parents=True)
-    page.goto("about:blank")  # a fresh document, so the state comes from this URL's hash only
-    page.goto(f"{base}/{clip.page}?still=1#{clip.state}")
-    page.add_style_tag(content=".controlbar, .topbar { position: static; } .fig details { display: none; }")
-    fig = page.locator(clip.selector)
-    fig.scroll_into_view_if_needed()
-    page.wait_for_function(f"!document.querySelector('{clip.selector} .loading')", timeout=60_000)
+    fig = open_figure(page, base, clip.selector, clip.state)  # its first draw has finished, so it cannot reset a slider later
     values = list(range(*clip.steps)) if clip.steps else list(range(*clip.slider[1:]))
 
     def shoot() -> set[tuple[int, int]]:
@@ -130,7 +124,8 @@ def encode(frames: Path, n: int, name: str, gif_dir: Path, mp4_dir: Path, strip_
     palette = frames / "palette.png"
     scale = f"fps={FPS},scale={GIF_WIDTH}:-1:flags=lanczos"
     run_ffmpeg(*src, "-vf", f"{scale},palettegen=stats_mode=diff", palette)  # pass 1: one palette for the whole clip
-    run_ffmpeg(*src, "-i", palette, "-lavfi", f"{scale}[x];[x][1:v]paletteuse=dither=bayer:bayer_scale=5:diff_mode=rectangle", out["gif"])
+    run_ffmpeg(*src, "-i", palette, "-lavfi", f"{scale}[x];[x][1:v]paletteuse=dither=bayer:bayer_scale=5:diff_mode=rectangle",
+               out["gif"])  # pass 2: every frame mapped to that palette; only the changed rectangle is re-dithered
     picks = sorted({round(i * (n - 1) / 4) for i in range(5)})  # 5 evenly spaced frames, first and last included
     sel = "+".join(f"eq(n\\,{i})" for i in picks)  # select keeps a frame where the expression is non-zero
     run_ffmpeg(*src, "-vf", f"select='{sel}',scale=360:-1,tile={len(picks)}x1", "-frames:v", "1", out["strip"])

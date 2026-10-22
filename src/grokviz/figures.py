@@ -69,6 +69,23 @@ def serve(directory) -> tuple[ThreadingHTTPServer, int]:
     return server, server.server_address[1]
 
 
+# On paper: no "How to read it" toggles, no selection outlines, no sticky control bar over the figure, and the figure at
+# its own height rather than stretched to its grid row (https://developer.mozilla.org/docs/Web/CSS/align-self).
+CAPTURE_CSS = ".fig details, .grid-mark { display: none; } .controlbar, .topbar { position: static; } .fig { align-self: start; }"
+
+
+def open_figure(page, base: str, selector: str, state: str):
+    """Open the dashboard at `state` in a fresh document, wait until the figure at `selector` has drawn; return it."""
+    page.goto("about:blank")  # fresh document: the dashboard reads its state from the #hash only when it loads
+    page.goto(f"{base}/dashboard.html?still=1#{state}")  # still: no motion, no ⤢ button (web/js/core/motion.js)
+    page.add_style_tag(content=CAPTURE_CSS)
+    fig = page.locator(selector)
+    fig.scroll_into_view_if_needed()
+    page.wait_for_function(f"!document.querySelector('{selector} .loading')", timeout=60_000)  # figure started drawing
+    page.evaluate("() => window.grokviz.anim.settled()")  # and every draw finished (web/js/core/hooks.js)
+    return fig
+
+
 def render_report_figures(ctx: PipelineContext) -> None:
     """Phase entry point: PNGs of report figures and README screenshots."""
     out = ctx.cfg.reports_dir / "figures"
@@ -82,13 +99,7 @@ def render_report_figures(ctx: PipelineContext) -> None:
             browser = pw.chromium.launch()
             page = browser.new_page(viewport={"width": 1400, "height": 1000}, color_scheme="light", device_scale_factor=2)
             for fid, state in REPORT_FIGURES:
-                page.goto("about:blank")  # fresh document: the dashboard reads its state from the #hash only when it loads
-                page.goto(f"{base}/dashboard.html?still=1#{state}")  # still: no motion, no ⤢ button (web/js/core/motion.js)
-                # on paper: no interactive "How to read it" toggles, no selection outlines, no sticky control bar overlapping the figure
-                page.add_style_tag(content=".fig details, .grid-mark { display: none; } .controlbar, .topbar { position: static; }")
-                fig = page.locator(f"#fig-{fid}")
-                fig.scroll_into_view_if_needed()
-                page.wait_for_function(f"!document.querySelector('#fig-{fid} .loading')", timeout=60_000)  # figure drawn
+                fig = open_figure(page, base, f"#fig-{fid}", state)
                 page.wait_for_timeout(800)  # let Plotly finish transitions
                 fig.screenshot(path=str(out / f"{fid}.png"))
                 log.info("figure %s → %s", fid, out / f"{fid}.png")

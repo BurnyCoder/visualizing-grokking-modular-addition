@@ -33,7 +33,7 @@ def test_a_short_clip_renders(tmp_path):
 
     from grokviz.media import Clip, render_clip
 
-    clip = Clip("test-hero", "dashboard.html", "#fig-hero-grokking", "run=paper", steps=(1001, 1401, 100))
+    clip = Clip("test-hero", "#fig-hero-grokking", "run=paper", steps=(1001, 1401, 100))
     out = render_clip(clip, SITE, tmp_path / "frames", gif_dir=tmp_path, mp4_dir=tmp_path, strip_dir=tmp_path)
     assert count_frames_and_secs(str(out["mp4"]))[0] == 4 and count_frames_and_secs(str(out["gif"]))[0] == 4
     assert out["strip"].stat().st_size > 0

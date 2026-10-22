@@ -83,9 +83,9 @@ def render_report_figures(ctx: PipelineContext) -> None:
             page = browser.new_page(viewport={"width": 1400, "height": 1000}, color_scheme="light", device_scale_factor=2)
             for fid, state in REPORT_FIGURES:
                 page.goto("about:blank")  # fresh document: the dashboard reads its state from the #hash only when it loads
-                page.goto(f"{base}/dashboard.html#{state}")
-                # on paper: no interactive "How to read it" toggles, and no sticky control bar overlapping the figure
-                page.add_style_tag(content=".fig details { display: none; } .controlbar, .topbar { position: static; }")
+                page.goto(f"{base}/dashboard.html?still=1#{state}")  # still: no motion, no ⤢ button (web/js/core/motion.js)
+                # on paper: no interactive "How to read it" toggles, no selection outlines, no sticky control bar overlapping the figure
+                page.add_style_tag(content=".fig details, .grid-mark { display: none; } .controlbar, .topbar { position: static; }")
                 fig = page.locator(f"#fig-{fid}")
                 fig.scroll_into_view_if_needed()
                 page.wait_for_function(f"!document.querySelector('#fig-{fid} .loading')", timeout=60_000)  # figure drawn

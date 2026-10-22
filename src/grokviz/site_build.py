@@ -7,6 +7,9 @@ Local explanation: chapters are markdown files with small macros that the build 
   {{quote:id}}                      — an exact quotation from quotes.yaml (verified against the PDF page)
   {{num:key}}                       — a number from site/data/summary.json (so prose cannot drift from data)
   {{fig:id}} / {{widget:id}}        — a live figure from figures.yaml / an interactive teaching widget
+  {{anim:id}}                       — the figure as an animation with its own step, played while on screen
+                                      (configured by the figure's `anim:` block: run, range, speed, loop, poster)
+  {{scene:id}}                      — a scrollytelling marker from scenes.yaml (state / play range for the page)
   {{cite:key}}                      — a numbered link into references.yaml
 and `::: example|nuance|note|object` containers become callout boxes; $…$ and $$…$$ become KaTeX math.
 While expanding, the build enforces the reading contract and fails on any violation: every term and symbol is
@@ -29,6 +32,7 @@ from pathlib import Path  # paths
 
 import yaml  # content files
 from jinja2 import Environment, FileSystemLoader, select_autoescape  # templates
+from jinja2.utils import htmlsafe_json_dumps  # JSON safe in single-quoted attributes (the tojson filter's escaping)
 from markdown_it import MarkdownIt  # markdown → HTML
 from mdit_py_plugins.container import container_plugin  # ::: callouts
 from mdit_py_plugins.dollarmath import dollarmath_plugin  # $math$
@@ -38,7 +42,7 @@ from grokviz.formatting import fmt_number, fmt_value  # prose numbers and R-chec
 
 log = logging.getLogger("grokviz.site_build")
 CONTENT, TEMPLATES, WEB = REPO_ROOT / "content", REPO_ROOT / "templates", REPO_ROOT / "web"
-MACRO = re.compile(r"\[\[(dfn|term|preview|sym|symdef):([\w.-]+)(?:\|([^\]]+))?\]\]|\{\{(quote|num|fig|widget|cite):([\w./-]+)\}\}")
+MACRO = re.compile(r"\[\[(dfn|term|preview|sym|symdef):([\w.-]+)(?:\|([^\]]+))?\]\]|\{\{(quote|num|fig|anim|scene|widget|cite):([\w./-]+)\}\}")
 CALLOUTS = {"example": "Worked example", "nuance": "Nuance", "note": "Note", "object": "", "definition": "Definition", "check": "Control"}
 QUOTE_MAX_WORDS, QUOTE_CHAPTER_MAX = 25, 100  # copyright policy (NOTICE.md, docs/content-style.md)
 
@@ -60,6 +64,7 @@ class Build:
     summary: dict
     js_figures: set
     js_widgets: set
+    scenes: dict = field(default_factory=dict)  # scrollytelling markers (content/scenes.yaml)
     defined_terms: dict = field(default_factory=dict)  # term → page where defined
     defined_syms: dict = field(default_factory=dict)  # symbol → page where defined
     used_refs: list = field(default_factory=list)  # citation keys in first-use order
@@ -143,13 +148,21 @@ def expand(text: str, b: Build, page: str) -> str:
                 b.errors.append(f"{page}: number '{key}' missing from summary.json")
                 return "?"
             return f'<span class="num" data-num="{key}">{fmt_number(b.summary[key])}</span>'
-        if kind == "fig":
+        if kind in ("fig", "anim"):
             if key not in b.figures:
                 b.errors.append(f"{page}: figure '{key}' missing from figures.yaml")
                 return ""
             if key not in b.js_figures:
                 b.errors.append(f"{page}: figure '{key}' has no JS renderer in web/js/figures/index.js")
-            return render_figure(key, b)
+            if kind == "anim" and "anim" not in b.figures[key]:
+                b.errors.append(f"{page}: figure '{key}' has no anim block in figures.yaml")
+                return ""
+            return render_figure(key, b, anim=kind == "anim")
+        if kind == "scene":
+            if key not in b.scenes:
+                b.errors.append(f"{page}: scene '{key}' missing from scenes.yaml")
+                return ""
+            return f"<div class=\"scene\" id=\"scene-{key}\" data-scene='{htmlsafe_json_dumps(b.scenes[key])}' aria-hidden=\"true\"></div>"
         if kind == "widget":
             if key not in b.js_widgets:
                 b.errors.append(f"{page}: widget '{key}' has no JS implementation in web/js/widgets/index.js")
@@ -189,9 +202,13 @@ def md_inline(text: str | None, b: Build, page: str) -> str:
     return html[3:-4] if html.startswith("<p>") and html.endswith("</p>") and html.count("<p>") == 1 else html
 
 
-def render_figure(fid: str, b: Build) -> str:
-    """HTML of one figure from its metadata (shared by chapters and dashboard)."""
+def render_figure(fid: str, b: Build, anim: bool = False) -> str:
+    """HTML of one figure from its metadata (shared by chapters and dashboard); `anim` renders it as an animation."""
     f = dict(b.figures[fid], id=fid)
+    if anim:
+        f["anim"] = {"run": "paper", "range": "grokking", "speed": 1, "loop": "loop", **f["anim"]}  # defaults
+    else:
+        f.pop("anim", None)
     page = f"figure:{fid}"
     f["what_html"] = md_inline(f.get("what"), b, page)
     f["read_html"] = _md.render(expand(f.get("read", ""), b, page)) if f.get("read") else ""
@@ -226,7 +243,8 @@ def build_site(ctx=None) -> None:
     summary = json.loads(summary_path.read_text(encoding="utf-8")) if summary_path.exists() else {}
     b = Build(glossary=load_yaml("glossary.yaml"), symbols=load_yaml("symbols.yaml"), quotes=load_yaml("quotes.yaml"),
               refs=load_yaml("references.yaml"), figures=load_yaml("figures.yaml"), summary=summary,
-              js_figures=js_ids(WEB / "js" / "figures" / "index.js"), js_widgets=js_ids(WEB / "js" / "widgets" / "index.js"))
+              js_figures=js_ids(WEB / "js" / "figures" / "index.js"), js_widgets=js_ids(WEB / "js" / "widgets" / "index.js"),
+              scenes=load_yaml("scenes.yaml") or {})
     check_glossary(b.glossary, b.errors)
     chapters = load_yaml("chapters.yaml")
     macros = {f"\\{k}": v for k, v in (load_yaml("macros.yaml") or {}).items()}

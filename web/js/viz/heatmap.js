@@ -57,6 +57,7 @@ export class Heatmap {
     if (!rc || !this.values) { tt.hidden = true; return; }
     const [r, c] = rc;
     const v = this.values[r * this.o.cols + c];
+    if (Number.isNaN(v)) { tt.hidden = true; return; } // hidden cell
     const head = this.o.label ? this.o.label(r, c) : `${this.o.rowLabel} = ${r}, ${this.o.colLabel} = ${c}`;
     tt.innerHTML = `<span class="tt-term">${head}</span>value ${this.o.format(v)}`;
     tt.hidden = false;
@@ -64,7 +65,7 @@ export class Heatmap {
     tt.style.top = `${e.clientY + 14}px`;
   }
 
-  /** Draw `values` (length rows*cols, row-major). Optional fixed limits {min, max}. */
+  /** Draw `values` (length rows*cols, row-major; NaN cells stay transparent). Optional fixed limits {min, max}. */
   draw(values, limits = null) {
     this.values = values;
     let lo = Infinity, hi = -Infinity;
@@ -76,7 +77,7 @@ export class Heatmap {
     const cmap = this.o.diverging ? rdbu : viridis;
     for (let i = 0; i < values.length; i++) {
       const [r, g, b] = cmap((values[i] - lo) / span);
-      img.data[4 * i] = r; img.data[4 * i + 1] = g; img.data[4 * i + 2] = b; img.data[4 * i + 3] = 255;
+      img.data[4 * i] = r; img.data[4 * i + 1] = g; img.data[4 * i + 2] = b; img.data[4 * i + 3] = Number.isNaN(values[i]) ? 0 : 255; // NaN = not shown (transparent)
     }
     this.ctx.putImageData(img, 0, 0);
     this._colorbar(lo, hi, cmap);

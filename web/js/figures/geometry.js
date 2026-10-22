@@ -3,28 +3,28 @@
 // Local explanation: scatter plots of precomputed low-dimensional projections (src/grokviz/geometry.py):
 // token embeddings in each key-frequency plane (circles = the "clock"), embedding PCA, MLP class-mean circles,
 // PCA of class-mean logits / predicted distributions, plus grids of the probability of the correct answer and
-// of the prediction's entropy over all inputs. Points are coloured by their number on a cyclic colour wheel,
-// so a circle traversed in order shows up as a rainbow.
+// of the prediction's entropy over all inputs. Points are coloured by their position on a cyclic colour map
+// (viz/colors.js clockColor), so a circle traversed in order shows one smooth colour cycle.
 // Global context: the "addition becomes rotation" picture (paper Fig. 1, Sec. 3.1; Welch Labs' linear-probe
 // circles) watched as it emerges from noise during training.
 // Sources: paper Sec. 3.1 (https://arxiv.org/abs/2301.05217); Welch Labs video (https://www.youtube.com/watch?v=D8GOeCFFby4).
 import { array, nearestIndex, row, run, trainMask } from "../core/data.js";
 import { Plot } from "../viz/plot.js";
 import { Heatmap } from "../viz/heatmap.js";
+import { clockColor, cssVar } from "../viz/colors.js";
 import { el, follow, frameKey, note, runOf, set, watch } from "./common.js";
 
 const P = 113;
-const hue = (i, n = P) => `hsl(${Math.round((360 * i) / n)}, 70%, 50%)`; // cyclic colour for number i
 
 /**
  * Points [p, 2] (or [p, 3] using the first two columns) as a coloured scatter trace. With frequency k, number i is
- * coloured by its predicted clock position (k·i mod p): if the network places i at angle w_k·i, the circle is a rainbow.
+ * coloured by its predicted clock position (k·i mod p): if the network places i at angle w_k·i, the colours change smoothly once around the circle.
  */
 function points(xy, dims, name, k = 1) {
   const x = [], y = [];
   for (let i = 0; i < P; i++) { x.push(xy[i * dims]); y.push(xy[i * dims + 1]); }
   return { x, y, mode: "markers", type: "scatter", name, text: x.map((_, i) => `number ${i} (clock position ${(k * i) % P})`),
-    marker: { size: 6, color: x.map((_, i) => hue((k * i) % P)) }, showlegend: false };
+    marker: { size: 6, color: x.map((_, i) => clockColor((k * i) % P, P)), line: { width: 0.5, color: cssVar("--ink-soft") } }, showlegend: false }; // outline: light and dark map ends stay visible
 }
 
 /** Symmetric axis range covering all points of a scatter trace, so equal-aspect plots never clip. */
@@ -58,7 +58,7 @@ function planes(arrayName, what) {
           return pl.draw([tr], { margin: { l: 10, r: 10, t: 4, b: 10 }, xaxis: { zeroline: false, showticklabels: false, range: rng },
             yaxis: { zeroline: false, showticklabels: false, range: rng, scaleanchor: "x" }, hovermode: "closest" });
         }));
-        info.textContent = `step ${r.geometry_steps[f]}: ${what}. Colour = predicted clock position k·n mod 113; a smooth rainbow around the circle means number n sits at angle w_k·n (K = ${K} key frequencies).`;
+        info.textContent = `step ${r.geometry_steps[f]}: ${what}. Colour = predicted clock position k·n mod 113; one smooth colour cycle around the circle means number n sits at angle w_k·n (K = ${K} key frequencies).`;
       }, { dedupe: frameKey(ds, "geometry_steps") });
     },
   };

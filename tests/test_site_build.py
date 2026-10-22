@@ -71,3 +71,18 @@ def test_anim_and_scene_macros():
     assert not b.errors
     sb.expand("{{anim:g}} {{anim:missing}} {{scene:missing}}", b, "p")
     assert len(b.errors) == 3, b.errors
+
+
+def test_tour_steps_bind_numbers_and_are_checked():
+    """Tour text goes through the macro expander (numbers come from summary.json, not typed by hand); a step must name
+    a dashboard panel, and a play range needs from < to."""
+    from grokviz import site_build as sb
+
+    sb._md = sb.markdown()
+    b = sb.Build(glossary={}, symbols={}, quotes={}, refs={}, figures={}, summary={"task.n_train": {"value": 3830, "fmt": "int"}},
+                 js_figures=set(), js_widgets=set(), root="./")
+    raw = [{"title": "T", "panel": "loss-curves", "play": {"from": 0, "to": 100}, "text": "{{num:task.n_train}} sums"},
+           {"title": "U", "panel": "nope", "text": "x"}, {"title": "V", "panel": "loss-curves", "play": {"from": 9, "to": 1}, "text": "y"}]
+    steps = sb.tour_steps(raw, b, {"loss-curves"})
+    assert 'data-num="task.n_train"' in steps[0]["text"] and steps[0]["play"] == {"from": 0, "to": 100}
+    assert len(b.errors) == 2, b.errors

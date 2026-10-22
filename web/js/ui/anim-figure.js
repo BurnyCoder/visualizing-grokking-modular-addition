@@ -19,6 +19,7 @@ import { scrollPlay } from "./scrollplay.js";
 export async function mountAnim(fig) {
   const cfg = JSON.parse(fig.dataset.anim);
   const player = new Player(storeOf(fig), { reduced: reducedMotion });
+  fig.player = player; // the figure's own controls (e.g. the hero's ▶) find it here
   const r = await run(cfg.run);
   player.setSteps(r.ckpt_steps, r.phases, Array.isArray(cfg.range) ? cfg.range.map((s) => nearest(r.ckpt_steps, s)) : cfg.range);
   player.setSpeed(cfg.speed);

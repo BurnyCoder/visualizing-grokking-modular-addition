@@ -1,38 +1,54 @@
-# tour.yaml — the dashboard's guided tour: each step sets the shared state and focuses one panel.
-# Global context: a 2-minute narrative through training for the paper's run; numbers in the text refer to the
-# paper's run (step values are checkpoints: the paper's checkpoint "epoch e" holds weights after e+1 steps).
+# tour.yaml — the dashboard's guided tour: each step sets the shared state, focuses one panel and may play a range.
+# Global context: a short narrative through training for the paper's run. Fields: title; panel (a dashboard panel id,
+# checked by the build); state (keys of web/js/core/state.js, applied first); play {from, to, speed} in training steps,
+# played on the page's player (under reduced motion it jumps to `to`); text in markdown with the site's macros, so
+# numbers come from site/data/summary.json via {{num:key}} (step values in `state`/`play` are checkpoint positions:
+# the paper's checkpoint "epoch e" holds the weights after e+1 steps).
+- title: "Grokking in one view"
+  panel: hero-grokking
+  state: {run: paper}
+  play: {from: 0, to: 15400, speed: 2}
+  text: "The paper's run plays from its first step to just after grokking. The four views show the same moment; the line under ▶ names the phase. Press → for a slower walk through the same story."
 - title: "The puzzle"
   panel: loss-curves
-  state: {run: paper, step: 1001}
-  text: "After ~1,000 steps the training loss is tiny but the test loss is huge: the network has memorised its 3,830 training sums and fails on the other 8,939."
+  state: {step: 1601}
+  text: "By step {{num:paper.t1}} the training loss is tiny but the test loss is huge: the network has memorised its {{num:task.n_train}} training sums and fails on the other {{num:task.n_test}}."
 - title: "A long plateau"
   panel: acc-curves
-  state: {step: 5001}
-  text: "For thousands of steps nothing seems to happen: training accuracy is 100 %, test accuracy near chance."
+  play: {from: 1600, to: 9300, speed: 4}
+  text: "For thousands of steps little seems to happen: training accuracy stays at 100 % while test accuracy stays low."
 - title: "…but the weights are changing"
-  panel: we-fourier-bars
-  state: {step: 5001}
-  text: "Look at the embedding in the Fourier basis: a few frequencies are already standing out of the noise."
+  panel: we-fourier-heatmap
+  play: {from: 0, to: 15400, speed: 3}
+  text: "The embedding's Fourier spectrum over training (the bright column is the current step): during the plateau a few frequencies — bright rows — separate from the rest, long before the test loss moves."
 - title: "Hidden progress"
   panel: progress-measures
   state: {step: 7001}
   text: "The restricted loss — the loss using only those few frequencies — is already falling, and the excluded loss is rising: the training answers increasingly come from the Fourier circuit, not memorisation."
 - title: "Numbers become angles"
   panel: embed-circles
-  state: {step: 9001}
-  text: "Projected onto the right planes, the 113 embeddings line up on circles: the network represents a number a by the angle 2πk·a/113."
+  play: {from: 1000, to: 15000, speed: 2}
+  text: "Projected onto the right planes, the 113 embeddings spread out onto circles: the network represents a number a by the angle 2πk·a/113."
+- title: "Confidence everywhere"
+  panel: pcorrect-grid
+  play: {from: 0, to: 15400, speed: 2}
+  text: "Each pixel is one input. The training pairs (the speckle) are answered correctly early on; the test pairs light up only during cleanup."
 - title: "Grokking"
   panel: loss-curves
-  state: {step: 11001}
-  text: "Weight decay now strips away the memorising weights and the test loss collapses — after the circuit already existed."
+  state: {step: 10601}
+  text: "Test accuracy passes 99 % at step {{num:paper.t_grok}}: weight decay strips away the memorising weights and the test loss collapses — after the circuit already existed."
 - title: "Cleanup"
   panel: ssw-curves
-  state: {step: 14001}
+  play: {from: 9300, to: 14100, speed: 2}
   text: "The sum of squared weights falls steeply: the memorisation solution is expensive and weight decay removes it."
 - title: "Periodic neurons"
   panel: neuron-grid
   state: {step: 40001, neuron: 0}
   text: "Every neuron's activation over all inputs is a pattern of stripes: a function of cos and sin of one frequency."
+- title: "Periodic attention"
+  panel: attn-grid
+  state: {step: 40001, head: 0}
+  text: "The attention heads are periodic too: how much '=' attends to the first number depends on a and b through waves."
 - title: "Interference"
   panel: interference
   state: {step: 40001, a: 100, b: 50}
@@ -43,9 +59,9 @@
   text: "Remove one key frequency from the logits and the loss explodes; remove any other frequency and nothing happens."
 - title: "Late surprise"
   panel: avg-attn
-  state: {step: 45001}
-  text: "Even after 40,000 steps training is not over: around 43k two heads suddenly attend to '=' again — a small phase change nobody has explained yet."
+  play: {from: 40000, to: 50000, speed: 2}
+  text: "Training is not over after 40,000 steps: late on, two heads attend to '=' again (heads 0–3: {{num:paper.attn_eq_45k}} at step 45,001, up from {{num:paper.attn_eq_pct}} at 40,001) — a small change nobody has explained yet."
 - title: "Not a fluke"
   panel: seed-test-loss
-  state: {step: 40000}
-  text: "All 11 of our weight-decay seeds grok (at different times, with different key frequencies); none of the 5 runs without weight decay do."
+  state: {step: 40001}
+  text: "Every one of our weight-decay seeds groks, at different times and with different key frequencies, and no run without weight decay does (hypothesis H5 in the table below)."

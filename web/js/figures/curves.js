@@ -41,20 +41,16 @@ function overTraining(traces, layout = {}, height = 270) {
 
 const line = (x, y, name, color, extra = {}) => ({ x: Array.from(x), y: Array.from(y), name, type: "scatter", mode: "lines", line: { color, width: 1.8 }, ...extra });
 
-export const figures = {
-  "loss-curves": overTraining(async (id) => {
-    const tr = await array(id, "curve_train_loss");
-    const te = await array(id, "curve_test_loss");
-    return [line(stepsEvery(tr.data.length, 10), tr.data, "train loss", cssVar("--train")),
-      line(stepsEvery(te.data.length, 10), te.data, "test loss", cssVar("--test"))];
-  }, { yaxis: { type: "log", title: { text: "loss (log scale)" }, exponentformat: "power" } }),
+/** Train and test loss traces at every 10th step (also used by the dashboard hero, figures/hero.js). */
+export async function lossTraces(id) {
+  const tr = await array(id, "curve_train_loss"), te = await array(id, "curve_test_loss");
+  return [line(stepsEvery(tr.data.length, 10), tr.data, "train loss", cssVar("--train")),
+    line(stepsEvery(te.data.length, 10), te.data, "test loss", cssVar("--test"))];
+}
 
-  "loss-curves-linear": overTraining(async (id) => {
-    const tr = await array(id, "curve_train_loss");
-    const te = await array(id, "curve_test_loss");
-    return [line(stepsEvery(tr.data.length, 10), tr.data, "train loss", cssVar("--train")),
-      line(stepsEvery(te.data.length, 10), te.data, "test loss", cssVar("--test"))];
-  }, { yaxis: { title: { text: "loss (linear scale)" }, rangemode: "tozero" } }),
+export const figures = {
+  "loss-curves": overTraining(lossTraces, { yaxis: { type: "log", title: { text: "loss (log scale)" }, exponentformat: "power" } }),
+  "loss-curves-linear": overTraining(lossTraces, { yaxis: { title: { text: "loss (linear scale)" }, rangemode: "tozero" } }),
 
   "acc-curves": overTraining(async (id, r) => [
     line(r.ckpt_steps, await column(id, "ckpt_scalars", "acc_train"), "train accuracy", cssVar("--train")),

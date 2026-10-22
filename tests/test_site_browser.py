@@ -77,7 +77,7 @@ def test_offscreen_figures_wait_until_visible(browser_page):
     page.evaluate("document.querySelector('#fig-we-svals').scrollIntoView()")
     page.wait_for_function("document.querySelector('#fig-we-svals .js-plotly-plot')")  # created and drawn once
     seen = page.evaluate(SETTLED)["we-svals"]
-    page.evaluate("window.scrollTo(0, 0)")
+    page.evaluate("document.querySelector('#fig-loss-curves').scrollIntoView()")
     page.wait_for_timeout(300)  # the visibility observer reports on the next frames
     top = page.evaluate(SETTLED)["loss-curves"]
     for i in (10, 20, 30):  # three different checkpoints via the control bar's slider
@@ -150,3 +150,28 @@ def test_chapter_animation_scroll_play_and_reduced_motion(browser_page):
         assert page.inner_text(f"{fig} .pb-play") == "▶" and page.inner_text(f"{fig} .pb-label") == poster, "autoplay under reduced motion"
     finally:
         page.emulate_media(reduced_motion="no-preference")
+
+
+def test_hero_and_tour(browser_page):
+    """The hero's ▶ plays the run through grokking on the page player, with blended frames labelled while playing; the
+    tour plays its first step's range and its text carries bound numbers."""
+    page, base = browser_page
+    hero = "#fig-hero-grokking"
+    page.goto("about:blank")
+    page.goto(f"{base}/dashboard.html")
+    page.wait_for_function(f"document.querySelectorAll('{hero} .fig-note').length === 3 && !document.querySelector('{hero} .loading')", timeout=30_000)
+    page.click(f"{hero} .hero-play")
+    page.wait_for_timeout(1500)
+    assert page.inner_text(f"{hero} .hero-play").startswith("❚❚")
+    assert "blended" in page.inner_text(f"{hero} .hero-tile:nth-child(2) .fig-note"), "no blending label while playing"
+    page.click(f"{hero} .hero-play")
+    page.evaluate(SETTLED)
+    assert "stored frame" in page.inner_text(f"{hero} .hero-tile:nth-child(2) .fig-note"), "paused view must be a stored frame"
+    page.click("#ctl-tour")
+    page.wait_for_timeout(800)
+    assert page.locator(f"{hero}.tour-focus").count() == 1 and page.inner_text("#ctl-player .pb-play") == "❚❚"
+    page.click("#tour .tour-next")
+    page.evaluate(SETTLED)
+    assert page.locator("#tour .tour-text [data-num='task.n_train']").count() == 1
+    assert page.inner_text("#ctl-player .pb-label").startswith("step 1,601")
+    page.click("#tour .tour-close")

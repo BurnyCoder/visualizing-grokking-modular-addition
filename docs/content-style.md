@@ -32,3 +32,19 @@ enforces the mechanical parts of that promise; the rest is editorial.
 - Hedging follows the evidence: “the paper claims / we measured / we could not reproduce”.
 - Charts: log axes are labelled, phases shaded, colours fixed per frequency/run, no dual axes, sequential maps for
   non-negative data and diverging maps (centred at 0) for signed data.
+
+## Animation rules
+
+- **Motion has a purpose.** Animate a change over training or a sweep of an input, one change at a time, with 1–3
+  sentences telling the reader what to watch.
+- **Honest frames.** A paused view always shows a stored frame (checkpoint, weight snapshot or geometry frame) and says
+  which step it is. Interpolation between stored frames is used only while playing and is disclosed in the caption.
+- **Reader in control.** Chapter animations (`{{anim:id}}`) play only while on screen, one at a time, and stop
+  autoplaying once the reader touches their controls. The dashboard never autoplays.
+- **Reduced motion.** Under `prefers-reduced-motion` (and `?still=1` captures) nothing autoplays or tweens: the figure
+  shows its poster frame and ▶ moves in whole checkpoints.
+- **`anim:` block.** A figure placed with `{{anim:id}}` needs an `anim:` block in `content/figures.yaml`:
+  `{run, range, speed, loop, poster}`. `range` is a preset (`grokking`, `whole`, `late`, `memorisation`, `circuit`,
+  `cleanup`) or `[from, to]` in training steps; `poster` defaults to the end of the range.
+- **Scenes.** `{{scene:id}}` markers (`content/scenes.yaml`: `{label, state, play: {from, to, speed}}`) set the page's
+  state or play a step range when they cross the middle of the screen.

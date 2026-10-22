@@ -12,7 +12,7 @@ import { array, model, nearestIndex, row, run, manifest } from "../core/data.js"
 import { Plot } from "../viz/plot.js";
 import { Heatmap } from "../viz/heatmap.js";
 import { cssVar, freqColor } from "../viz/colors.js";
-import { clusterOrder, el, fill, follow, frameKey, kstep, note, runOf, set, storeOf, watch } from "./common.js";
+import { basisName, clusterOrder, el, fill, follow, frameKey, kstep, note, runOf, set, storeOf, watch } from "./common.js";
 import { CanvasPlot } from "../viz/canvas.js";
 import { fourierBasis, freqCoeffs } from "../model/fourier.js";
 
@@ -164,7 +164,7 @@ export const figures = {
     },
   },
 
-  "attn-C-fourier": headSpectra("attn_C_fourier", "norm of C_j's component"),
+  "attn-C-fourier": headSpectra("attn_C_fourier", "norm of C_j's component", { signed: true }),
   "ov-fourier": headSpectra("ov_fourier", "norm in W_O W_V W_E"),
 
   "wlogit-sorted": {
@@ -282,23 +282,34 @@ export const figures = {
   },
 };
 
-/** Per-head Fourier spectra ([T, 4, 113]) at the current step as grouped bars of √(cos² + sin²) per frequency. */
-function headSpectra(arrayName, ytitle) {
+/**
+ * Per-head Fourier spectra ([T, 4, 113]) at the current step as grouped bars of √(cos² + sin²) per frequency. With
+ * `signed` (the array holds signed coefficients, e.g. C_j) a selector also offers the signed Const, cos k and sin k
+ * coefficients of the run's key frequencies, where the phase of each head shows (two heads can mirror each other).
+ */
+function headSpectra(arrayName, ytitle, { signed = false } = {}) {
   return {
     async render(body, ds) {
       body.innerHTML = "";
+      const sel = signed ? el(body, "label", "hero-ctl", 'show <select><option value="norm">size per frequency (all 56)</option><option value="signed">signed cos and sin parts (key frequencies)</option></select>').querySelector("select") : null;
       const plot = new Plot(body, { height: 280 });
-      watch(body, ["run", "step"], async (s) => {
+      const draw = async (s) => {
         const id = runOf(ds), r = await run(id), a = await array(id, arrayName);
         const t = nearestIndex(r.ckpt_steps, s.step);
         const v = row(a, t), H = a.shape[1], P = a.shape[2];
+        const comps = [0, ...r.key_freqs.flatMap((k) => [2 * k - 1, 2 * k])]; // Const, cos k, sin k of the key frequencies
         const traces = [];
         for (let h = 0; h < H; h++) {
-          const comb = freqNorms(v.subarray(h * P, (h + 1) * P));
-          traces.push({ x: comb.map((_, i) => i + 1), y: comb, type: "bar", name: `head ${h}` });
+          const vh = v.subarray(h * P, (h + 1) * P), comb = freqNorms(vh);
+          traces.push(sel?.value === "signed" ? { x: comps.map(basisName), y: comps.map((i) => vh[i]), type: "bar", name: `head ${h}` }
+            : { x: comb.map((_, i) => i + 1), y: comb, type: "bar", name: `head ${h}` });
         }
-        await plot.draw(traces, { barmode: "group", xaxis: { title: { text: "frequency k" }, dtick: 4 }, yaxis: { title: { text: `${ytitle} (√(cos²+sin²))` } }, hovermode: "closest" });
-      }, { dedupe: frameKey(ds, "ckpt_steps") });
+        await plot.draw(traces, sel?.value === "signed"
+          ? { barmode: "group", xaxis: { title: { text: "Fourier component over the token (key frequencies)" }, type: "category" }, yaxis: { title: { text: `${ytitle.replace("norm of ", "")} (signed)` }, zeroline: true }, hovermode: "closest" }
+          : { barmode: "group", xaxis: { title: { text: "frequency k" }, dtick: 4 }, yaxis: { title: { text: `${ytitle} (√(cos²+sin²))` } }, hovermode: "closest" });
+      };
+      watch(body, ["run", "step"], draw, { dedupe: frameKey(ds, "ckpt_steps") });
+      if (sel) sel.onchange = () => draw(storeOf(body).state);
     },
   };
 }

@@ -48,6 +48,10 @@ And the whole story in one view once more:
 4. During memorisation the gradients of the training and test losses point in opposite directions; after grokking the network sits in a balance between the loss and weight decay (ch. 19).
 5. In all 11 of our retrained seeds with weight decay, the Fourier signatures appear — sparse spectra, single-frequency neurons, cosine-shaped logits, and the patching test — each seed with its own key frequencies; the strictest preregistered ablation criterion (H4) held in only 6 of 11, because our rule for naming the key frequencies sometimes includes a weak one or leaves out a little used one. Without weight decay, none of 5 networks grokked (ch. 20).
 
+Point 5 at a glance: the three phases of every run whose phases were detected, on one time axis, and the paper's run with its authors' own boundaries:
+
+{{fig:seed-phase-strips}}
+
 ## Limitations and nuances
 
 - **A toy model.** One task, one layer, and a mechanism that took significant manual effort to find. The paper itself notes {{quote:nanda-specific}}

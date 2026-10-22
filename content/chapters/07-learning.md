@@ -40,6 +40,10 @@ The three rules side by side on a loss with two parameters, shaped like a long v
 
 {{widget:adamw-toy}}
 
+The same pull on the real network: each training run as a path through (size of all weights, loss). With weight decay (λ = 1) the weights first grow and then shrink while the test loss falls; without it (λ = 0) they keep growing and the test loss stays high. Chapter 19 returns to this balance.
+
+{{anim:loss-vs-norm}}
+
 ## The settings of this experiment
 
 Settings chosen before training are [[dfn:hyperparameter|hyperparameters]]. The parameters start at random values (their [[dfn:initialization]]); a [[dfn:seed|random seed]] fixes those values and the train/test split so a run can be repeated exactly.

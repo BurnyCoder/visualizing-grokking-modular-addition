@@ -99,8 +99,10 @@ def publish_site_data(ctx: PipelineContext) -> None:
     repo = ctx.cfg.hf_site_data_repo
     api.create_repo(repo, repo_type="dataset", exist_ok=True)
     data_dir = ctx.cfg.site_dir / "data"
+    # delete_patterns="*": remote files under data/ that are not in this upload are deleted, so the dataset mirrors the
+    # local export (no stale arrays shipped to Pages; https://huggingface.co/docs/huggingface_hub/guides/upload#upload-a-folder)
     info = api.upload_folder(repo_id=repo, repo_type="dataset", folder_path=str(data_dir), path_in_repo="data",
-                             commit_message="Update website data")
+                             commit_message="Update website data", delete_patterns="*")
     lock = {"repo": repo, "revision": info.oid, "path": "data"}
     (REPO_ROOT / "site-data.lock").write_text(json.dumps(lock, indent=2) + "\n", encoding="utf-8")
     log.info("site data uploaded to %s @ %s (site-data.lock updated)", repo, info.oid)

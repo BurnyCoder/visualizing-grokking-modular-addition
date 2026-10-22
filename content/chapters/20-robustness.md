@@ -25,11 +25,23 @@ All runs use the paper's architecture, optimiser and initialisation rule for 40,
 
 {{fig:seed-test-loss}}
 
+The phases of every run on one time axis, and every weight-decay seed's clock at the same moment (it plays while on screen): different seeds grok at different times and with different frequencies, but in the same order and into the same circle.
+
+{{fig:seed-phase-strips}}
+
+{{anim:seed-clocks}}
+
 Grokking is not always the end of the story. In {{num:seeds.spike_n}} of our 14 runs that grokked, the test loss later jumps more than 100-fold above its lowest value so far, again and again, and falls back each time: {{num:seeds.spikes}}. Similar loss spikes late in training with adaptive optimisers like Adam were described as the "slingshot mechanism" {{cite:thilak2022}}; we did not investigate their cause, and none of the preregistered tests depends on them (all are measured at step 40,000, between spikes).
 
 ## Results
 
 {{fig:hypothesis-table}}
+
+Each seed's value of every preregistered metric against its threshold, and the sparsity test (H3) run by run:
+
+{{fig:hypothesis-dots}}
+
+{{fig:gini-vs-null}}
 
 {{num:hyp.summary}}
 

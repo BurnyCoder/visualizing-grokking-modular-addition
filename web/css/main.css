@@ -262,7 +262,7 @@ body.modal-open { overflow: hidden; }
 .widget label { font-size: 0.88rem; color: var(--ink-soft); }
 .widget .row { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; }
 .widget svg { max-width: 100%; height: auto; }
-.workings { font-family: var(--mono); font-size: 0.82rem; background: var(--bg-soft); padding: 0.6rem 0.8rem; border-radius: 6px; overflow-x: auto; white-space: pre; }
+.workings { font-family: var(--mono); font-size: 0.82rem; background: var(--bg-soft); padding: 0.6rem 0.8rem; border-radius: 6px; overflow-x: auto; white-space: pre-wrap; } /* keep line breaks, wrap long lines instead of hiding them */
 
 /* ---------- landing ---------- */
 .hero { max-width: 60rem; margin: 0 auto; padding: 3rem 1rem 1rem; }
@@ -288,6 +288,15 @@ body.modal-open { overflow: hidden; }
   .tour { left: 0.5rem; right: 0.5rem; bottom: 0.5rem; max-width: none; }
 }
 
+.tiles3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 0.6rem; } /* three heatmaps side by side (trig-outer-product) */
+.tiles3 .heatmap-wrap { flex-direction: column; gap: 0.3rem; }
+.mm { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; font-family: var(--mono); } /* matmul-anim widget */
+.mm table { border-collapse: collapse; }
+.mm td { border: 1px solid var(--line); padding: 0.2rem 0.5rem; text-align: right; min-width: 2rem; transition: background-color 0.3s; }
+.mm td.mm-col { background: color-mix(in srgb, var(--accent) 22%, transparent); }
+.mm td.mm-row { outline: 2px solid var(--ink); outline-offset: -2px; }
+.mm-op { font-size: 1.2rem; color: var(--ink-soft); }
+.btn.sweep { padding: 0.05rem 0.45rem; font-size: 0.8rem; margin-left: -0.4rem; } /* ▶ next to a slider (widgets/basics.js sweep) */
 /* in-chapter training scrubber (widget) */
 .widget.chapter-scrubber { position: sticky; top: 3.1rem; z-index: 20; padding: 0.4rem 0.8rem; box-shadow: 0 4px 14px rgba(0,0,0,0.05); }
 

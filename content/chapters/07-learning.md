@@ -18,6 +18,8 @@ where the step size [[symdef:gamma]] is the [[dfn:learning-rate]].
 - $w = 3.5$: slope 1, new $w = 3.25$ — approaching the minimum at $w = 3$, halving the distance each step.
 :::
 
+Press ▶ next to “steps” to watch the path grow one step at a time.
+
 {{widget:gd-toy}}
 
 ## Full-batch training
@@ -33,6 +35,10 @@ The rule that turns gradients into updates is the [[dfn:optimizer]]. Plain gradi
 $$\theta \;\leftarrow\; \theta\,(1 - \gamma\lambda) \;-\; \gamma\cdot\frac{\hat m}{\sqrt{\hat v} + \epsilon},$$
 
 with [[symdef:lam]] the weight-decay strength and $\hat m$, $\hat v$ Adam's running averages. Weight decay is a form of [[dfn:regularization]]: it prefers solutions with small weights among those that fit the data. With $\gamma = 0.001$ and $\lambda = 1$, every weight shrinks by 0.1 % per step unless the loss gradient pushes back — after 1,000 steps an unopposed weight would shrink to $0.999^{1000} \approx 37\%$ of its size.
+
+The three rules side by side on a loss with two parameters, shaped like a long valley (its lowest point is marked ×). Press ▶ next to “steps” and compare where each one goes.
+
+{{widget:adamw-toy}}
 
 ## The settings of this experiment
 

@@ -6,6 +6,10 @@ Each of the 128 rows of $W_E$ is a list of 113 numbers — one per input number.
 
 {{fig:we-fourier-bars}}
 
+Played through training, the same norms become a race: the twelve largest at each moment, each with an outline at its starting value. The key frequencies pull ahead early, and the others shrink during cleanup.
+
+{{anim:freq-norm-race}}
+
 At the end of training only six frequencies carry visible weight in the paper's network: {{num:paper.we_top6}}. Five of them — {{num:paper.key_freqs}} — reappear in every later part of the network; the paper calls them the key frequencies:
 
 {{quote:nanda-key-frequencies}}
@@ -34,7 +38,9 @@ The activation of a neuron over all inputs is equally striking:
 
 The right panel is the neuron's 2D Fourier transform (chapter 10, with its average removed): almost all of it sits in the 3 × 3 block of one frequency — constant, linear terms and quadratic terms of that frequency. Neuron 0 of the paper's network is periodic with frequency 42 {{cite:nanda2023}} (Sec. 4.1). Here are more neurons, three from each [[preview:neuron-cluster|frequency cluster]]:
 
-{{fig:neuron-small-multiples}}
+These neurons were picked from the final model's frequency clusters; played through training, each one turns from noise into stripes.
+
+{{anim:neuron-small-multiples}}
 
 Where do these waves come from? A neuron's input is what the attention heads copy from the tokens, passed through $W_{in}$. For one head, the map from the attended token a to all 512 neuron inputs is $W_{neur} = W_{in} W_O W_V W_E$ (ARENA's name for it {{cite:arena152}}). Written in the Fourier basis over a, each neuron's row is already concentrated on the waves of its own frequency — the periodicity is in place before the ReLU acts:
 

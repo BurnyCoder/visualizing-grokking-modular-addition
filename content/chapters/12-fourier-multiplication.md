@@ -16,11 +16,19 @@ $$\begin{aligned}\cos(w(a+b)) &= \cos(wa)\cos(wb) - \sin(wa)\sin(wb),\\ \sin(w(a
 
 These need *products* of two numbers; in the network they are computed by the attention layer and the MLP (chapter 14 shows how a ReLU multiplies).
 
+What these products look like over all inputs: each product of two waves is a checkerboard, and their difference depends only on a + b, so it forms stripes along the lines a + b = constant. Press ▶ to run through the frequencies.
+
+{{widget:trig-outer-product}}
+
 **Step 3 — score each candidate answer c** with one more identity (the subtraction form of chapter 9):
 
 $$\cos(w(a+b-c)) = \cos(w(a+b))\cos(wc) + \sin(w(a+b))\sin(wc).$$
 
 For fixed (a, b) this is a *linear* function of the two numbers $\cos(w(a+b))$ and $\sin(w(a+b))$, with weights $\cos(wc)$ and $\sin(wc)$ that depend only on c — exactly what one matrix can do. In the network it is the neuron–logit map $W_L$ (chapter 15). The score is largest, equal to 1, when $a + b - c$ is a multiple of 113, i.e. when c = (a + b) mod 113.
+
+The steps so far on a clock: the hands for a and b add up to the hand for a + b, and the score of a candidate c is the cosine of the angle between c's hand and a + b's. Press ▶ next to c to sweep it around.
+
+{{widget:add-angles}}
 
 **Step 4 — add up several frequencies.** The network does steps 1–3 for a few [[dfn:key-frequencies|key frequencies]] k ∈ [[sym:K]] at once and adds the results with weights [[sym:alpha]]:
 
@@ -47,6 +55,8 @@ One wave alone cannot single out the answer reliably: it has near-peaks elsewher
 ::: example
 **Interference with the paper's key frequencies {14, 35, 41, 42, 52}** (all weights 1): at c = c* every cosine equals 1, so the sum is **5.0**; at every other c the five waves disagree and the largest sum anywhere else is only **2.59**. Softmax then turns this gap into a confident answer.
 :::
+
+Press ▶ next to a to move the input: the peak of the sum follows a + b.
 
 {{widget:interference-toy}}
 

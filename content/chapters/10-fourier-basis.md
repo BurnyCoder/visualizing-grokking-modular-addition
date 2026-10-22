@@ -30,6 +30,8 @@ Take $v = (3, 1, 0, 0, 1)$. Its coefficients are the dot products with the rows:
 
 A vector is [[dfn:sparse]] if only a few of its entries are large. The key intuition, as the ARENA course puts it, is that a function that looks periodic in the ordinary basis is sparse in the Fourier basis {{cite:arena152}}: a wave of frequency 14 is *one* basis vector (well, a mix of cos 14 and sin 14), so its transform has only two non-zero coefficients, while a random-looking list spreads over all 113.
 
+Press ▶ next to “phase shift” to slide the wave along: the picture moves, but its Fourier coefficients stay on cos k and sin k; only their balance changes.
+
 {{widget:periodic-sparse}}
 
 This is why the Fourier basis is the right lens: if the network's weights turn out to be sparse in it, the network is using a few specific waves — and we can name them.
@@ -43,6 +45,8 @@ Three kinds of 2D basis functions will matter:
 - **Constant:** Const(a)·Const(b) — the same value everywhere.
 - A [[dfn:linear-term]]: a wave in one input only, e.g. $\cos(w_k a)\cdot\text{Const}(b)$ — vertical or horizontal stripes.
 - A [[dfn:quadratic-term]]: a product of waves in both inputs, e.g. $\cos(w_k a)\cos(w_k b)$ — a checkerboard of blobs.
+
+Press ▶ next to “index in a” to run through all 113 waves in a.
 
 {{widget:basis-2d}}
 

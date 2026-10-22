@@ -4,6 +4,8 @@ This chapter is a guided walk through training. Use the bar below to pick a run 
 
 ## The spectrum sharpens
 
+{{scene:spectrum}}
+
 First, the embedding's Fourier spectrum over the whole run at once — each column is one checkpoint, each row one frequency:
 
 {{fig:we-fourier-heatmap}}
@@ -14,6 +16,8 @@ Early on every frequency has some weight. During memorisation the picture stays 
 
 ## Circles emerge from noise
 
+{{scene:circles}}
+
 Project each number's embedding onto the plane that carries cos(w_k a) and sin(w_k a), for each key frequency. Move the bar from step ~1,000 to ~15,000:
 
 {{fig:embed-circles}}
@@ -21,6 +25,10 @@ Project each number's embedding onto the plane that carries cos(w_k a) and sin(w
 At initialisation the 113 points are a random cloud. As the circuit forms they spread into a ring whose colours (each number coloured by its predicted clock position k·a mod 113) run smoothly around it — **the number a has become the angle w_k·a**, the clock of chapter 9. The same happens for the answer: the MLP's average activation for each answer c = (a + b) mod 113, read along $W_L$'s cos/sin directions, also traces circles:
 
 {{fig:mlp-circles}}
+
+Pairs of numbers live on a torus: put a at angle w_k·a around the ring and b at angle w_k·b around the tube. Coloured by the probability of the right answer, the whole surface lights up as the network groks; coloured by the answer, the inputs that share an answer lie on one helix.
+
+{{fig:torus-3d}}
 
 ## The logits learn the trig terms first, the neurons later
 
@@ -33,6 +41,8 @@ How much of the variance of the neurons and of the logits lies in the cos/sin(w_
 {{fig:cluster-sizes}}
 
 {{fig:fve-curves}}
+
+{{scene:confidence}}
 
 ## Confidence on every input
 
@@ -50,8 +60,18 @@ Averaging the network's predicted distribution over all inputs with the same cor
 
 {{fig:logit-pca}}
 
+The first three principal components in 3D (drag to turn):
+
+{{fig:pca-3d}}
+
 ## A late surprise
+
+{{scene:late}}
 
 Training does not end at step 14,000. Around step 43,000, in the paper's run, two attention heads suddenly start attending to “=” again (on average {{num:paper.attn_eq_45k}} for heads 0–3 at step 45,001, up from {{num:paper.attn_eq_pct}} at 40,001), and the sum of squared weights shows a small kink (955 → 942 in ARENA's description) {{cite:arena152}}. Neither the paper nor ARENA explains it; it is a reminder that even this “fully understood” network has unexplained behaviour.
 
 {{fig:avg-attn}}
+
+The same averages over the whole run, one chart per head: the return of attention to “=” late in training stands out.
+
+{{fig:attn-over-training}}

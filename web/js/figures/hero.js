@@ -14,15 +14,15 @@
 // Global context: the dashboard's first impression and chapter 0's opening animation; every tile is also a full
 // dashboard panel further down (loss-curves, pcorrect-grid, embed-circles, neuron-grid).
 // Sources: paper Fig. 1–4 and Sec. 3–5 (https://arxiv.org/abs/2301.05217).
-import { array, model, run, trainMask } from "../core/data.js";
+import { array, model, run } from "../core/data.js";
 import { lerpPolar2, phaseOf } from "../core/anim.js";
 import { Plot, phaseShapes } from "../viz/plot.js";
 import { Heatmap } from "../viz/heatmap.js";
 import { CanvasPlot } from "../viz/canvas.js";
-import { clockColor, cssVar } from "../viz/colors.js";
 import { pagePlayer } from "../ui/page-player.js";
 import { lossTraces } from "./curves.js";
-import { el, fill, follow, frameKey, note, runOf, set, storeOf, watch } from "./common.js";
+import { clockScene, inputGridView, planeRadius } from "./geometry.js";
+import { el, fill, follow, frameKey, note, runOf, set, watch } from "./common.js";
 
 const P = 113;
 const SAY = { // one line per phase (phases detected by src/grokviz/phases.py)
@@ -67,28 +67,14 @@ export const figures = {
       });
 
       // 2. confidence on every input
-      const t2 = tile("Confidence on every input");
-      const show = el(t2, "label", "hero-ctl", 'show <select><option value="all">all pairs</option><option value="train">training pairs</option><option value="test">test pairs</option></select>').querySelector("select");
-      const hm = new Heatmap(t2, { rows: P, cols: P, size: 260, diverging: false, format: (v) => v.toFixed(3), onClick: (a, b) => set({ a, b }) });
-      const n2 = note(t2), grid = new Float32Array(P * P);
-      const draw2 = async (s) => {
-        const id = runOf(ds), r = await run(id);
-        if (!r.geometry_steps) { n2.textContent = "No frames for this run."; return; }
-        const [a, mask] = await Promise.all([array(id, "geo_p_correct"), trainMask(r.split_seed)]);
-        const label = fill(grid, a, r.geometry_steps, s);
-        if (show.value !== "all") for (let i = 0; i < grid.length; i++) if ((mask[i] === 1) !== (show.value === "train")) grid[i] = NaN; // hide the other pairs
-        hm.draw(grid, { min: 0, max: 1 });
-        n2.textContent = `${label}. Yellow: right answer with probability 1; purple: 0. Click a cell to select that input.`;
-      };
-      watch(t2, ["run", "step", "stepf", "playing"], draw2, { theme: false });
-      show.onchange = () => draw2(storeOf(t2).state);
-      follow(t2, ["a", "b"], (s) => hm.marks.set("input", { row: s.a, col: s.b }));
+      inputGridView(tile("Confidence on every input"), ds, "geo_p_correct", { size: 260,
+        describe: (label) => `${label}. Yellow: right answer with probability 1; purple: 0. Click a cell to select that input.` });
 
       // 3. the clock: embeddings on one key frequency's plane
       const t3 = tile("Numbers on a circle");
       const chips = el(t3, "div", "hero-chips");
       const cp = new CanvasPlot(t3, { height: 260, onClick: (i) => set({ a: i }) });
-      const n3 = note(t3), xy = new Float32Array(2 * P), radius = new Map(); // "run|plane" → largest |coordinate| over training
+      const n3 = note(t3), xy = new Float32Array(2 * P);
       let chipsFor = null;
       watch(t3, ["run", "step", "stepf", "playing", "freq", "a", "b"], async (s) => {
         const id = runOf(ds), r = await run(id);
@@ -99,23 +85,9 @@ export const figures = {
           chips.replaceChildren(...ks.map((f) => Object.assign(document.createElement("button"), { type: "button", className: "chip", textContent: `k = ${f}`, onclick: () => set({ freq: f }) })));
         }
         [...chips.children].forEach((c, i) => c.classList.toggle("active", i === j));
-        const a = await array(id, "geo_we_planes"), K = a.shape[1];
-        const key = `${id}|${j}`;
-        if (!radius.has(key)) { // fixed scale for the whole run, so the circle visibly grows
-          let m = 0;
-          for (let f = 0; f < a.shape[0]; f++) for (let q = 0; q < 2 * P; q++) m = Math.max(m, Math.abs(a.data[(f * K + j) * 2 * P + q]));
-          radius.set(key, 1.08 * m || 1);
-        }
-        const R = radius.get(key), label = fill(xy, a, r.geometry_steps, s, { offset: j * 2 * P, lerp: lerpPolar2 });
-        const at = (t) => ({ x: xy[2 * t], y: xy[2 * t + 1] }), c = (s.a + s.b) % P;
-        const hands = [[s.a, "--train"], [s.b, "--restricted"], [c, "--accent"]];
-        cp.draw({
-          domain: [-R, R, -R, R], equal: true,
-          segments: hands.map(([t, v]) => ({ x0: 0, y0: 0, x1: at(t).x, y1: at(t).y, color: cssVar(v), width: 2.2 })),
-          points: { x: Array.from({ length: P }, (_, t) => xy[2 * t]), y: Array.from({ length: P }, (_, t) => xy[2 * t + 1]), r: 3.2,
-            color: (t) => clockColor((k * t) % P, P), label: (t) => `<span class="tt-term">number ${t}</span>clock position ${k}·${t} mod 113 = ${(k * t) % P}` },
-          labels: hands.map(([t, v], h) => ({ x: 1.13 * at(t).x, y: 1.13 * at(t).y, text: ["a", "b", "a+b"][h], color: cssVar(v) })),
-        });
+        const a = await array(id, "geo_we_planes");
+        const label = fill(xy, a, r.geometry_steps, s, { offset: j * 2 * P, lerp: lerpPolar2 }), c = (s.a + s.b) % P;
+        cp.draw(clockScene(xy, k, planeRadius(a, j, `${id}|geo_we_planes|${j}`), [[s.a, "--train", "a"], [s.b, "--restricted", "b"], [c, "--accent", "a+b"]]));
         n3.textContent = `${label}. Each dot is a number n, projected on the plane of cos and sin of frequency k = ${k} and coloured by its clock position k·n mod 113; hands point at a = ${s.a}, b = ${s.b} and a + b = ${c} (mod 113). Click a dot to make it a.`;
       });
 

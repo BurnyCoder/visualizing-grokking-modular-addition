@@ -12,7 +12,7 @@ import { Heatmap, miniHeatmap } from "../viz/heatmap.js";
 import { Plot } from "../viz/plot.js";
 import { freqColor } from "../viz/colors.js";
 import { fourierBasis } from "./weights.js";
-import { basisName, clusterOrder, el, follow, frameKey, note, runOf, set, watch } from "./common.js";
+import { basisName, clusterOrder, el, fill, follow, frameKey, note, runOf, set, watch } from "./common.js";
 
 /** 2D Fourier transform of a p×p grid (rows a, cols b): C = F G Fᵀ (orthonormal basis). */
 export function fft2(grid, p) {
@@ -43,16 +43,20 @@ export function spectrumMap(arrayName, what) {
     async render(body, ds) {
       body.innerHTML = "";
       const hm = new Heatmap(body, { rows: 113, cols: 113, size: 300, diverging: false, format: (v) => `10^${v.toFixed(1)} of max`,
-        label: (r, c) => `${basisName(r)} (in a) × ${basisName(c)} (in b)` });
-      const info = note(body);
-      watch(body, ["run", "step"], async (s) => {
+        label: (r, c) => `${basisName(r)} (in a) × ${basisName(c)} (in b)`, onClick: (i, j) => { const k = Math.ceil(Math.max(i, j) / 2); if (k) set({ freq: k }); } });
+      const info = note(body), map = new Float32Array(113 * 113);
+      const mark = (s) => { // the selected frequency's cos and sin rows (in a) and columns (in b)
+        [0, 1].forEach((d) => { hm.marks.set(`row${d}`, { row: 2 * s.freq - 1 + d }); hm.marks.set(`col${d}`, { col: 2 * s.freq - 1 + d }); });
+      };
+      watch(body, ["run", "step", "stepf", "playing"], async (s) => {
         const id = runOf(ds), r = await run(id);
         if (!r.spectra_steps) { info.textContent = "no 2D Fourier maps for this run"; return; }
-        const f = nearestIndex(r.spectra_steps, s.step);
-        hm.draw(row(await array(id, arrayName), f), { min: -4, max: 0 });
+        const label = fill(map, await array(id, arrayName), r.spectra_steps, s); // blended (in log10) while playing
+        hm.draw(map, { min: -4, max: 0 });
         const only = r.spectra_steps.length === 1 ? " (this run has this map only at its final checkpoint)" : "";
-        info.textContent = `step ${r.spectra_steps[f]}${only}: ${what}. Colour: log10 of each component's size relative to the largest (darkest = 10⁻⁴ or less).`;
-      }, { dedupe: frameKey(ds, "spectra_steps"), theme: false });
+        info.textContent = `${label}${only}: ${what}. Colour: log10 of each component's size relative to the largest (darkest = 10⁻⁴ or less). Outlined: cos and sin of the selected frequency k (click a component to select its k).`;
+      }, { theme: false });
+      follow(body, ["freq"], mark);
     },
   };
 }
@@ -170,24 +174,25 @@ export const figures = {
       const mark = (s) => [...grid.children].forEach((f) => f.classList.toggle("selected", Number(f.dataset.neuron) === s.neuron));
       watch(body, ["run", "step"], async (s) => {
         const id = runOf(ds), r = await run(id), net = await model(id, s.step);
-        const t = nearestIndex(r.ckpt_steps, net.step);
-        const freqs = row(await array(id, "neuron_freq"), t), fve = row(await array(id, "neuron_fve"), t);
+        const [fa, va] = await Promise.all([array(id, "neuron_freq"), array(id, "neuron_fve")]);
+        const last = fa.shape[0] - 1, t = nearestIndex(r.ckpt_steps, net.step);
+        const fEnd = row(fa, last), vEnd = row(va, last), freqs = row(fa, t), fve = row(va, t);
         const picks = [];
-        for (const k of r.key_freqs) { // 3 example neurons per key frequency cluster of the final model
+        for (const k of r.key_freqs) { // 3 example neurons per frequency cluster of the final model, followed through training
           let n = 0;
-          for (let i = 0; i < freqs.length && n < 3; i++) if (freqs[i] === k && fve[i] > 0.85) { picks.push(i); n++; }
+          for (let i = 0; i < fEnd.length && n < 3; i++) if (fEnd[i] === k && vEnd[i] > 0.85) { picks.push(i); n++; }
         }
         grid.replaceChildren();
         for (const i of picks.length ? picks : [0, 1, 2, 3, 4, 5, 6, 7]) {
           const f = el(grid, "figure");
           f.append(miniHeatmap(net.neuronGrid(i, true), 113, 113, false));
-          el(f, "figcaption", "", `neuron ${i} · k=${freqs[i]} · ${(100 * fve[i]).toFixed(0)} %`);
+          el(f, "figcaption", "", `neuron ${i} (final k = ${fEnd[i]}) · now: k=${freqs[i]}, ${(100 * fve[i]).toFixed(0)} %`);
           f.style.cursor = "pointer";
           f.dataset.neuron = i;
           f.onclick = () => set({ neuron: i });
         }
         mark(s);
-        info.textContent = `step ${net.step}: example neurons from each frequency cluster (chosen at this step). Click one to inspect it (outlined).`;
+        info.textContent = `Weights from step ${net.step.toLocaleString("en-US")}: three neurons from each frequency cluster of the final model, the same neurons at every step, so playing shows each one turn into a wave. Captions: the neuron's best frequency and the share of its variance it explains now. Click one to inspect it (outlined).`;
       }, { dedupe: frameKey(ds, "weight_steps"), theme: false, minGap: 250 }); // 15 neuron grids
       follow(body, ["neuron"], mark);
     },

@@ -181,6 +181,11 @@ body.modal-open { overflow: hidden; }
 .canvas-plot { display: block; width: 100%; }
 @media (max-width: 80rem) { .hero-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 40rem) { .hero-tiles { grid-template-columns: minmax(0, 1fr); } }
+/* interference panel (web/js/figures/output.js): controls, then the waves beside the clock inset */
+.interf-ctl { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.8rem; margin-bottom: 0.3rem; }
+.interf-ctl .hero-ctl { margin: 0; }
+.interf-row { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 0.6rem; align-items: center; }
+@media (max-width: 40rem) { .interf-row { grid-template-columns: minmax(0, 1fr); } }
 /* forward-flow diagram (web/js/figures/flow.js) */
 .flow { width: 100%; height: auto; display: block; }
 .flow-edges path { fill: none; stroke: var(--line); stroke-width: 1.2; }

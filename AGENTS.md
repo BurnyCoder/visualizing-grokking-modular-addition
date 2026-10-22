@@ -40,7 +40,8 @@ Treat it as read-only reference: port code from it with `Source:` links instead 
   `content/dashboard.yaml`. A figure that needs new data gets an array in `export.py`, documented in `docs/data-formats.md`.
 - **Figure subscriptions.** Subscribe with `watch(body, keys, draw, {dedupe, theme})` from `web/js/figures/common.js`,
   never with `subscribe` directly (a build test rejects the old `watch(keys, fn)`). Pass `dedupe: frameKey(ds, field, ...keys)`
-  when the figure shows a stored frame, and `theme: false` when its colours do not depend on the theme. Move cursors
+  when the figure shows a stored frame, `theme: false` when its colours do not depend on the theme, and `minGap: ms`
+  when one draw is expensive (thousands of SVG points, many grids), so it redraws less often while a run plays. Move cursors
   and marks with `Plot.cursor`, `Heatmap.marks` and `follow(body, keys, fn)`; never call `Plotly.relayout` per frame.
   Bind Plotly events with `Plot.on`.
 - **Animated figures.** Any figure can be placed as an animation with `{{anim:id}}` once it has an `anim:` block in

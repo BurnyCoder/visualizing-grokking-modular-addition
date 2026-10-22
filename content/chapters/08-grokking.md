@@ -27,6 +27,10 @@ Here is the paper's own training run. Both curves are plotted on a [[dfn:log-sca
 
 {{fig:acc-curves}}
 
+The curves average over many questions. The next picture shows every question at once: each pixel is one of the 12,769 sums a + b (a = row, b = column), coloured by the probability the network gives to the correct answer (yellow = certain and right, dark purple = no chance). While it is on screen it plays the paper's run from the start to just after grokking; pause it or drag its slider to study one moment. Watch the [[term:training-set|training questions]], a random speckle, turn yellow early while the [[term:test-set|test questions]] stay dark through the plateau, until the whole square lights up after step {{num:paper.t2}}.
+
+{{anim:pcorrect-grid}}
+
 ## Why it looks sudden
 
 On a linear axis the same data looks like an abrupt [[dfn:phase-transition]] — nothing, then a cliff:

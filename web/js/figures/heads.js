@@ -4,7 +4,7 @@
 //   attn-over-training     mean attention from '=' to a, b and '=' for each head at every checkpoint (avg_attn);
 //   attention-heads-grid   for the current weights, every head's attention from '=' to a, to b and to '=' on all
 //                          12,769 inputs (4 × 3 grids, fixed colour scale 0–1, from the model's cached patterns);
-//   sigmoid-linearisation  for the selected head, attention to a against the score difference s₀ − s₁ on 2,000
+//   sigmoid-linearisation  for the selected head, attention to a against the score difference s₀ − s₁ on 800 sampled
 //                          inputs, with σ(s₀ − s₁) (what the attention would be if '=' got none) and the best straight
 //                          line, whose variance explained is the paper's "linear range" measure.
 // Global context: chapter 6 derives A₀ ≈ σ(C_j[a] − C_j[b]) and chapter 14 checks the linear range (paper App. C.1.3);
@@ -20,11 +20,11 @@ import { el, follow, frameKey, note, runOf, set, watch } from "./common.js";
 const P = 113, KEYS = ["a", "b", "="];
 const keyColor = (j) => cssVar(["--train", "--restricted", "--accent"][j]); // to a, to b, to '='
 
-/** 2,000 fixed input indices (deterministic pseudo-random subset of the 12,769 pairs, Park–Miller generator). */
+/** 800 fixed input indices (deterministic pseudo-random subset of the 12,769 pairs, Park–Miller generator). */
 const SAMPLE = (() => {
   let seed = 12345;
   const out = new Set();
-  while (out.size < 2000) { seed = (seed * 16807) % 2147483647; out.add(seed % (P * P)); }
+  while (out.size < 800) { seed = (seed * 16807) % 2147483647; out.add(seed % (P * P)); }
   return [...out];
 })();
 
@@ -36,7 +36,7 @@ export const figures = {
       grid.style.gridTemplateColumns = "repeat(auto-fill, minmax(230px, 1fr))";
       const info = note(body);
       let plots = [], shown = null;
-      watch(body, ["run", "step", "stepf"], async (s, changed) => {
+      watch(body, ["run", "step"], async (s, changed) => { // the cursor moves per stored checkpoint, like the other training curves
         const id = runOf(ds), r = await run(id);
         if (id !== shown || changed.includes("theme")) {
           shown = id;
@@ -54,7 +54,7 @@ export const figures = {
             shapes: phaseShapes(r.phases, r.ckpt_steps.at(-1)), margin: { l: 44, r: 6, t: 28, b: 36 }, hovermode: "x unified" })));
           info.textContent = "Mean attention from '=' over all 12,769 inputs, for each head (the three lines add up to 1 at every step). Click a chart to select that head and step. In the paper's run two heads start attending to '=' again late in training (chapter 18).";
         }
-        plots.forEach((pl) => pl.cursor(s.stepf ?? s.step));
+        plots.forEach((pl) => pl.cursor(s.step));
       });
     },
   },
@@ -86,7 +86,7 @@ export const figures = {
         }
         mark(s);
         info.textContent = `Step ${net.step.toLocaleString("en-US")}: attention from '=' to a, to b and to '=' for every input (rows a, columns b; purple 0, yellow 1). For each head the three grids add up to 1 in every cell. Click a grid to select its head (outlined) and the input under the mouse.`;
-      }, { dedupe: frameKey(ds, "weight_steps"), theme: false, minGap: 250 }); // 12 grids
+      }, { dedupe: frameKey(ds, "weight_steps"), theme: false, minGap: 500 }); // 12 grids
       follow(body, ["head"], mark);
     },
   },
@@ -112,13 +112,13 @@ export const figures = {
         const xs = Array.from({ length: 61 }, (_, i) => lo + ((hi - lo) * i) / 60);
         const pct = (sse) => `${(100 * (1 - sse / (sst || 1))).toFixed(1)} %`;
         await plot.draw([
-          { x: SAMPLE.map((i) => x[i]), y: SAMPLE.map((i) => A[i]), type: "scatter", mode: "markers", name: "inputs (2,000 of 12,769)",
+          { x: SAMPLE.map((i) => x[i]), y: SAMPLE.map((i) => A[i]), type: "scatter", mode: "markers", name: "inputs (800 of 12,769)",
             marker: { size: 3, color: cssVar("--train"), opacity: 0.45 }, text: SAMPLE.map((i) => `a = ${Math.floor(i / P)}, b = ${i % P}`), hovertemplate: "%{text}<extra></extra>" },
           { x: xs, y: xs.map(sig), type: "scatter", mode: "lines", name: "σ(s₀ − s₁): no attention to '='", line: { color: cssVar("--ink"), dash: "dot", width: 2 } },
           { x: xs, y: xs.map((v) => b0 + E * v), type: "scatter", mode: "lines", name: "best straight line", line: { color: cssVar("--accent"), width: 2 } },
         ], { xaxis: { title: { text: "score difference s₀ − s₁ (= C_j[a] − C_j[b] + const)" } }, yaxis: { title: { text: `head ${h}: attention from '=' to a` }, range: [-0.02, 1.02] }, hovermode: "closest" });
         info.textContent = `Head ${h}, weights from step ${net.step.toLocaleString("en-US")}, over all 12,769 inputs: σ(s₀ − s₁) explains ${pct(sseSig)} of the attention's variance, the best straight line ${pct(sseLine)} (the paper reports 97.5 % for the straight line, averaged over the heads of its final model). Pick another head in the control bar.`;
-      }, { dedupe: frameKey(ds, "weight_steps", "head"), minGap: 300 }); // 2,000 SVG points
+      }, { dedupe: frameKey(ds, "weight_steps", "head"), minGap: 1000 }); // 800 SVG points: a diagnostic view, refreshed about once a second while playing
     },
   },
 };

@@ -176,7 +176,7 @@ export const figures = {
         }
         mark(s);
         info.textContent = `Weights from step ${net.step.toLocaleString("en-US")}: three neurons from each frequency cluster of the final model, the same neurons at every step, so playing shows each one turn into a wave. Captions: the neuron's best frequency and the share of its variance it explains now. Click one to inspect it (outlined).`;
-      }, { dedupe: frameKey(ds, "weight_steps"), theme: false, minGap: 250 }); // 15 neuron grids
+      }, { dedupe: frameKey(ds, "weight_steps"), theme: false, minGap: 500 }); // 15 neuron grids
       follow(body, ["neuron"], mark);
     },
   },
@@ -194,7 +194,7 @@ export const figures = {
           marker: { size: 6, color: act, colorscale: "Viridis", cmin: 0, cmax: 1, colorbar: { title: { text: "fraction of inputs<br>where active", side: "right" }, thickness: 10 } } }],
         { xaxis: { title: { text: "best frequency k" }, range: [0, 57] }, yaxis: { title: { text: "fraction of variance explained" }, range: [0, 1.02] }, hovermode: "closest",
           shapes: [{ type: "line", xref: "paper", x0: 0, x1: 1, y0: 0.85, y1: 0.85, line: { dash: "dot", width: 1 } }] });
-      }, { dedupe: frameKey(ds, "ckpt_steps"), minGap: 250 }); // 512 SVG markers + colour bar
+      }, { dedupe: frameKey(ds, "ckpt_steps"), minGap: 400 }); // 512 SVG markers + colour bar
     },
   },
 
@@ -210,7 +210,7 @@ export const figures = {
         await plot.draw([{ x: pre, y: post, mode: "markers", type: "scatter", text: f.map((k, i) => `neuron ${i}, k=${k}`), marker: { size: 6, color: f.map((k) => freqColor(k)) } }],
           { xaxis: { title: { text: "quadratic share before ReLU" }, range: [0, 1] }, yaxis: { title: { text: "quadratic share after ReLU" }, range: [0, 1] }, hovermode: "closest",
             shapes: [{ type: "line", x0: 0, y0: 0, x1: 1, y1: 1, line: { dash: "dot", width: 1 } }] });
-      }, { dedupe: frameKey(ds, "ckpt_steps"), minGap: 250 }); // 512 SVG markers
+      }, { dedupe: frameKey(ds, "ckpt_steps"), minGap: 400 }); // 512 SVG markers
     },
   },
 

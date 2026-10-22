@@ -20,6 +20,10 @@ $$\cos\!\Big(\frac{2\pi k}{113}\,x\Big), \qquad \sin\!\Big(\frac{2\pi k}{113}\,x
 
 which complete exactly k full cycles as x runs from 0 to 113. The angle per unit step is [[sym:wk]] $= 2\pi k/113$; for k = 14 it is ≈ 0.7785 radians.
 
+A hand turning around the circle draws both waves: its height is the sine and its horizontal position the cosine. Press ▶ to turn it twice around.
+
+{{widget:phasor-wave}}
+
 ## Numbers as angles: the clock
 
 Placing the number x at angle $w_k x$ on the unit circle turns the 113 numbers into 113 points on a circle — a clock face with 113 hours, visited k steps at a time. Because $w_k \cdot 113 = 2\pi k$ is a whole number of turns, x and x + 113 land on the same point: **wrapping around modulo 113 happens automatically**.
@@ -27,6 +31,8 @@ Placing the number x at angle $w_k x$ on the unit circle turns the 113 numbers i
 ::: example
 **The running example at frequency k = 14.** The point for a = 100 is at angle $w_{14}\cdot 100$; since $14\cdot100 = 1400$ and $1400 \bmod 113 = 44$, this is the same point as $44/113$ of a full turn. For b = 50: $14\cdot 50 = 700$, $700 \bmod 113 = 22$, i.e. $22/113$ of a turn. The correct answer c* = 37 sits at $14 \cdot 37 = 518$, $518 \bmod 113 = 66$ — exactly $44 + 22$. **Adding the angles of a and b lands on the angle of a + b.**
 :::
+
+Press ▶ next to a to walk a around the clock and watch a + b follow it.
 
 {{widget:unit-circle}}
 

@@ -44,6 +44,10 @@ At step 40,000, across the 11 weight-decay seeds, the loss step is {{num:seeds.a
 
 {{fig:update-norms}}
 
+Where these forces take the weights: each run's path through (weight norm, loss) during training. With weight decay the norm first grows, then shrinks while the test loss collapses; without it the norm keeps growing and the test loss stays high.
+
+{{anim:loss-vs-norm}}
+
 ## Why does grokking happen? The paper's account
 
 Combining the measurements, the paper's explanation (Sec. 5 and the speculative App. E) runs as follows {{cite:nanda2023}}:

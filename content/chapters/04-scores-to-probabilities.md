@@ -18,6 +18,8 @@ Exponentials make every score positive; dividing by their total makes them add u
 **Three answers with logits (2, 1, 0).** $e^2 \approx 7.39$, $e^1 \approx 2.72$, $e^0 = 1$, total 11.11. Probabilities: 7.39/11.11 ≈ **0.665**, 2.72/11.11 ≈ **0.245**, 1/11.11 ≈ **0.090**. Doubling all logits to (4, 2, 0) sharpens the distribution to ≈ (0.867, 0.117, 0.016).
 :::
 
+Press ▶ next to “scale all logits” to multiply every logit by a growing factor: the probabilities pile up on the largest logit, so the loss shrinks when the correct answer has the largest logit and grows when it does not.
+
 {{widget:softmax}}
 
 The predicted answer is the [[dfn:argmax]] — the position of the largest logit (equivalently, of the largest probability). With only two options, softmax has a simple form: the probability of the first is $\frac{e^{x_1}}{e^{x_1}+e^{x_2}} = \frac{1}{1+e^{-(x_1-x_2)}}$, the [[dfn:sigmoid]] $\sigma$ of the difference. We will meet this when an [[preview:attention-head|attention head]] chooses between a and b.

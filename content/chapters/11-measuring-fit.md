@@ -34,6 +34,10 @@ $\begin{pmatrix}3&0\\0&1\end{pmatrix}$ has singular values 3 and 1. $\begin{pmat
 
 {{fig:we-svals}}
 
+The same singular values at every checkpoint of training (largest at the bottom): by the end, about ten of them stand above the rest.
+
+{{fig:svals-over-training}}
+
 {{fig:embed-pca}}
 
 ## How concentrated is a list? The Gini coefficient

@@ -6,6 +6,10 @@ Take the 2D Fourier transform of every logit grid (one per answer c), set all co
 
 {{fig:freq-ablation-bars}}
 
+Try it yourself: choose frequencies to remove from the logits of every input, or the only ones to keep, and see the loss, the accuracy and the confidence on every input. The run's key frequencies are outlined.
+
+{{fig:ablation-playground}}
+
 On the paper's network (unablated loss {{num:rc.R1}}):
 
 - removing **any single key frequency** raises the loss by a factor of {{num:paper.key_ablation_ratio_range}};

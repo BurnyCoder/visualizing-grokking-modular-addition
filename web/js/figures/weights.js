@@ -14,6 +14,7 @@ import { Heatmap } from "../viz/heatmap.js";
 import { cssVar, freqColor } from "../viz/colors.js";
 import { clusterOrder, el, fill, follow, frameKey, kstep, note, runOf, set, storeOf, watch } from "./common.js";
 import { CanvasPlot } from "../viz/canvas.js";
+import { fourierBasis } from "../model/fourier.js";
 
 const K = 56; // frequencies 1..56 for p = 113
 
@@ -267,20 +268,4 @@ function headSpectra(arrayName, ytitle) {
       }, { dedupe: frameKey(ds, "ckpt_steps") });
     },
   };
-}
-
-const basisCache = new Map();
-/** Real orthonormal Fourier basis (paper order) as a flat p×p Float32Array, cached. */
-export function fourierBasis(p) {
-  if (basisCache.has(p)) return basisCache.get(p);
-  const F = new Float32Array(p * p);
-  for (let x = 0; x < p; x++) F[x] = 1 / Math.sqrt(p); // constant row
-  for (let k = 1; k <= (p - 1) / 2; k++) {
-    for (let x = 0; x < p; x++) {
-      F[(2 * k - 1) * p + x] = Math.cos((2 * Math.PI * k * x) / p) * Math.sqrt(2 / p);
-      F[2 * k * p + x] = Math.sin((2 * Math.PI * k * x) / p) * Math.sqrt(2 / p);
-    }
-  }
-  basisCache.set(p, F);
-  return F;
 }

@@ -422,6 +422,15 @@ interference:
   cite: "{{cite:nanda2023}} App. B, Fig. 8"
   producer: "browser (GrokModel) + least squares"
   size: l
+clock-vs-pizza:
+  title: "Clock or pizza?"
+  size: l
+  what: "The logit of the right answer for every input, re-arranged by the inputs' sum a + b and difference b − a, its mean and spread at each difference, and the distance irrelevance q of Zhong et al."
+  read: "Zhong et al. found two algorithms for modular addition. In the Clock (this site's story), the right answer's logit depends on the angles' sum only. In the Pizza, it also carries a factor |cos(w_k(a − b)/2)| that depends on the difference. Distance irrelevance q is the average spread of the right-answer logit among inputs with the same difference, divided by its spread over all inputs (their Def. 4.2): low q means the difference matters (their Pizza networks have q between 0 and 0.4)."
+  expect: "For the trained networks of this site q stays well above the Pizza range (the live value is in the note): a Clock, as Zhong et al. report for transformers with full attention."
+  chapter: "21-summary.html"
+  cite: "{{cite:zhong2023}} Sec. 4.1.2, Def. 4.2"
+  producer: "web/js/model/grokmodel.js (logitsGrid)"
 logit-fourier-2d:
   title: "The logits in the 2D Fourier basis"
   what: "Size of each 2D Fourier component (in a and in b) of the logits, combined over all 113 answers (log scale)."
@@ -480,6 +489,15 @@ grad-we-fourier-heatmap:
   producer: "gradients.py"
   size: xl
 # ---------------- G. interventions ----------------
+ablation-playground:
+  title: "Ablation playground"
+  size: l
+  what: "Choose frequencies to remove from the logits of every input, or the only ones to keep, and see the loss, the accuracy and the confidence on every input change."
+  read: "For each candidate answer c, the logits over all inputs (a, b) form a 113 × 113 grid. Removing frequency k zeroes the 8 components of that grid that involve k in the 2D Fourier basis; keeping only some frequencies keeps their components and zeroes everything else (paper Sec. 4.4, docs/operationalizations.md). The run's key frequencies are outlined. The computation runs in your browser from the stored float16 weights, so very small losses differ slightly from the analysis values in the next panel."
+  expect: "Removing any key frequency multiplies the loss many times over, while removing other frequencies changes almost nothing; keeping only the key frequencies keeps the network working."
+  chapter: "16-evidence-interventions.html"
+  cite: "{{cite:nanda2023}} Sec. 4.4, Fig. 6"
+  producer: "web/js/model/ablation.js (same maths as interventions.ablate_logit_freqs)"
 freq-ablation-bars:
   title: "Removing one frequency from the logits"
   what: "Loss after zeroing all 2D Fourier components of one frequency in every logit grid (log scale)."

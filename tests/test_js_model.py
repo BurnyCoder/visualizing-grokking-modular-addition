@@ -9,12 +9,13 @@ Source: Node.js test runner (https://nodejs.org/api/test.html).
 import json  # fixture
 import shutil  # find node
 import subprocess  # run node --test
+from types import SimpleNamespace  # minimal grid for the ablation reference
 
 import numpy as np  # binary weights
 import pytest  # skip if node missing
 import torch  # reference model
 
-from grokviz import task  # inputs
+from grokviz import fourier, interventions, losses, task  # basis, ablation reference, loss, inputs
 from grokviz.model import GrokTransformer  # reference implementation
 
 ROOT = __import__("pathlib").Path(__file__).resolve().parents[1]
@@ -43,7 +44,12 @@ def test_js_model_matches_pytorch(tmp_path):
     rows = rng.choice(113 * 113, 64, replace=False)
     samples = [{"a": int(r // 113), "b": int(r % 113), "logits": logits[r, -1].tolist(), "logits_f16": logits16[r, -1].tolist(),
                 "pre": cache["blocks.0.mlp.pre"][r, -1].tolist()} for r in rows]
-    ref = {"p": 113, "layout": [{"name": n, "shape": list(state[n].shape)} for n in names], "samples": samples,
+    L, labels = logits[:, -1, :113].double(), (tokens[:, 0] + tokens[:, 1]) % 113  # all-pairs logits and right answers
+    grid = SimpleNamespace(p=113, F=fourier.fourier_basis(113)[0].double())  # the two fields ablate_logit_freqs reads
+    loss = lambda x: losses.grid_loss(x, labels).item()  # noqa: E731 — cross-entropy over all pairs
+    ablation = {"original": loss(L), "remove_3_7": loss(interventions.ablate_logit_freqs(L, grid, zero=[3, 7])),
+                "keep_1_2": loss(interventions.ablate_logit_freqs(L, grid, keep_only=[1, 2]))}
+    ref = {"p": 113, "layout": [{"name": n, "shape": list(state[n].shape)} for n in names], "samples": samples, "ablation": ablation,
            "attn_grid_h0": cache["blocks.0.attn.pattern"][:, 0, 2, 0].tolist(), "neuron_grid_7": cache["blocks.0.mlp.post"][:, -1, 7].tolist()}
     (tmp_path / "reference.json").write_text(json.dumps(ref), encoding="utf-8")
     result = subprocess.run(["node", "--test", str(ROOT / "tests" / "js" / "grokmodel.test.mjs")], capture_output=True, text=True,

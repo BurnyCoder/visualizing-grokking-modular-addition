@@ -11,25 +11,8 @@ import { array, model, nearestIndex, row, run } from "../core/data.js";
 import { Heatmap, miniHeatmap } from "../viz/heatmap.js";
 import { Plot } from "../viz/plot.js";
 import { freqColor } from "../viz/colors.js";
-import { fourierBasis } from "./weights.js";
+import { fft2 } from "../model/fourier.js";
 import { basisName, clusterOrder, el, fill, follow, frameKey, note, runOf, set, watch } from "./common.js";
-
-/** 2D Fourier transform of a p×p grid (rows a, cols b): C = F G Fᵀ (orthonormal basis). */
-export function fft2(grid, p) {
-  const F = fourierBasis(p);
-  const tmp = new Float32Array(p * p), out = new Float32Array(p * p);
-  for (let i = 0; i < p; i++) for (let b = 0; b < p; b++) { // tmp = F · G (transform along a)
-    let s = 0;
-    for (let a = 0; a < p; a++) s += F[i * p + a] * grid[a * p + b];
-    tmp[i * p + b] = s;
-  }
-  for (let i = 0; i < p; i++) for (let j = 0; j < p; j++) { // out = tmp · Fᵀ (transform along b)
-    let s = 0;
-    for (let b = 0; b < p; b++) s += tmp[i * p + b] * F[j * p + b];
-    out[i * p + j] = s;
-  }
-  return out;
-}
 
 const centre = (g) => { const m = g.reduce((x, y) => x + y, 0) / g.length; return g.map((v) => v - m); }; // remove the constant
 

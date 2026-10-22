@@ -31,7 +31,7 @@ groups:
   - id: output
     title: "E. The answer for one input"
     blurb: "The selected input (a, b): its 113 logits, their fit by a sum of cosines, and the constructive interference that singles out a + b."
-    panels: [forward-flow, output-dist, interference, logit-fourier-2d]
+    panels: [forward-flow, output-dist, interference, logit-fourier-2d, clock-vs-pizza]
   - id: gradients
     title: "F. Gradients and weight decay"
     blurb: "The forces acting on the weights at each checkpoint, recomputed exactly (training is full-batch)."
@@ -39,7 +39,7 @@ groups:
   - id: interventions
     title: "G. Causal tests"
     blurb: "Change one part of the computation and watch the output: ablations and counterfactual patching."
-    panels: [freq-ablation-bars, cluster-ablations, patching-result, patching-live]
+    panels: [ablation-playground, freq-ablation-bars, cluster-ablations, patching-result, patching-live]
   - id: seeds
     title: "H. All runs and controls"
     blurb: "The paper's run next to our replications with different random seeds, and controls without weight decay or with random labels."

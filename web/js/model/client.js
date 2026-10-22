@@ -1,12 +1,15 @@
-// client.js — build GrokModels with their tables computed in model/worker.js (main-thread fallback).
+// client.js — run the network's heavy per-snapshot computations in model/worker.js (main-thread fallback).
 //
 // Local explanation: `buildModel(flat, layout, p)` sends a copy of the weights to one shared module worker, which
-// returns the precomputed tables; the model is then assembled here with GrokModel.fromTables (cheap). Requests are
-// matched to replies by id. If workers are unavailable or the worker fails, the model is built on this thread as before.
-// Global context: core/data.js uses this for every weight snapshot, so scrubbing or playing through training keeps
-// the page responsive (the precompute takes ~0.1 s per snapshot).
+// returns the precomputed tables; the model is then assembled here with GrokModel.fromTables (cheap).
+// `ablationBasis(flat, layout, p)` returns every input's logits and their Fourier blocks for the ablation playground.
+// Requests are matched to replies by id. If workers are unavailable or the worker fails, the same work is done on
+// this thread instead.
+// Global context: core/data.js uses this for every weight snapshot, so scrubbing, playing or ablating keeps the page
+// responsive (the precompute takes ~0.1 s per snapshot, the ablation basis ~2 s).
 // Sources: Worker constructor with type "module" and import.meta.url (https://developer.mozilla.org/docs/Web/API/Worker/Worker).
 import { GrokModel } from "./grokmodel.js";
+import { logitBlocks } from "./ablation.js";
 
 let worker = null; // the shared worker; false once it proved unusable
 let nextId = 0;
@@ -34,18 +37,31 @@ function getWorker() {
   return worker || null;
 }
 
+/** Run `op` on weights `flat` in the worker; resolves with its result, or null when there is no usable worker. */
+async function inWorker(op, flat, layout, p) {
+  const w = getWorker();
+  if (!w) return null;
+  try {
+    return await new Promise((resolve, reject) => {
+      const id = nextId++;
+      pending.set(id, { resolve, reject });
+      w.postMessage({ id, op, flat, layout, p }); // structured clone copies the weights; the page keeps its own
+    });
+  } catch {
+    return null; // fall through to the main thread
+  }
+}
+
 /** A GrokModel for weights `flat` (Float32Array), with its tables computed in the worker when possible. */
 export async function buildModel(flat, layout, p) {
-  const w = getWorker();
-  if (w) {
-    try {
-      const tables = await new Promise((resolve, reject) => {
-        const id = nextId++;
-        pending.set(id, { resolve, reject });
-        w.postMessage({ id, op: "tables", flat, layout, p }); // structured clone copies the weights; the page keeps its own
-      });
-      return GrokModel.fromTables(flat, layout, p, tables);
-    } catch { /* fall through to the main thread */ }
-  }
-  return new GrokModel(flat, layout, p);
+  const tables = await inWorker("tables", flat, layout, p);
+  return tables ? GrokModel.fromTables(flat, layout, p, tables) : new GrokModel(flat, layout, p);
+}
+
+/** {L: logits [p·p·p], blocks: their Fourier blocks} for the ablation playground, from the worker when possible. */
+export async function ablationBasis(flat, layout, p) {
+  const result = await inWorker("ablation", flat, layout, p);
+  if (result) return result;
+  const L = new GrokModel(flat, layout, p).logitsGrid();
+  return { L, blocks: logitBlocks(L, p) };
 }

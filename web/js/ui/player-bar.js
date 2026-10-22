@@ -2,8 +2,8 @@
 //
 // Local explanation: `playerBar(el, player, {variant, keys})` builds the controls inside `el` and keeps them in sync
 // with the Player:
-//   full    (dashboard)     ⏮ ◀ ▶/❚❚ ▶ ⏭, scrubber over the checkpoints with the phase bands and the play range
-//                           marked, "step · phase" label, speed, loop mode, range and phase chips, keyboard help;
+//   full    (dashboard)     ⏮ ◀ ▶/❚❚ ▶ ⏭, scrubber over the checkpoints with the phase bands (and, for the paper's run,
+//                           its authors' boundaries dashed) and the play range marked, "step · phase" label, speed, loop mode, range and phase chips, keyboard help;
 //   compact (chapter bar)   ▶/❚❚, scrubber, label, speed;
 //   mini    (inside an animated figure) ▶/❚❚, scrubber, label.
 // With `keys: true` the page keyboard drives it: Space play/pause, ←/→ one checkpoint (Shift: ten), [ / ] slower /
@@ -58,7 +58,7 @@ export function playerBar(el, player, { variant = "full", keys = false } = {}) {
   slider.addEventListener("input", () => player.seek(Number(slider.value)));
   speed?.addEventListener("change", () => player.setSpeed(Number(speed.value)));
 
-  /** Phase bands and the play range under the scrubber (positions in checkpoint-index space). */
+  /** Phase bands, the paper's own boundaries and the play range under the scrubber (positions in checkpoint-index space). */
   function drawStrip() {
     const strip = $(".phase-strip"), steps = player.steps, n = steps.length - 1 || 1, ph = player.phases;
     strip.replaceChildren();
@@ -72,6 +72,11 @@ export function playerBar(el, player, { variant = "full", keys = false } = {}) {
         span.style.background = cssVar(c).replace(/0\.\d+\)$/, "0.45)"); // the theme's band colour, more opaque
         strip.append(span);
       }
+    }
+    for (const t of Object.values(ph?.paper_boundaries || {})) { // the paper's own boundaries (paper run), dashed
+      const tick = Object.assign(document.createElement("span"), { className: "pb-paper" }); // explained in the run line (dashboard.js)
+      tick.style.left = `${(100 * nearest(steps, t)) / n}%`;
+      strip.append(tick);
     }
     shownSteps = steps;
   }

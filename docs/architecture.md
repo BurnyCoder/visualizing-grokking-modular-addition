@@ -39,6 +39,9 @@ The phase-by-phase diagram is in the README ([What happens when you run it](../R
   step plus the interpolated `stepf` while playing, and the stored frame when paused. The page has one Player
   (`ui/page-player.js`) shared by the dashboard's player bar, the chapter scrubber, scenes and the tour; each
   `{{anim:id}}` figure has its own, started by `ui/scrollplay.js` when on screen.
+- **3D without WebGL.** The 3D panels (`figures/space.js`) are point clouds of at most 12,769 points. A small canvas
+  renderer (`viz/view3d.js`) rotates them, sorts them by depth and draws them at full frame rate. This avoids a ~670 KB
+  engine, WebGL context limits and GPU needs in headless capture. It is lazily loaded with the panels that use it.
 - **Heavy compute in Python, per-input compute in the browser.** Curves, spectra and geometry are precomputed; any
   (a, b) / neuron / head view is computed from float16 weights by `web/js/model/grokmodel.js` (tested against torch).
   Each weight snapshot's per-token tables (~45 million multiply-adds) are built in a web worker (`model/worker.js`,

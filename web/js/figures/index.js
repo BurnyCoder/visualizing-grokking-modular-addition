@@ -53,6 +53,8 @@ export const FIGURES = {
   "cluster-sizes": mod("./activations.js", "cluster-sizes"),
   "embed-circles": mod("./geometry.js", "embed-circles"),
   "mlp-circles": mod("./geometry.js", "mlp-circles"),
+  "torus-3d": mod("./space.js", "torus-3d"),
+  "pca-3d": mod("./space.js", "pca-3d"),
   "embed-pca": mod("./geometry.js", "embed-pca"),
   "logit-pca": mod("./geometry.js", "logit-pca"),
   "prob-pca": mod("./geometry.js", "prob-pca"),

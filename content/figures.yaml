@@ -337,6 +337,24 @@ embed-circles:
   cite: "{{cite:nanda2023}} Sec. 3.1; {{cite:video_welch}} “Linear Probes”"
   producer: "geometry.key_plane_coords"
   size: xl
+torus-3d:
+  title: "Every input on a torus"
+  size: l
+  what: "All 12,769 inputs (a, b) on a torus, at angles w_k·a around the ring and w_k·b around the tube; coloured by the probability of the right answer, by training/test pair, or by the answer a + b."
+  read: "A pair of angles is a point on a torus, the way one angle is a point on a circle. The network's answer depends on the sum of the two angles, w_k(a + b), so the inputs that share an answer lie on one helix winding around the torus; colour by the answer to see the helices. Played through training, the colour by probability shows memorisation (a speckle of training pairs) give way to the whole surface lighting up. While playing, probabilities are blended between stored frames (every 200 steps for the paper's run). Drag to turn the torus."
+  expect: "Early in training only the training pairs are bright; after grokking every point is."
+  chapter: "18-watch-it-form.html"
+  cite: "{{cite:nanda2023}} Sec. 3.1"
+  producer: "geometry.frame"
+pca-3d:
+  title: "The representations in 3D"
+  size: l
+  what: "The first three principal components of the number embeddings, of the mean logits per answer, or of the mean predicted distribution per answer, at the selected step."
+  read: "Principal components are the directions of largest variance. A principal axis has no inherent sign, so while two stored frames are blended the second is flipped to agree with the first; paused, the stored frame is shown as computed."
+  expect: "Rings and loops appear as the circuit forms: the numbers are arranged by the clock."
+  chapter: "18-watch-it-form.html"
+  cite: "{{cite:nanda2023}} Sec. 3.1"
+  producer: "geometry.pca"
 mlp-circles:
   title: "The answer on a circle: MLP activations by answer"
   what: "Average neuron activation for each answer c = a+b mod p, read along W_L's cos/sin(w_k c) directions."

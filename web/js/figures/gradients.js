@@ -8,11 +8,11 @@
 // Global context: links the progress measures to their cause — the paper attributes circuit formation and
 // cleanup to weight decay (Sec. 5.2–5.3); these plots show the forces directly.
 // Sources: paper Sec. 5.2–5.3 (https://arxiv.org/abs/2301.05217); AdamW (https://arxiv.org/abs/1711.05101).
-import { array, column, run } from "../core/data.js";
+import { array, column, manifest, nearestIndex, run } from "../core/data.js";
 import { Plot, phaseShapes } from "../viz/plot.js";
 import { cssVar } from "../viz/colors.js";
 import { stepByFreq } from "./weights.js";
-import { note, runOf, watch } from "./common.js";
+import { el, frameKey, note, runOf, storeOf, watch } from "./common.js";
 
 /** Metric-over-training plot for gradient arrays (same pattern as curves.js); `needs` = the array it plots.
  * Charts with one line per parameter (11 legend entries) pass a taller `height` so the plot keeps its room. */
@@ -42,6 +42,33 @@ function overTraining(traces, layout, needs = "grad_scalars", missing = "No grad
 const ln = (x, y, name, color, extra = {}) => ({ x: Array.from(x), y: Array.from(y), name, type: "scatter", mode: "lines", line: { color, width: 1.8 }, ...extra });
 
 export const figures = {
+  "loss-vs-norm": {
+    async render(body, ds) {
+      body.innerHTML = "";
+      const sel = el(body, "label", "hero-ctl", 'loss <select><option value="loss_test">test</option><option value="loss_train">train</option></select>').querySelector("select");
+      const plot = new Plot(body, { height: 330 });
+      const info = note(body);
+      const draw = async (s) => {
+        const m = await manifest(), id = runOf(ds), TRAIL = 20; // checkpoints of trail behind each dot
+        const ids = [id, ...m.runs.filter((r) => r.group === "wd0" && r.id !== id).map((r) => r.id)]; // the run and every λ = 0 control
+        const traces = [];
+        for (const rid of ids) {
+          const r = await run(rid), mine = rid === id, col = cssVar(mine ? "--accent" : "--ink-soft");
+          const L = Array.from(await column(rid, "ckpt_scalars", sel.value)), W = Array.from(await column(rid, "ckpt_scalars", "ssw_total"), Math.sqrt);
+          const i = nearestIndex(r.ckpt_steps, s.step), lo = Math.max(0, i - TRAIL), name = mine ? `${rid} (λ = ${r.weight_decay})` : `no weight decay (λ = 0), ${ids.length - 1} runs`;
+          traces.push(ln(W, L, name, col, { opacity: 0.3, showlegend: false, hoverinfo: "skip", line: { color: col, width: 1 } }), // whole path
+            ln(W.slice(lo, i + 1), L.slice(lo, i + 1), name, col, { line: { color: col, width: mine ? 3 : 1.5 }, showlegend: mine || rid === ids[1], legendgroup: mine ? "run" : "wd0" }),
+            { x: [W[i]], y: [L[i]], type: "scatter", mode: "markers", marker: { size: mine ? 11 : 6, color: col }, showlegend: false,
+              hovertemplate: `${rid}, step ${r.ckpt_steps[i]}<br>norm %{x:.1f}, loss %{y:.2e}<extra></extra>` });
+        }
+        await plot.draw(traces, { xaxis: { title: { text: "weight norm √(sum of squared weights)" } }, yaxis: { type: "log", exponentformat: "power", title: { text: `${sel.value === "loss_test" ? "test" : "train"} loss (log)` } }, hovermode: "closest" });
+        info.textContent = `Each run moves through (weight norm, loss) as it trains; dots mark step ${s.step.toLocaleString("en-US")}, tails the last ${TRAIL} checkpoints. Highlighted: ${id}; grey: the runs without weight decay. With weight decay the norm first grows, then shrinks while the test loss collapses; without it the norm keeps growing and the test loss stays high.`;
+      };
+      sel.onchange = () => draw(storeOf(body).state);
+      watch(body, ["run", "step"], draw, { dedupe: async (s) => `${await frameKey(ds, "ckpt_steps")(s)}|${sel.value}` });
+    },
+  },
+
   "grad-norms": overTraining(async (id, r) => {
     const g = await array(id, "grad_norm");
     const T = g.shape[0], P = g.shape[1];

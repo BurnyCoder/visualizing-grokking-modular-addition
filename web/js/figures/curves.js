@@ -10,7 +10,8 @@
 import { array, column, run } from "../core/data.js";
 import { Plot, phaseShapes } from "../viz/plot.js";
 import { cssVar, freqColor } from "../viz/colors.js";
-import { runOf, watch } from "./common.js";
+import { el, follow, frameKey, note, runOf, storeOf, watch } from "./common.js";
+import { stepByFreq } from "./weights.js";
 
 const stepsEvery = (n, every, step0 = 0) => Array.from({ length: n }, (_, i) => step0 + i * every); // x values for per-10-step curves
 
@@ -48,7 +49,40 @@ export async function lossTraces(id) {
     line(stepsEvery(te.data.length, 10), te.data, "test loss", cssVar("--test"))];
 }
 
+/** The two step × frequency views of alpha-growth: each frequency's cos(w_k(a+b−c)) coefficient in the logits, and the loss without it. */
+const VIEWS = {
+  alpha: { array: "cos_coeffs", perFreq: (v) => Array.from(v), format: (v) => v.toFixed(1), limits: { min: 0 }, label: "coefficient of cos(w_k(a+b−c))", log: false,
+    what: "Coefficient of the unit-normalised cos(w_k(a+b−c)) in the logits at every checkpoint (colour from 0; the few small negative values show as 0)." },
+  excluded: { array: "excl_per_freq", perFreq: (v) => Array.from(v, (x) => Math.log10(x)), format: (v) => `10^${v.toFixed(1)}`, label: "training loss without k", log: true,
+    what: "Training loss after removing frequency k from the logits (colour: log10 of the loss) at every checkpoint." },
+};
+
 export const figures = {
+  "alpha-growth": {
+    async render(body, ds) {
+      body.innerHTML = "";
+      const sel = el(body, "label", "hero-ctl", 'show <select><option value="alpha">how strongly cos(w_k(a+b−c)) appears in the logits</option><option value="excluded">the training loss without frequency k</option></select>').querySelector("select");
+      const heats = {}; // one heatmap per view, the other hidden (and therefore not redrawn: figures/common.js gate)
+      for (const [k, v] of Object.entries(VIEWS)) { heats[k] = el(body, "div"); heats[k].hidden = k !== sel.value; stepByFreq(v.array, v).render(heats[k], ds); }
+      const plot = new Plot(body, { height: 210, stepAxis: true }); // the selected frequency, drawn up to the current step
+      const info = note(body);
+      const draw = async (s) => {
+        const id = runOf(ds), r = await run(id), v = VIEWS[sel.value], a = await array(id, v.array), K = a.shape[1];
+        const y = Array.from({ length: a.shape[0] }, (_, t) => a.data[t * K + s.freq - 1]);
+        const upto = r.ckpt_steps.findIndex((x) => x > s.step), n = upto < 0 ? y.length : upto;
+        await plot.draw([line(r.ckpt_steps, y, `k = ${s.freq}, whole run`, cssVar("--ink-soft"), { opacity: 0.35 }),
+          line(r.ckpt_steps.slice(0, n), y.slice(0, n), `k = ${s.freq} up to the current step`, freqColor(s.freq), { line: { color: freqColor(s.freq), width: 2.6 } })],
+        { yaxis: { title: { text: v.label }, ...(v.log ? { type: "log", exponentformat: "power" } : { rangemode: "tozero" }) }, xaxis: { title: { text: "training step" } },
+          shapes: phaseShapes(r.phases, r.ckpt_steps.at(-1)) });
+        plot.cursor(s.stepf ?? s.step);
+        info.textContent = `Line: frequency k = ${s.freq} (${r.key_freqs.includes(s.freq) ? "a key frequency of this run" : "not a key frequency of this run"}); pick another by clicking a heatmap row or in the control bar.`;
+      };
+      sel.onchange = () => { for (const [k, d] of Object.entries(heats)) d.hidden = k !== sel.value; draw(storeOf(body).state); };
+      watch(body, ["run", "step", "freq"], draw, { dedupe: async (s) => `${await frameKey(ds, "ckpt_steps", "freq")(s)}|${sel.value}` });
+      follow(body, ["stepf"], (s) => plot.cursor(s.stepf ?? s.step));
+    },
+  },
+
   "loss-curves": overTraining(lossTraces, { yaxis: { type: "log", title: { text: "loss (log scale)" }, exponentformat: "power" } }),
   "loss-curves-linear": overTraining(lossTraces, { yaxis: { title: { text: "loss (linear scale)" }, rangemode: "tozero" } }),
 

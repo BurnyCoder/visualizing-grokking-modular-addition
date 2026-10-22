@@ -11,8 +11,9 @@
 import { array, model, nearestIndex, row, run, manifest } from "../core/data.js";
 import { Plot } from "../viz/plot.js";
 import { Heatmap } from "../viz/heatmap.js";
-import { cssVar } from "../viz/colors.js";
-import { clusterOrder, follow, frameKey, kstep, note, runOf, set, storeOf, watch } from "./common.js";
+import { cssVar, freqColor } from "../viz/colors.js";
+import { clusterOrder, el, fill, follow, frameKey, kstep, note, runOf, set, storeOf, watch } from "./common.js";
+import { CanvasPlot } from "../viz/canvas.js";
 
 const K = 56; // frequencies 1..56 for p = 113
 
@@ -46,11 +47,12 @@ function spectrumBars(arrayName, ytitle) {
 }
 
 /**
- * Step × frequency heatmap of a per-checkpoint array [T, 113] (Fourier components): `perFreq(row)` turns one row into 56
- * values (k = 1…56, drawn high k at the top). The current checkpoint's column and the selected frequency's row are
- * outlined (overlay marks: moving them redraws nothing); clicking a cell selects that step and frequency.
+ * Step × frequency heatmap of a per-checkpoint array: `perFreq(row)` turns one checkpoint's row into 56 values
+ * (k = 1…56, drawn high k at the top), coloured with fixed `limits` {min, max} when given. The current checkpoint's
+ * column and the selected frequency's row are outlined (overlay marks: moving them redraws nothing); clicking a cell
+ * selects that step and frequency.
  */
-export function stepByFreq(arrayName, { perFreq, format, what }) {
+export function stepByFreq(arrayName, { perFreq, format, what, limits = null }) {
   return {
     async render(body, ds) {
       body.innerHTML = "";
@@ -68,7 +70,7 @@ export function stepByFreq(arrayName, { perFreq, format, what }) {
         hm = new Heatmap(body, { rows: K, cols: T, size: 640, height: 240, diverging: false, format,
           label: (rr, cc) => `k = ${K - rr}, step ${steps[cc]}`, onClick: (rr, cc) => storeOf(body).set({ step: steps[cc], freq: K - rr }) });
         body.append(info);
-        hm.draw(grid);
+        hm.draw(grid, limits);
         info.textContent = `${what} Rows: frequency k (1 at the bottom, 56 at the top); columns: checkpoints from step 0 to ${kstep(steps[T - 1])}. Highlighted: the current step's column and the selected frequency's row (click a cell to select both).`;
         mark(s);
       }, { theme: false });
@@ -81,6 +83,43 @@ export function stepByFreq(arrayName, { perFreq, format, what }) {
 export const freqNorms = (v) => Array.from({ length: K }, (_, i) => Math.hypot(v[2 * i + 1], v[2 * i + 2]));
 
 export const figures = {
+  "freq-norm-race": {
+    async render(body, ds) {
+      body.innerHTML = "";
+      const sel = el(body, "label", "hero-ctl", 'matrix <select><option value="we_fourier">W_E (embedding)</option><option value="wl_fourier">W_L (neuron → logit map)</option></select>').querySelector("select");
+      const cp = new CanvasPlot(body, { height: 330, onClick: (k) => set({ freq: k }) });
+      const info = note(body);
+      const TOP = 12, buf = new Float32Array(2 * K + 1), shownY = new Map(), scale = new Map(); // frequency → displayed row
+      const draw = async (s) => {
+        const id = runOf(ds), r = await run(id), a = await array(id, sel.value);
+        if (!scale.has(`${id}|${sel.value}`)) { // one x scale for the whole run: bars grow and shrink visibly
+          let m = 0;
+          for (let t = 0; t < a.shape[0]; t++) m = Math.max(m, ...freqNorms(a.data.subarray(t * 113, (t + 1) * 113)));
+          scale.set(`${id}|${sel.value}`, m || 1);
+        }
+        const max = scale.get(`${id}|${sel.value}`), label = fill(buf, a, r.ckpt_steps, s);
+        const norms = freqNorms(buf), init = freqNorms(a.data.subarray(0, 113)); // now, and at initialisation (step 0)
+        const top = norms.map((v, i) => [v, i + 1]).sort((x, y) => y[0] - x[0]).slice(0, TOP);
+        const rects = [], labels = [];
+        top.forEach(([v, k], rank) => {
+          const target = TOP - 1 - rank, y0 = shownY.get(k) ?? -1; // a frequency entering the top 12 rises from below
+          const y = s.playing ? y0 + (target - y0) * 0.3 : target; // ease the reordering while playing; exact when paused
+          shownY.set(k, y);
+          rects.push({ x0: 0, x1: init[k - 1], y0: y - 0.36, y1: y + 0.36, stroke: cssVar("--ink-soft") }, // ghost: the value at initialisation
+            { x0: 0, x1: v, y0: y - 0.3, y1: y + 0.3, fill: freqColor(k), stroke: k === s.freq ? cssVar("--ink") : null, id: k,
+              label: `<span class="tt-term">k = ${k}</span>norm ${v.toFixed(2)} (at initialisation ${init[k - 1].toFixed(2)}); click to select` });
+          labels.push({ x: -0.015 * max, y, text: `k = ${k}`, align: "right", color: cssVar(r.key_freqs.includes(k) ? "--ink" : "--ink-soft") },
+            { x: v + 0.015 * max, y, text: v.toFixed(1), align: "left", color: cssVar("--ink-soft") });
+        });
+        for (const k of [...shownY.keys()]) if (!top.some(([, kk]) => kk === k)) shownY.delete(k); // dropped out of the top 12
+        cp.draw({ domain: [-0.16 * max, 1.12 * max, -0.7, TOP - 0.3], rects, labels });
+        info.textContent = `${label}. The 12 largest frequency norms of ${sel.value === "we_fourier" ? "W_E" : "W_L"}, longest at the top; outlines show each frequency's norm at initialisation, dark labels the run's key frequencies. Click a bar to select its frequency everywhere.`;
+      };
+      sel.onchange = () => draw(storeOf(body).state);
+      watch(body, ["run", "step", "stepf", "playing", "freq"], draw);
+    },
+  },
+
   "we-fourier-bars": spectrumBars("we_fourier", "norm of component in W_E"),
   "wl-fourier-bars": spectrumBars("wl_fourier", "norm of component in W_L"),
   "we-fourier-heatmap": stepByFreq("we_fourier", { perFreq: freqNorms, format: (v) => v.toFixed(3), what: "Norm of each frequency in W_E at every checkpoint." }),

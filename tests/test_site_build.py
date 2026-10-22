@@ -86,3 +86,15 @@ def test_tour_steps_bind_numbers_and_are_checked():
     steps = sb.tour_steps(raw, b, {"loss-curves"})
     assert 'data-num="task.n_train"' in steps[0]["text"] and steps[0]["play"] == {"from": 0, "to": 100}
     assert len(b.errors) == 2, b.errors
+
+
+def test_figure_data_keys_cannot_be_prose_numbers():
+    """Summary entries with fmt "json" (hypothesis tables for the JavaScript panels) are rejected in {{num:}}."""
+    from grokviz import site_build as sb
+
+    sb._md = sb.markdown()
+    b = sb.Build(glossary={}, symbols={}, quotes={}, refs={}, figures={}, js_figures=set(), js_widgets=set(),
+                 summary={"hypotheses.per_run": {"value": {"wd1_s0": {}}, "fmt": "json"}, "task.n_train": {"value": 3830, "fmt": "int"}})
+    assert "3,830" in sb.expand("{{num:task.n_train}}", b, "p") and not b.errors
+    sb.expand("{{num:hypotheses.per_run}}", b, "p")
+    assert len(b.errors) == 1

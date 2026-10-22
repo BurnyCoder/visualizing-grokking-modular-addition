@@ -505,9 +505,43 @@ seed-key-freqs:
   chapter: "20-robustness.html"
   producer: "metrics.key_frequencies"
   size: l
+seed-phase-strips:
+  title: "Every run's phases on one time axis"
+  what: "Memorisation, circuit formation and cleanup of every run whose phases were detected, with the step at which test accuracy passes 99 %; on the paper's row, ticks mark the paper's own boundaries."
+  read: "Phases come from the objective rules of docs/operationalizations.md applied to each run's curves. The vertical cursor is the selected step; click a row to select that run."
+  expect: "The weight-decay seeds grok at different times, but always in the same order: memorisation, a long circuit formation, then cleanup."
+  chapter: "20-robustness.html"
+  cite: "{{cite:nanda2023}} Sec. 5.1"
+  producer: "phases.py"
+  size: l
+seed-clocks:
+  title: "The clock in every seed"
+  what: "Every weight-decay seed (and the paper's run) at the selected step: the 113 number embeddings on the plane of the run's first key frequency."
+  expect: "Different seeds choose different key frequencies, but every one of them ends with the numbers on a circle in clock order."
+  chapter: "20-robustness.html"
+  cite: "{{cite:nanda2023}} App. C.2"
+  producer: "geometry.key_plane_coords"
+  size: l
 hypothesis-table:
   title: "Preregistered hypotheses"
   what: "Results of the five tests written down before training (docs/preregistration.md)."
   chapter: "20-robustness.html"
   producer: "hypotheses.py"
   size: xl
+hypothesis-dots:
+  title: "Each seed against each preregistered threshold"
+  what: "For every weight-decay seed, the value of each preregistered metric of H1, H2 and H4 against its threshold."
+  read: "Filled dots meet the preregistered condition, hollow ones do not. H1: the test loss drops after the restricted loss (steps). H2: the excluded loss grows at least 10× during circuit formation. H4: removing any key frequency multiplies the loss by at least 100, removing any other frequency by at most 2, and keeping only the key frequencies by at most 1.5. H3 is shown in the Gini panel; H5 compares groups of runs (table above)."
+  expect: "Every seed meets H1 and H2. H4 fails in several seeds, through condition (i) in some (one key frequency matters less than 100×) and condition (iii) in others (the key frequencies alone are not quite enough), which is why H4 is not supported."
+  chapter: "20-robustness.html"
+  cite: "docs/preregistration.md"
+  producer: "hypotheses.py"
+  size: l
+gini-vs-null:
+  title: "Sparsity in the Fourier basis: start, end and the bar to clear"
+  what: "For every run, the Gini coefficient of the W_E (or W_L) frequency norms at initialisation and at the end, against the preregistered bar of H3."
+  read: "The bar is max(initial Gini + 0.3, 99th percentile of the same Gini computed in 100 random orthonormal bases): sparsity has to be large and specific to the Fourier basis (docs/preregistration.md, H3)."
+  expect: "Runs with weight decay end far above the bar (0.6–0.9); runs without weight decay and with random labels stay below 0.1."
+  chapter: "20-robustness.html"
+  cite: "docs/preregistration.md; {{cite:nanda2023}} Fig. 7"
+  producer: "hypotheses.py"

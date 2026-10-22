@@ -77,4 +77,8 @@ export const FIGURES = {
   "seed-test-loss": mod("./seeds.js", "seed-test-loss"),
   "seed-key-freqs": mod("./seeds.js", "seed-key-freqs"),
   "hypothesis-table": mod("./seeds.js", "hypothesis-table"),
+  "hypothesis-dots": mod("./seeds.js", "hypothesis-dots"),
+  "gini-vs-null": mod("./seeds.js", "gini-vs-null"),
+  "seed-phase-strips": mod("./seeds.js", "seed-phase-strips"),
+  "seed-clocks": mod("./seeds.js", "seed-clocks"),
 };

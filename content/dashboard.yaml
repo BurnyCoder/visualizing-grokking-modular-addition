@@ -43,4 +43,4 @@ groups:
   - id: seeds
     title: "H. All runs and controls"
     blurb: "The paper's run next to our replications with different random seeds, and controls without weight decay or with random labels."
-    panels: [seed-test-loss, seed-key-freqs, hypothesis-table]
+    panels: [seed-test-loss, seed-phase-strips, seed-clocks, seed-key-freqs, hypothesis-table, hypothesis-dots, gini-vs-null]

@@ -47,31 +47,38 @@ function spectrumBars(arrayName, ytitle) {
 }
 
 /**
- * Step × frequency heatmap of a per-checkpoint array: `perFreq(row)` turns one checkpoint's row into 56 values
- * (k = 1…56, drawn high k at the top), coloured with fixed `limits` {min, max} when given. The current checkpoint's
- * column and the selected frequency's row are outlined (overlay marks: moving them redraws nothing); clicking a cell
- * selects that step and frequency.
+ * Step × row heatmap of a per-checkpoint array: `perRow(row, state)` turns one checkpoint's row into `rows` values, row 0
+ * drawn at the bottom, coloured with fixed `limits` {min, max} when given; `keys` are extra state keys it depends on
+ * (e.g. the selected head). By default the rows are frequencies k = 1…56: `rowName(i)` labels row i, `select(i)` is the
+ * state a click on it selects and `selected(state)` the row outlined (null: none). The current checkpoint's column is
+ * outlined too (overlay marks: moving them redraws nothing).
  */
-export function stepByFreq(arrayName, { perFreq, format, what, limits = null }) {
+export function stepHeatmap(arrayName, { perRow, format, what, limits = null, keys = [], rows = K, rowName = (i) => `k = ${i + 1}`,
+  select = (i) => ({ freq: i + 1 }), selected = (s) => s.freq - 1, rowsText = "frequency k (1 at the bottom, 56 at the top)" }) {
   return {
     async render(body, ds) {
       body.innerHTML = "";
       let hm = null, steps = null;
       const info = note(body);
-      const mark = (s) => { if (!hm) return; hm.marks.set("step", { col: nearestIndex(steps, s.step) }); hm.marks.set("freq", { row: K - s.freq }); };
-      watch(body, ["run"], async (s) => {
+      const mark = (s) => {
+        if (!hm) return;
+        const i = selected(s);
+        hm.marks.set("step", { col: nearestIndex(steps, s.step) });
+        hm.marks.set("row", i == null ? null : { row: rows - 1 - i });
+      };
+      watch(body, ["run", ...keys], async (s) => {
         const id = runOf(ds), r = await run(id);
         body.querySelector(".heatmap-wrap")?.remove();
         hm = null;
         if (!r.arrays[arrayName]) { info.textContent = "No data for this run."; return; }
-        const a = await array(id, arrayName), T = a.shape[0], grid = new Float32Array(K * T);
-        for (let t = 0; t < T; t++) perFreq(row(a, t)).forEach((v, j) => { grid[(K - 1 - j) * T + t] = v; }); // row K−k holds frequency k
+        const a = await array(id, arrayName), T = a.shape[0], grid = new Float32Array(rows * T);
+        for (let t = 0; t < T; t++) perRow(row(a, t), s).forEach((v, i) => { grid[(rows - 1 - i) * T + t] = v; }); // row 0 at the bottom
         steps = r.ckpt_steps;
-        hm = new Heatmap(body, { rows: K, cols: T, size: 640, height: 240, diverging: false, format,
-          label: (rr, cc) => `k = ${K - rr}, step ${steps[cc]}`, onClick: (rr, cc) => storeOf(body).set({ step: steps[cc], freq: K - rr }) });
+        hm = new Heatmap(body, { rows, cols: T, size: 640, height: 240, diverging: false, format,
+          label: (rr, cc) => `${rowName(rows - 1 - rr)}, step ${steps[cc]}`, onClick: (rr, cc) => storeOf(body).set({ step: steps[cc], ...select(rows - 1 - rr) }) });
         body.append(info);
         hm.draw(grid, limits);
-        info.textContent = `${what} Rows: frequency k (1 at the bottom, 56 at the top); columns: checkpoints from step 0 to ${kstep(steps[T - 1])}. Highlighted: the current step's column and the selected frequency's row (click a cell to select both).`;
+        info.textContent = `${what} Rows: ${rowsText}; columns: checkpoints from step 0 to ${kstep(steps[T - 1])}. Highlighted: the current step's column${selected(s) == null ? "" : " and the selected row"} (click a cell to select).`;
         mark(s);
       }, { theme: false });
       follow(body, ["step", "freq"], mark);
@@ -122,8 +129,25 @@ export const figures = {
 
   "we-fourier-bars": spectrumBars("we_fourier", "norm of component in W_E"),
   "wl-fourier-bars": spectrumBars("wl_fourier", "norm of component in W_L"),
-  "we-fourier-heatmap": stepByFreq("we_fourier", { perFreq: freqNorms, format: (v) => v.toFixed(3), what: "Norm of each frequency in W_E at every checkpoint." }),
-  "wl-fourier-heatmap": stepByFreq("wl_fourier", { perFreq: freqNorms, format: (v) => v.toFixed(3), what: "Norm of each frequency in W_L at every checkpoint." }),
+  "we-fourier-heatmap": stepHeatmap("we_fourier", { perRow: freqNorms, format: (v) => v.toFixed(3), what: "Norm of each frequency in W_E at every checkpoint." }),
+  "wl-fourier-heatmap": stepHeatmap("wl_fourier", { perRow: freqNorms, format: (v) => v.toFixed(3), what: "Norm of each frequency in W_L at every checkpoint." }),
+  "svals-over-training": stepHeatmap("we_svals", { perRow: (v) => Array.from(v), format: (v) => v.toFixed(2), limits: { min: 0 }, rows: 113,
+    rowName: (i) => `singular value ${i + 1}`, select: () => ({}), selected: () => null, rowsText: "the 113 singular values of W_E, largest at the bottom",
+    what: "Singular values of the embedding matrix W_E at every checkpoint." }),
+  "head-spectra-over-training": {
+    async render(body, ds) { // two views (C_j or OV) of the selected head; the hidden one is not redrawn
+      body.innerHTML = "";
+      const sel = el(body, "label", "hero-ctl", 'show <select><option value="attn_C_fourier">the attention lookup C_j</option><option value="ov_fourier">what the head writes (OV)</option></select>').querySelector("select");
+      const views = {};
+      for (const [name, what] of [["attn_C_fourier", "Norm of each frequency in the selected head's attention lookup C_j"], ["ov_fourier", "Norm of each frequency in what the selected head writes, W_O W_V W_E"]]) {
+        views[name] = el(body, "div");
+        views[name].hidden = name !== sel.value;
+        stepHeatmap(name, { perRow: (v, s) => freqNorms(v.subarray(s.head * 113, (s.head + 1) * 113)), keys: ["head"], format: (v) => v.toFixed(3),
+          what: `${what} at every checkpoint (pick the head in the control bar).` }).render(views[name], ds);
+      }
+      sel.onchange = () => { for (const [name, d] of Object.entries(views)) d.hidden = name !== sel.value; };
+    },
+  },
 
   "we-svals": {
     async render(body, ds) {

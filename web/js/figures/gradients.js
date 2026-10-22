@@ -11,7 +11,7 @@
 import { array, column, manifest, nearestIndex, run } from "../core/data.js";
 import { Plot, phaseShapes } from "../viz/plot.js";
 import { cssVar } from "../viz/colors.js";
-import { stepByFreq } from "./weights.js";
+import { stepHeatmap } from "./weights.js";
 import { el, frameKey, note, runOf, storeOf, watch } from "./common.js";
 
 /** Metric-over-training plot for gradient arrays (same pattern as curves.js); `needs` = the array it plots.
@@ -99,8 +99,8 @@ export const figures = {
   }, { yaxis: { type: "log", title: { text: "‖update‖ (log)" }, exponentformat: "power" } }, "update_norm",
   "Update sizes were logged only for our retrained runs.", 400),
 
-  "grad-we-fourier-heatmap": stepByFreq("grad_we_fourier", {
-    perFreq: (v) => { // share of the gradient's energy (cos² + sin², constant excluded) in each frequency
+  "grad-we-fourier-heatmap": stepHeatmap("grad_we_fourier", {
+    perRow: (v) => { // share of the gradient's energy (cos² + sin², constant excluded) in each frequency
       const e = Array.from({ length: 56 }, (_, i) => v[2 * i + 1] ** 2 + v[2 * i + 2] ** 2), tot = e.reduce((x, y) => x + y, 0) || 1;
       return e.map((x) => x / tot);
     },

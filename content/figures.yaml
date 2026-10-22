@@ -117,9 +117,18 @@ cos-coeffs:
   chapter: "18-watch-it-form.html"
   cite: "{{cite:nanda2023}} Fig. 14"
   producer: "metrics.cos_coefficients"
+restricted-split-curves:
+  title: "The restricted loss on training and test pairs"
+  what: "The restricted loss (logits kept only along the key frequencies) on training pairs and on test pairs separately, the ordinary loss on all pairs, and the excluded loss of the worst single frequency."
+  read: "The restricted loss keeps only the key-frequency part of the logits (docs/operationalizations.md); computing it on training and on test pairs separately shows whether that part generalises. The dotted line is the largest training loss after removing any one frequency (the paper's K-free excluded loss, footnote 3)."
+  expect: "The restricted loss is almost the same on training and test pairs at every step: the key-frequency part of the logits generalises from the start, while the ordinary loss on all pairs is dominated by the memorised test answers until grokking."
+  chapter: "17-progress-measures.html"
+  cite: "{{cite:nanda2023}} Sec. 5.1"
+  producer: "metrics.restricted_loss, metrics.excluded_loss_per_freq"
 fve-curves:
   title: "How well the Fourier story explains the network, over training"
-  what: "Fraction of logit variance explained by Σα_k cos(w_k(a+b−c)), and fraction of neurons dominated by one frequency."
+  what: "Fraction of logit variance explained by Σα_k cos(w_k(a+b−c)), fraction of neurons dominated by one frequency, test accuracy of the logits restricted to the key frequencies, and the share of W_L outside the key frequencies."
+  expect: "Restricted test accuracy reaches 100 % before grokking; the share of W_L outside the key frequencies falls from about 90 % to under 1 % by the end of cleanup."
   chapter: "18-watch-it-form.html"
   cite: "{{cite:nanda2023}} Sec. 4.2–4.3"
   producer: "metrics.logit_cos_fit / neuron_frequencies"
@@ -166,6 +175,13 @@ we-svals:
   chapter: "11-measuring-fit.html"
   cite: "{{cite:arena152}} section 3, “Examine the SVD of W_E”"
   producer: "checkpoint_metrics.py"
+svals-over-training:
+  title: "The embedding's singular values over training"
+  what: "All 113 singular values of W_E at every checkpoint (largest at the bottom)."
+  expect: "Late in training about ten singular values (two per key frequency, cos and sin) stand above the rest."
+  chapter: "13-evidence-periodicity.html"
+  cite: "{{cite:arena152}} section 2, “Examine the SVD of W_E”"
+  producer: "checkpoint_metrics.py"
 attn-C-fourier:
   title: "Attention lookup tables in the Fourier basis"
   what: "For each head, the per-frequency norm of C_j, the pre-softmax score the '=' position gives each token."
@@ -181,6 +197,13 @@ ov-fourier:
   chapter: "14-evidence-neurons-heads.html"
   cite: "{{cite:nanda2023}} Fig. 11"
   producer: "metrics.ov_fourier_norms"
+head-spectra-over-training:
+  title: "Each head's frequencies over training"
+  what: "For the selected head, the norm of each frequency in its attention lookup C_j or in what it writes (OV), at every checkpoint."
+  expect: "In the paper's run each head's lookup table is spread over several frequencies through the plateau (at most a quarter of its energy in one) and concentrates on a single key frequency during cleanup and after (92–99 % by step 40,001); head 0 even switches its frequency late."
+  chapter: "14-evidence-neurons-heads.html"
+  cite: "{{cite:nanda2023}} App. C.1.3, Fig. 10–11"
+  producer: "metrics.attention_lookup, metrics.ov_fourier_norms"
 wlogit-sorted:
   title: "W_logit in the Fourier basis, neurons sorted by cluster"
   what: "Each row is one neuron's column of the neuron–logit map, written in the Fourier basis over answers c."

@@ -25,5 +25,14 @@ The phase-by-phase diagram is in the README ([What happens when you run it](../R
 - **Static site, one implementation per figure.** Figures are ES modules registered by id; chapters and the
   dashboard place the same implementation, so the step-by-step text and the dashboard cannot disagree.
 - **Numbers are bound, not typed.** Every number in the prose comes from `site/data/summary.json` via `{{num:key}}`.
+- **One render pipeline for every figure.** A state change goes store → flush → visibility gate → latest-wins
+  runner → dedupe → figure (`web/js/core/store.js`, `core/visibility.js`, `figures/common.js` `watch`):
+  - `set()` updates the state at once; listeners are notified once per animation frame with the union of the changed keys;
+  - a figure that is off screen only marks itself dirty and draws once when it scrolls back;
+  - at most one draw per figure runs at a time, always with the latest state, so frames never land out of order;
+  - a figure whose stored frame (checkpoint, weight snapshot, geometry frame) did not change skips the draw;
+  - the step cursor (`viz/overlay.js`) and heatmap marks are overlays moved with CSS, not chart redraws;
+  - an element inside `[data-scope]` gets its own step (`core/state.js` `storeOf`), so an animated figure can play
+    without moving the rest of the page.
 - **Heavy compute in Python, per-input compute in the browser.** Curves, spectra and geometry are precomputed; any
   (a, b) / neuron / head view is computed from float16 weights by `web/js/model/grokmodel.js` (tested against torch).

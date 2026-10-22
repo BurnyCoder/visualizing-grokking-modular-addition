@@ -233,3 +233,21 @@ def test_3d_panels_draw_and_turn(browser_page):
         page.mouse.up()
         after = page.evaluate(f"document.querySelector('{canvas}').toDataURL()")
         assert len(before) > 3000 and after != before, f"{fid}: nothing drawn or the drag did not turn it"
+
+
+def test_ablation_playground(browser_page):
+    """Removing one key frequency in the browser multiplies the loss many times; removing five other frequencies barely
+    changes it (the paper's Fig. 6 pattern, computed from the stored weights by web/js/model/ablation.js)."""
+    import re
+
+    page, base = browser_page
+    page.goto("about:blank")
+    page.goto(f"{base}/dashboard.html#step=40001")
+    fig = "#fig-ablation-playground"
+    page.evaluate(f"document.querySelector('{fig}').scrollIntoView()")
+    page.wait_for_function(f"document.querySelector('{fig} .abl-stats')?.textContent.includes('loss')", timeout=60_000)
+    ratio = lambda: float(re.search(r"×([\d.e+]+)", page.inner_text(f"{fig} .abl-stats")).group(1))  # noqa: E731
+    page.click(f"{fig} .interf-ctl .chip >> text=one key frequency")
+    assert ratio() > 100, f"removing a key frequency: ×{ratio()}"
+    page.click(f"{fig} .interf-ctl .chip >> text=five other frequencies")
+    assert ratio() < 2, f"removing other frequencies: ×{ratio()}"

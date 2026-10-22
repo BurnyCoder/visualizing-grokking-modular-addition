@@ -70,6 +70,26 @@ def test_every_page_draws_without_errors(browser_page):
     assert fcp < 3000, f"dashboard first contentful paint {fcp:.0f} ms"
 
 
+def test_phone_width_has_no_horizontal_scroll(browser_page):
+    """At 375 px (a common phone width) no page is wider than the screen once its figures have drawn."""
+    page, base = browser_page
+    page.set_viewport_size({"width": 375, "height": 812})
+    try:
+        wide = []
+        for path in ("index.html", "dashboard.html", "chapters/00-overview.html", "chapters/12-fourier-multiplication.html", "chapters/18-watch-it-form.html"):
+            page.goto("about:blank")
+            page.goto(f"{base}/{path}")
+            page.evaluate("async () => { for (let y = 0; y < document.body.scrollHeight; y += 600) { window.scrollTo(0, y); await new Promise((r) => setTimeout(r, 60)); } }")
+            page.evaluate("() => window.grokviz?.anim?.settled()")
+            w = page.evaluate("document.documentElement.scrollWidth")
+            if w > 376:  # 1 px of rounding allowed
+                culprits = page.evaluate("[...document.querySelectorAll('body *')].filter((e) => e.getBoundingClientRect().right > 377).slice(0, 5).map((e) => e.tagName + '.' + e.className)")
+                wide.append(f"{path}: {w} px wide, e.g. {culprits}")
+        assert not wide, "\n".join(wide)
+    finally:
+        page.set_viewport_size({"width": 1400, "height": 900})
+
+
 def test_offscreen_figures_wait_until_visible(browser_page):
     """While the step changes, a figure scrolled out of view does not redraw (figures/common.js watch); it redraws
     exactly once when it is scrolled back, and visible figures follow every change."""

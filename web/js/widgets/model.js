@@ -1,14 +1,16 @@
 // model.js — widgets that drive the real network: the in-chapter training scrubber and the step-by-step forward
 // pass of chapter 5.
 //
-// Local explanation: `scrubber` is a compact copy of the dashboard's run selector + step slider (+ play), bound to
-// the shared state, so chapter figures can be moved through training; `forward-walkthrough` runs GrokModel's
+// Local explanation: `scrubber` is a run selector plus the compact player bar (ui/player-bar.js) on the page's Player,
+// so chapter figures can be moved or played through training; `forward-walkthrough` runs GrokModel's
 // detailed forward pass on the selected (a, b) at the selected step and prints every intermediate quantity
 // (embeddings, attention scores and pattern per head, residuals, a few neurons, top logits, probabilities).
 // Global context: lets a reader check every equation of chapter 5 against the actual numbers of the trained model.
 // Source: paper App. A equations (https://arxiv.org/abs/2301.05217).
-import { manifest, model, nearestIndex as nearest, run } from "../core/data.js";
-import { set, state, subscribe } from "../core/state.js";
+import { manifest, model } from "../core/data.js";
+import { set, subscribe } from "../core/state.js";
+import { pagePlayer } from "../ui/page-player.js";
+import { playerBar } from "../ui/player-bar.js";
 import { softmax } from "../model/grokmodel.js";
 import { frameKey, watch } from "../figures/common.js";
 
@@ -18,23 +20,13 @@ export const widgets = {
   scrubber: {
     async render(el) {
       el.classList.add("chapter-scrubber");
-      el.innerHTML = `<div class="cb-row"><label>Run <select></select></label><button class="btn" type="button">▶</button>
-        <input type="range" min="0" max="0" value="0" style="flex:1 1 14rem"><output class="mono"></output></div>`;
-      const sel = el.querySelector("select"), slider = el.querySelector("input"), label = el.querySelector("output"), play = el.querySelector("button");
+      el.innerHTML = `<div class="cb-row"><label>Run <select></select></label><div class="pb-slot"></div></div>`;
+      const sel = el.querySelector("select");
       const m = await manifest();
       for (const r of m.runs) sel.append(new Option(r.id, r.id));
-      let steps = [];
-      const showStep = (s) => { if (!steps.length) return; const i = nearest(steps, s.step); slider.value = String(i); label.textContent = `step ${steps[i].toLocaleString()}`; };
-      subscribe(["run"], async (s) => { sel.value = s.run; steps = (await run(s.run)).ckpt_steps; slider.max = String(steps.length - 1); set({ step: steps[nearest(steps, s.step)] }); showStep(s); });
-      subscribe(["step"], showStep);
+      subscribe(["run"], (s) => { sel.value = s.run; });
       sel.onchange = () => set({ run: sel.value });
-      slider.oninput = () => set({ step: steps[Number(slider.value)] });
-      let timer = null;
-      play.onclick = () => {
-        if (timer) { clearInterval(timer); timer = null; play.textContent = "▶"; return; }
-        play.textContent = "❚❚";
-        timer = setInterval(() => { const i = nearest(steps, state.step); if (i >= steps.length - 1) { clearInterval(timer); timer = null; play.textContent = "▶"; } else set({ step: steps[i + 1] }); }, 200);
-      };
+      playerBar(el.querySelector(".pb-slot"), pagePlayer(), { variant: "compact" }); // the page's Player (ui/page-player.js)
     },
   },
 

@@ -1,5 +1,5 @@
 {#- dashboard.html — the Big Dashboard: one page with every visualization, grouped, all linked to one state.
-    Local: sticky control bar (run, epoch scrubber, a/b/a′, head, neuron, frequency), guided tour, and panel
+    Local: sticky control bar (run, player bar with scrubber/speed/loop/range chips, a/b/a′, head, neuron, frequency), guided tour, and panel
     groups rendered from content/dashboard.yaml; each panel is a figure from the shared registry with its
     explanation, equation, citation and a deep link into the chapters.
     Global: the same figure modules appear inside chapters, so the dashboard and the step-by-step story never
@@ -9,12 +9,7 @@
 <section class="controlbar" id="controlbar" aria-label="Dashboard controls">
   <div class="cb-row">
     <label>Run <select id="ctl-run"></select></label>
-    <button id="ctl-play" type="button" class="btn" aria-label="Play training">▶</button>
-    <div class="scrubber-wrap">
-      <input id="ctl-step" type="range" min="0" max="0" value="0" aria-label="Training step">
-      <div id="ctl-phases" class="phase-strip" aria-hidden="true"></div>
-    </div>
-    <output id="ctl-step-label" class="mono">step 0</output>
+    <div id="ctl-player"></div>{# playback controls, filled by web/js/ui/player-bar.js #}
   </div>
   <div class="cb-row small">
     <label>a <input id="ctl-a" type="number" min="0" max="112" value="100"></label>

@@ -7,6 +7,9 @@
 // Global context: the only place that knows the data format written by src/grokviz/export.py.
 // Sources: fetch + ArrayBuffer (https://developer.mozilla.org/docs/Web/API/Response/arrayBuffer).
 import { GrokModel, decodeF16 } from "../model/grokmodel.js";
+import { nearest } from "./anim.js";
+
+export { nearest as nearestIndex }; // index of the stored step closest to a step (one implementation, core/anim.js)
 
 const ROOT = (window.GROKVIZ && window.GROKVIZ.root) || "./"; // relative path from this page to the site root
 const cache = new Map(); // url → Promise
@@ -84,19 +87,11 @@ export function row(a, i) {
   return a.data.subarray(i * size, (i + 1) * size);
 }
 
-/** Index of the stored step closest to `step` in a sorted list of steps. */
-export function nearestIndex(steps, step) {
-  let lo = 0, hi = steps.length - 1;
-  while (lo < hi) { const mid = (lo + hi) >> 1; if (steps[mid] < step) lo = mid + 1; else hi = mid; } // first ≥ step
-  if (lo > 0 && Math.abs(steps[lo - 1] - step) <= Math.abs(steps[lo] - step)) lo -= 1;
-  return lo;
-}
-
 const models = new Map(); // "run@step" → Promise<GrokModel>
 /** GrokModel for the stored weight checkpoint of `runId` nearest to `step`. */
 export async function model(runId, step) {
   const r = await run(runId);
-  const s = r.weight_steps[nearestIndex(r.weight_steps, step)];
+  const s = r.weight_steps[nearest(r.weight_steps, step)];
   const key = `${runId}@${s}`;
   if (!models.has(key)) {
     models.set(key, array(runId, `w_${s}`).then((a) => Object.assign(new GrokModel(a.data, r.param_layout, r.p || 113), { step: s })));

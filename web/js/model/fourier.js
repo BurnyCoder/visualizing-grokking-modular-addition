@@ -24,6 +24,20 @@ export function fourierBasis(p) {
   return F;
 }
 
+/**
+ * Coefficients of cos k and sin k over the token a, for many units at once: `vectors[a][j]` is unit j's value at
+ * token a. Returns [x, y] with x[j] = Σ_a F_cos k[a]·vectors[a][j] (y likewise for sin k): a unit that is one wave
+ * r·cos(w_k a + φ) sits at r·√(p/2)·(cos φ, −sin φ), so a frequency cluster forms a ring (figure `neuron-stars`).
+ */
+export function freqCoeffs(vectors, p, k) {
+  const F = fourierBasis(p), n = vectors[0].length, x = new Float32Array(n), y = new Float32Array(n);
+  for (let a = 0; a < p; a++) {
+    const c = F[(2 * k - 1) * p + a], s = F[2 * k * p + a], v = vectors[a]; // basis rows cos k and sin k at a
+    for (let j = 0; j < n; j++) { x[j] += c * v[j]; y[j] += s * v[j]; }
+  }
+  return [x, y];
+}
+
 /** 2D Fourier transform of a p×p grid (rows a, cols b): C = F G Fᵀ (orthonormal basis). */
 export function fft2(grid, p) {
   const F = fourierBasis(p);

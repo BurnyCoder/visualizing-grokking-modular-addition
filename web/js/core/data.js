@@ -113,3 +113,6 @@ export async function prefetchModels(runId, step, ahead = 2) {
   const r = await run(runId), i = nearest(r.weight_steps, step);
   for (let k = 1; k <= ahead && i + k < r.weight_steps.length; k++) model(runId, r.weight_steps[i + k]);
 }
+
+/** site/data/summary.json: prose numbers and the hypothesis data the seed panels plot (fetched once). */
+export const summary = () => once("data/summary.json", "json");

@@ -11,7 +11,7 @@ import { array, column, run } from "../core/data.js";
 import { Plot, phaseShapes } from "../viz/plot.js";
 import { cssVar, freqColor } from "../viz/colors.js";
 import { el, follow, frameKey, note, runOf, storeOf, watch } from "./common.js";
-import { stepByFreq } from "./weights.js";
+import { stepHeatmap } from "./weights.js";
 
 const stepsEvery = (n, every, step0 = 0) => Array.from({ length: n }, (_, i) => step0 + i * every); // x values for per-10-step curves
 
@@ -51,9 +51,9 @@ export async function lossTraces(id) {
 
 /** The two step × frequency views of alpha-growth: each frequency's cos(w_k(a+b−c)) coefficient in the logits, and the loss without it. */
 const VIEWS = {
-  alpha: { array: "cos_coeffs", perFreq: (v) => Array.from(v), format: (v) => v.toFixed(1), limits: { min: 0 }, label: "coefficient of cos(w_k(a+b−c))", log: false,
+  alpha: { array: "cos_coeffs", perRow: (v) => Array.from(v), format: (v) => v.toFixed(1), limits: { min: 0 }, label: "coefficient of cos(w_k(a+b−c))", log: false,
     what: "Coefficient of the unit-normalised cos(w_k(a+b−c)) in the logits at every checkpoint (colour from 0; the few small negative values show as 0)." },
-  excluded: { array: "excl_per_freq", perFreq: (v) => Array.from(v, (x) => Math.log10(x)), format: (v) => `10^${v.toFixed(1)}`, label: "training loss without k", log: true,
+  excluded: { array: "excl_per_freq", perRow: (v) => Array.from(v, (x) => Math.log10(x)), format: (v) => `10^${v.toFixed(1)}`, label: "training loss without k", log: true,
     what: "Training loss after removing frequency k from the logits (colour: log10 of the loss) at every checkpoint." },
 };
 
@@ -63,7 +63,7 @@ export const figures = {
       body.innerHTML = "";
       const sel = el(body, "label", "hero-ctl", 'show <select><option value="alpha">how strongly cos(w_k(a+b−c)) appears in the logits</option><option value="excluded">the training loss without frequency k</option></select>').querySelector("select");
       const heats = {}; // one heatmap per view, the other hidden (and therefore not redrawn: figures/common.js gate)
-      for (const [k, v] of Object.entries(VIEWS)) { heats[k] = el(body, "div"); heats[k].hidden = k !== sel.value; stepByFreq(v.array, v).render(heats[k], ds); }
+      for (const [k, v] of Object.entries(VIEWS)) { heats[k] = el(body, "div"); heats[k].hidden = k !== sel.value; stepHeatmap(v.array, v).render(heats[k], ds); }
       const plot = new Plot(body, { height: 210, stepAxis: true }); // the selected frequency, drawn up to the current step
       const info = note(body);
       const draw = async (s) => {
@@ -138,8 +138,17 @@ export const figures = {
     return r.key_freqs.map((k) => line(r.ckpt_steps, Array.from({ length: T }, (_, t) => cc.data[t * K + k - 1]), `k=${k}`, freqColor(k)));
   }, { yaxis: { title: { text: "coefficient of cos(w_k(a+b−c))" } } }),
 
+  "restricted-split-curves": overTraining(async (id, r) => [
+    line(r.ckpt_steps, await column(id, "ckpt_scalars", "loss_all"), "loss on all pairs", cssVar("--ink")),
+    line(r.ckpt_steps, await column(id, "ckpt_scalars", "restricted_loss_train"), "restricted loss, training pairs (wide)", cssVar("--train"), { line: { color: cssVar("--train"), width: 5 }, opacity: 0.5 }), // wide underneath: the test curve lies on top of it
+    line(r.ckpt_steps, await column(id, "ckpt_scalars", "restricted_loss_test"), "restricted loss, test pairs", cssVar("--test")),
+    line(r.ckpt_steps, await column(id, "ckpt_scalars", "excluded_loss_max"), "excluded loss, worst single frequency", cssVar("--excluded"), { line: { color: cssVar("--excluded"), dash: "dot", width: 2 } }),
+  ], { yaxis: { type: "log", title: { text: "loss (log scale)" }, exponentformat: "power" } }, 300),
+
   "fve-curves": overTraining(async (id, r) => [
     line(r.ckpt_steps, await column(id, "ckpt_scalars", "logit_fve"), "logits explained by Σ α_k cos(w_k(a+b−c))", "#d1495b"),
     line(r.ckpt_steps, await column(id, "ckpt_scalars", "frac_neurons_085"), "fraction of neurons with one dominant frequency", "#00798c"),
+    line(r.ckpt_steps, await column(id, "ckpt_scalars", "restricted_acc_test"), "test accuracy using only the key frequencies", "#edae49"),
+    line(r.ckpt_steps, await column(id, "ckpt_scalars", "wl_resid_sq_frac"), "share of W_L outside the key frequencies", "#8d6a9f", { line: { color: "#8d6a9f", dash: "dot" } }),
   ], { yaxis: { title: { text: "fraction" }, range: [0, 1] } }),
 };

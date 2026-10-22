@@ -15,11 +15,11 @@ groups:
   - id: training
     title: "A. Training: losses, accuracy and progress measures"
     blurb: "What happens over 40,000+ steps of full-batch training: memorisation, a long plateau, then grokking — and the measurements that reveal the hidden progress during the plateau."
-    panels: [loss-curves, acc-curves, progress-measures, excluded-per-freq, gini-curves, ssw-curves, trig-loss-ratio, trig-fraction, cos-coeffs, alpha-growth, fve-curves, loss-curves-linear]
+    panels: [loss-curves, acc-curves, progress-measures, restricted-split-curves, excluded-per-freq, gini-curves, ssw-curves, trig-loss-ratio, trig-fraction, cos-coeffs, alpha-growth, fve-curves, loss-curves-linear]
   - id: weights
     title: "B. Weights seen through the Fourier basis"
     blurb: "The learned matrices, written in the basis of waves. Sparsity here — a few frequencies, nothing else — is the first clue to the algorithm."
-    panels: [freq-norm-race, we-fourier-bars, wl-fourier-bars, we-fourier-heatmap, wl-fourier-heatmap, we-svals, attn-C-fourier, ov-fourier, wlogit-sorted, wneur-fourier, pos-embed]
+    panels: [freq-norm-race, we-fourier-bars, wl-fourier-bars, we-fourier-heatmap, wl-fourier-heatmap, we-svals, svals-over-training, attn-C-fourier, ov-fourier, head-spectra-over-training, wlogit-sorted, wneur-fourier, pos-embed]
   - id: activations
     title: "C. Activations on every input"
     blurb: "What the attention heads and MLP neurons compute for each of the 12,769 inputs, computed live in your browser from the selected checkpoint's weights."
@@ -43,4 +43,4 @@ groups:
   - id: seeds
     title: "H. All runs and controls"
     blurb: "The paper's run next to our replications with different random seeds, and controls without weight decay or with random labels."
-    panels: [seed-test-loss, seed-key-freqs, hypothesis-table]
+    panels: [seed-test-loss, seed-phase-strips, seed-clocks, seed-key-freqs, hypothesis-table, hypothesis-dots, gini-vs-null]

@@ -218,6 +218,19 @@ def render_figure(fid: str, b: Build, anim: bool = False) -> str:
     return env().get_template("figure.html").render(fig=f, root=b.root)
 
 
+def tour_steps(raw: list[dict], b: Build, panels: set[str]) -> list[dict]:
+    """Dashboard tour steps (content/tour.yaml) with their text expanded like any content (so {{num:}} binds numbers);
+    reports steps whose panel is not on the dashboard or whose play range is empty."""
+    steps = []
+    for i, t in enumerate(raw):
+        if t["panel"] not in panels:
+            b.errors.append(f"tour step {i + 1}: panel '{t['panel']}' is not on the dashboard")
+        if "play" in t and not t["play"]["from"] < t["play"]["to"]:
+            b.errors.append(f"tour step {i + 1}: play range needs from < to")
+        steps.append({**t, "text": md_inline(t["text"], b, "tour")})
+    return steps
+
+
 def js_ids(path: Path) -> set[str]:
     """Ids registered in a JS registry file (keys of the exported object literal)."""
     return set(re.findall(r'^\s*"([\w.-]+)":', path.read_text(encoding="utf-8"), flags=re.M)) if path.exists() else set()
@@ -272,7 +285,7 @@ def build_site(ctx=None) -> None:
         for fid in g["panels"]:
             if fid not in b.js_figures:
                 b.errors.append(f"dashboard: figure '{fid}' has no JS renderer")
-    tour = load_yaml("tour.yaml")
+    tour = tour_steps(load_yaml("tour.yaml"), b, {fid for g in dash["groups"] for fid in g["panels"]})
     html = env().get_template("dashboard.html").render(
         page_title="Dashboard — Grokking, Visualized", description="Every visualization of the grokking transformer, linked and scrubbable over training.",
         root="./", nav="dashboard", body_class="dashboard-page", groups=groups, intro=md_inline(dash["intro"], b, "dashboard"),

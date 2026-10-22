@@ -10,9 +10,8 @@
 // Sources: IntersectionObserver thresholds and rootMargin (https://developer.mozilla.org/docs/Web/API/Intersection_Observer_API);
 // Page Visibility API (https://developer.mozilla.org/docs/Web/API/Page_Visibility_API).
 import { reducedMotion } from "../core/motion.js";
-import { nearest } from "../core/anim.js";
 import { set } from "../core/state.js";
-import { pagePlayer } from "./page-player.js";
+import { playSteps } from "./page-player.js";
 
 const registered = new Map(); // figure element → {player, manual}
 const THRESHOLDS = Array.from({ length: 11 }, (_, i) => i / 10); // report every 10 % of visibility
@@ -46,17 +45,9 @@ export function scrollPlay(el, player) {
 document.addEventListener("visibilitychange", () => { if (document.hidden) for (const e of registered.values()) e.player.pause(); });
 
 /** Apply one scene: set its state, then play (or, under reduced motion, show the end of) its step range. */
-async function applyScene(scene) {
+function applyScene(scene) {
   if (scene.state) set(scene.state);
-  if (!scene.play) return;
-  const player = pagePlayer();
-  await player.ready;
-  const lo = nearest(player.steps, scene.play.from), hi = nearest(player.steps, scene.play.to);
-  player.setRange([lo, hi]);
-  if (scene.play.speed) player.setSpeed(scene.play.speed);
-  if (reducedMotion()) { player.seek(hi); return; }
-  player.seek(lo);
-  player.play();
+  if (scene.play) playSteps(scene.play);
 }
 
 /** Watch every {{scene:id}} marker on the page. */

@@ -9,7 +9,7 @@
 import { manifest, run } from "./core/data.js";
 import { set, subscribe } from "./core/state.js";
 import { reducedMotion } from "./core/motion.js";
-import { pagePlayer } from "./ui/page-player.js";
+import { pagePlayer, playSteps } from "./ui/page-player.js";
 import { playerBar } from "./ui/player-bar.js";
 
 const $ = (id) => document.getElementById(id);
@@ -43,7 +43,7 @@ function fmtPhases(ph) {
 
 function setStatus(t) { $("ctl-status").textContent = t; }
 
-/** Guided tour through content/tour.yaml steps. */
+/** Guided tour through content/tour.yaml steps (text already expanded by the build; `play` ranges on the page player). */
 function initTour() {
   const steps = (window.GROKVIZ && window.GROKVIZ.tour) || [];
   const box = $("tour");
@@ -51,7 +51,9 @@ function initTour() {
   const show = () => {
     const t = steps[i];
     document.querySelectorAll(".fig.tour-focus").forEach((f) => f.classList.remove("tour-focus"));
+    pagePlayer().pause();
     set({ ...(t.state || {}) });
+    if (t.play) playSteps(t.play);
     const fig = document.getElementById(`fig-${t.panel}`);
     if (fig) { fig.classList.add("tour-focus"); fig.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", block: "center" }); }
     box.querySelector(".tour-step").textContent = `${i + 1} / ${steps.length}`;
@@ -62,5 +64,11 @@ function initTour() {
   $("ctl-tour").onclick = () => { if (!steps.length) return; box.hidden = false; i = 0; show(); };
   box.querySelector(".tour-next").onclick = () => { i = Math.min(i + 1, steps.length - 1); show(); };
   box.querySelector(".tour-prev").onclick = () => { i = Math.max(i - 1, 0); show(); };
-  box.querySelector(".tour-close").onclick = () => { box.hidden = true; document.querySelectorAll(".fig.tour-focus").forEach((f) => f.classList.remove("tour-focus")); };
+  box.querySelector(".tour-close").onclick = () => {
+    box.hidden = true;
+    pagePlayer().pause();
+    pagePlayer().setRange("grokking");
+    pagePlayer().setLoop("loop"); // back to the bar's defaults
+    document.querySelectorAll(".fig.tour-focus").forEach((f) => f.classList.remove("tour-focus"));
+  };
 }

@@ -23,7 +23,9 @@ export async function initDashboard() {
   subscribe(["run"], async (s) => {
     sel.value = s.run;
     const r = await run(s.run);
-    setStatus(`run ${r.id}: key frequencies ${r.key_freqs.join(", ")}; phases ${fmtPhases(r.phases)}`);
+    const keys = r.key_freqs.length > 20 // flat spectrum: every frequency passes the 25 %-of-max rule (as in figures/seeds.js)
+      ? `no sparse key set (all ${r.key_freqs.length} frequencies pass the key rule)` : `key frequencies ${r.key_freqs.join(", ")}`;
+    setStatus(`run ${r.id}: ${keys}; phases ${fmtPhases(r.phases)}`);
   });
   for (const [id, key, max] of [["ctl-a", "a", 112], ["ctl-b", "b", 112], ["ctl-ap", "ap", 112], ["ctl-neuron", "neuron", 511], ["ctl-freq", "freq", 56]]) {
     const input = $(id);

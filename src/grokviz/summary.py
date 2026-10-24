@@ -107,7 +107,10 @@ def paper_numbers(runs_dir: Path, p: int, frac: float) -> dict:
     out["paper.logit_fve"] = _v(rows["R8a"]["ours"], "pct")
     out["paper.logit_fit_loss"] = _v(rows["R8b"]["ours"], "sci")
     out["paper.logit_alpha"] = _v([round(x, 2) for x in det["logit_fit_coef"][:-1]])
-    out["paper.wl_resid_sq"] = _v(det["wl_projection"]["wl_residual_sq_frac"], "pct")
+    sq = lambda x: _v(f"{100 * x:.3f} %", "str")  # noqa: E731 — 3 decimals: 0.552 % must not print as "0.6 %" beside "< 0.55 %"
+    out["paper.wl_resid_sq"] = sq(det["wl_projection"]["wl_residual_sq_frac"])
+    out["paper.wl_resid_sq_last"] = sq(float(m["wl_resid_sq_frac"][-1]))  # the released run's last checkpoint
+    out["paper.last_step"] = _v(int(m["steps"][-1]), "int")
     out["paper.wl_resid_norm"] = _v(det["wl_projection"]["wl_residual_norm_frac"], "pct")
     ab = det["freq_ablation"]
     single = np.asarray(ab["single_freq"]) / ab["original"]
@@ -142,6 +145,41 @@ def paper_numbers(runs_dir: Path, p: int, frac: float) -> dict:
     out["paper.cos_tt_mid"] = _v(float(g["cos_train_test"][gi(mid)]), ".2f")
     out["paper.cos_tt_40k"] = _v(float(g["cos_train_test"][gi(40001)]), ".2f")
     out["paper.cos_gw_40k"] = _v(float(g["cos_grad_weight"][gi(40001)]), ".3f")
+    return {**out, **paper_curve_numbers(m, ph, g, gi)}
+
+
+def paper_curve_numbers(m: dict, ph: dict, g: dict, gi) -> dict:
+    """paper.* keys read off the paper run's per-checkpoint curves: accuracies, test loss, loss ratio, gradient cosine,
+    weight norms and W_E singular values (the figure captions describe these curves)."""
+    out: dict = {}
+    s = m["steps"]
+    for key, step in (("501", 501), ("t1", ph["t1"]), ("7k", 7001), ("t2", ph["t2"]), ("tgrok", ph["t_grok"])):
+        out[f"paper.acc_test_{key}"] = _v(_at(m, "acc_test", step), "pct")
+    out["paper.train_acc_full_step"] = _v(int(s[np.argmax(m["acc_train"] >= 1.0)]), "int")  # first checkpoint at 100 %
+    out["paper.loss_test_peak"] = _v(float(m["loss_test"].max()), ".0f")
+    out["paper.loss_test_t2"] = _v(_at(m, "loss_test", ph["t2"]), ".2f")
+    ratio = m["loss_test"] / m["restricted_loss"]  # ARENA's "test loss ÷ restricted loss" (figure trig-loss-ratio)
+    cf = (s >= ph["t1"]) & (s <= ph["t2"])  # circuit formation
+    out["paper.ratio_cf_range"] = _v(f"{ratio[cf].min():.0f}–{ratio[cf].max():.0f}", "str")
+    out["paper.ratio_peak"] = _v(float(ratio.max()), "sci")
+    out["paper.ratio_peak_step"] = _v(int(s[ratio.argmax()]), "int")
+    big = s[ratio > 1e4]
+    out["paper.ratio_1e4_steps"] = _v(f"{big.min():,}–{big.max():,}" if big.size else "none", "str")
+    cos, gs = g["cos_train_test"], g["steps"]
+    gcf = (gs >= ph["t1"]) & (gs <= ph["t2"])
+    out["paper.cos_tt_cf_range"] = _v(f"{cos[gcf].min():.2f} to {cos[gcf].max():.2f}", "str")
+    out["paper.cos_tt_last_neg"] = _v(int(gs[np.nonzero(cos < 0)[0].max()]), "int")
+    w40, w0 = g["weight_norm"][gi(40001)], g["weight_norm"][0]
+    names = [str(n).split(".")[-1] for n in g["param_names"]]  # "blocks.0.mlp.W_in" → "W_in"
+    mats = [(n, w40[i] / w0[i]) for i, n in enumerate(names) if n.startswith("W_")]  # norm at 40,001 ÷ at init (biases start at 0)
+    out["paper.norm_shrunk"] = _v(", ".join(f"{n} {x:.2f}×" for n, x in mats if x < 1), "str")
+    out["paper.norm_grown"] = _v(", ".join(f"{n} {x:.2f}×" for n, x in mats if x >= 1), "str")
+    out["paper.ssw_init"] = _v(float(m["ssw_total"][0]), ",.0f")
+    out["paper.ssw_40k"] = _v(_at(m, "ssw_total", 40001), ",.0f")
+    sv = np.sort(m["we_svals"][int(np.argmin(np.abs(s - 40001)))])[::-1]  # W_E singular values at step 40,001
+    out["paper.we_svals_top10"] = _v(f"{sv[9]:.1f}–{sv[0]:.1f}", "str")
+    out["paper.we_svals_next2"] = _v(f"{sv[10]:.2f} and {sv[11]:.2f}", "str")
+    out["paper.we_svals_rest_max"] = _v(float(sv[12]), ".2f")
     return out
 
 
@@ -189,6 +227,37 @@ def run_numbers(reports_dir: Path) -> dict:
             gi = ", ".join(f"{c['gini_we']:.2f}" for _, c in rows)
             out[f"controls.{group}"] = _v(f"final train accuracy {tr}, final test accuracy {acc}; Gini of the embedding spectrum {gi} (initially ≈ {np.mean([c['gini_we_init'] for _, c in rows]):.2f})", "str")
     return out
+
+
+def h4_detail_numbers(runs_dir: Path) -> dict:
+    """hyp.h4_*: which wd1 seeds fail H4's sub-conditions, and how (post-hoc description, no new test).
+
+    - key_fails: seeds whose weakest key frequency costs < 100× when removed, with its share of the largest W_L Fourier
+      norm (the key-frequency rule keeps norms ≥ 25 % of the largest) and the cost of the seed's next weakest key;
+    - keep_fails: seeds where keeping only the key frequencies raises the loss > 1.5×; n_few_keys: seeds with ≤ 4 keys.
+    """
+    key_fails, keep_fails, few = [], [], 0
+    for d in sorted(runs_dir.glob("wd1_s*"), key=lambda d: int(d.name[5:])):  # wd1_s0 … wd1_s10 in numeric order
+        fin = _load(d / "analysis" / "final.json")
+        if fin is None:
+            continue
+        ab, ks = fin["ablation"], fin["key_freqs"]
+        cost = {k: ab["single_freq"][k - 1] / ab["original"] for k in ks}  # loss ratio when frequency k is removed
+        wl = np.load(d / "analysis" / "ckpt_metrics.npz")["wl_fourier"][-1]  # W_L Fourier components at the last checkpoint
+        norm = np.hypot(wl[1::2], wl[2::2])  # frequency k's norm √(cos² + sin²) at index k − 1
+        few += len(ks) <= 4
+        k = min(cost, key=cost.get)
+        if cost[k] < 100:
+            rest = min(v for j, v in cost.items() if j != k)
+            key_fails.append(f"{d.name}: k = {k} costs {cost[k]:.1f}× ({100 * norm[k - 1] / norm.max():.0f} % of the largest "
+                             f"W_L norm; its other key frequencies ≥ {rest:,.0f}×)")
+        keep = ab["only_key_kept"] / ab["original"]
+        if keep > 1.5:
+            keep_fails.append(f"{d.name} ({len(ks)} key frequencies, {keep:.2f}×)")
+    if not few and not key_fails and not keep_fails:
+        return {}
+    return {"hyp.h4_key_fails": _v("; ".join(key_fails) or "none", "str"), "hyp.h4_keep_fails": _v(", ".join(keep_fails) or "none", "str"),
+            "hyp.n_few_keys": _v(few, "int")}
 
 
 def spectra_numbers(runs_dir: Path) -> dict:
@@ -287,4 +356,4 @@ def late_spike_numbers(runs_dir: Path, factor: float = 100.0, gap: int = 2000) -
 def build_summary(runs_dir: Path, reports_dir: Path, p: int, frac: float) -> dict:
     """All prose numbers."""
     return {**paper_numbers(runs_dir, p, frac), **run_numbers(reports_dir), **same_init_numbers(runs_dir), **late_spike_numbers(runs_dir),
-            **spectra_numbers(runs_dir), **dynamics_numbers(runs_dir)}
+            **spectra_numbers(runs_dir), **dynamics_numbers(runs_dir), **h4_detail_numbers(runs_dir)}

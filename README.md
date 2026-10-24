@@ -42,7 +42,8 @@ We then test the central claims on 11 independently trained seeds plus controls.
 
 **Training** (the paper's settings, Sec. 3, and its released code):
 - full-batch AdamW: learning rate 10⁻³, β = (0.9, 0.98), weight decay λ = 1, and a 10-step linear warm-up;
-- cross-entropy computed in float64, as in the paper's notebook and ARENA (the released `helpers.py` casts to float32);
+- cross-entropy computed in float64, as in the paper's notebook and ARENA. The released `helpers.py` casts to float32,
+  but none of the released run's 55,000 logged losses is representable in float32, so that run used a float64 loss too;
 - 40,000 steps, as stated in the paper (the released run continued to 50,000), with a checkpoint every 100 steps.
 
 All 22 runs train together on one GPU, vectorised with `torch.func.vmap`. This is deterministic and resumable
@@ -71,8 +72,9 @@ All 22 runs train together on one GPU, vectorised with `torch.func.vmap`. This i
   - counterfactual activation patching of the key-frequency subspace;
   - exact full-batch gradients;
   - activation and output-distribution geometry.
-- **Validation.** The code was first checked against 30 numbers and claims published by the paper and ARENA, using the paper's
-  network ([experiment 1](reports/exp-01-paper-validation.md)).
+- **Validation.** Before training, the code was checked on the paper's network against 27 numbers and claims published
+  by the paper and ARENA. Three checks of the training trajectory were added later, for 30 in all
+  ([experiment 1](reports/exp-01-paper-validation.md)).
 
 **Statistics.**
 - **Hypotheses.** H1–H5 were fixed before training (git tag `prereg-v1`). They are tested with exact sign tests or a
@@ -101,8 +103,9 @@ All 22 runs train together on one GPU, vectorised with `torch.func.vmap`. This i
 See [`reports/summary.md`](reports/summary.md) for all experiments and [`reports/tables/hypotheses.md`](reports/tables/hypotheses.md)
 for the preregistered tests. In short:
 
-- **Our analysis code reproduces 26 of 30 published numbers and claims** on the paper's network. The 4 it does not reproduce are
-  explained in [experiment 1](reports/exp-01-paper-validation.md).
+- **Our analysis code reproduces 26 of 30 published numbers and claims** on the paper's network; two of the 26 (R4, R12)
+  sit at the edge of the published bound. The 4 it does not reproduce are explained in
+  [experiment 1](reports/exp-01-paper-validation.md).
 - **Swapping the key-frequency subspace** of a's embedding with that of a′ moves the paper network's output to a′ + b:
   - recovered: 99.7 % of the logit difference;
   - complement-subspace control: 0.2 %;
@@ -171,8 +174,8 @@ flowchart LR
 2. **Training.** Train the 22 runs: 73 minutes on an RTX 5070 laptop GPU. Training saves a resume point every
    2,000 steps; if it is interrupted, rerunning the phase continues from there.
 3. **Measurement.**
-   - Compute every metric at every checkpoint (`runs/<id>/analysis/ckpt_metrics.npz`): 72 minutes for the paper run
-     and the 22 runs.
+   - Compute every metric at every checkpoint (`runs/<id>/analysis/ckpt_metrics.npz`): 72 minutes for the 22 runs,
+     plus about 3 minutes for the paper run's 500 checkpoints.
    - Compute exact full-batch gradients and the activation/output geometry.
    - Detect phase boundaries.
    - Run the ablations, random-basis nulls and patching on the final checkpoints.

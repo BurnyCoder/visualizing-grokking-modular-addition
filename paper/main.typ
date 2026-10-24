@@ -71,9 +71,13 @@ A fixed random #n("task.n_train") pairs (30 %) are used for training, the remain
 
 *Model* @nanda2023[Sec. 3]. One transformer layer with $d_"model" = 128$, four attention heads of size 32, an MLP with
 512 ReLU neurons, no LayerNorm, untied embedding $W_E$ and unembedding $W_U$; #n("model.n_params") parameters.
-It is trained full-batch with AdamW @loshchilov2019 (learning rate $10^(-3)$, weight decay $lambda = 1$,
-$beta = (0.9, 0.98)$). The paper states 40,000 epochs (full-batch steps) @nanda2023[p. 3]; its released run continues
-to 50,000. Our runs train for 40,000 steps, and we analyse the paper's run at step 40,001 (its epoch 40,000).
+It is trained full-batch with AdamW @loshchilov2019 (learning rate $10^(-3)$, weight decay $lambda = 1$
+@nanda2023[p. 3]; $beta = (0.9, 0.98)$ and a 10-step linear warm-up from the released code @paperrepo). The paper
+states 40,000 epochs (full-batch steps) @nanda2023[p. 3]; its released run continues to 50,000. Our runs train for
+40,000 steps, and we analyse the paper's run at step 40,001 (its epoch 40,000). We compute the cross-entropy in
+float64, as the paper's analysis notebook does; the released `helpers.py` casts to float32, but
+#n("paper.logged_losses_f32") of the released run's #n("paper.logged_losses_n") logged losses are representable in
+float32, so that run's loss was also computed in float64.
 
 *The algorithm* @nanda2023[Sec. 4]. For a few *key frequencies* $k$ (with $w_k = 2 pi k \/ 113$), the embedding maps
 $a$ to $cos(w_k a), sin(w_k a)$; attention and MLP compute $cos(w_k (a+b))$ and $sin(w_k (a+b))$ using
@@ -131,8 +135,9 @@ number at which one dissenting seed still passes the strictest Holm threshold ($
 == Website <sec-site>
 
 The site is generated from Markdown with macros: `[[dfn:…]]` defines a term, `[[term:…]]` uses one, and the build fails
-if any term or symbol is used before its definition in reading order, if a quote does not match its PDF page, or if a
-`{{num:…}}` key is missing from `summary.json`. Every figure is one JavaScript module shared by the chapters and the dashboard;
+if any term or symbol is used before its definition in reading order, if a quote is missing or longer than the quote
+policy allows, or if a `{{num:…}}` key is missing from `summary.json`; a separate test checks every quote word for word
+against its PDF page. Every figure is one JavaScript module shared by the chapters and the dashboard;
 per-input views run a JavaScript copy of the model on float16 weights, tested against PyTorch. The figures in this paper
 are screenshots of the same modules. Clips of the animated figures are recorded the same way, one stored checkpoint per frame
 (@fig-strip).
@@ -144,7 +149,9 @@ the probability of the right answer, at steps 1, 3,801, 7,601, 11,601 and 15,401
 
 == Reproducing the published numbers <sec-validation>
 
-Table 1 lists all #n("rchecks.n_rows") checks. #n("rchecks.n_match") match within stated tolerances. Two definitional findings: the paper's
+Table 1 lists all #n("rchecks.n_rows") checks. #n("rchecks.n_match") match within stated tolerances, two of them
+(R4, R12) only at the edge of the published bound: R4 as described next, and R12's per-head attention from '=' to '='
+is #n("paper.attn_eq_pct") against the paper's "0.1 % to 0.4 %" @nanda2023[p. 13]. Two definitional findings: the paper's
 "test loss" $2.41 times 10^(-7)$ equals the loss over _all_ pairs (test-only: #n("paper.loss40k_test")), and the
 paper's $W_L$ residual (Frobenius norm "under 0.55 %" of $norm(W_L)$ @nanda2023[p. 6]) matches only as a squared-norm
 ratio: #n("paper.wl_resid_sq") at step 40,001 (marginally above 0.55 %) and
@@ -207,7 +214,7 @@ gradient is almost exactly anti-parallel to the weights (cosine #n("paper.cos_gw
 first-order statement about steps along $-nabla L$, not about Adam's step; for Adam the relevant balance is between its
 step and weight decay, which we measure separately below.
 
-Across our 11 seeds (exploratory; reports/exp-04) the train-test gradient cosine is negative at #n("seeds.cos_tt_neg_ci")
+Across our 11 seeds (exploratory; reports/exp-04; intervals below are 95 % percentile bootstrap over seeds) the train-test gradient cosine is negative at #n("seeds.cos_tt_neg_ci")
 of the checkpoints between $t_1$ and $t_2$. Because Adam rescales gradients, we also rebuilt the optimiser's actual
 direction $d = hat(m) \/ (sqrt(hat(v)) + epsilon)$ from moments saved every 1,000 steps. At step 40,000 the loss step
 and the decay step are nearly equal and opposite: $norm(d) \/ (lambda norm(theta))$ = #n("seeds.adam_ratio_end_ci"),
@@ -242,10 +249,11 @@ shading marks the three phases from our objective rules.]) <fig-progress>
 ) <tab-hyp>
 
 Across the 11 weight-decay seeds, memorisation ends at step #n("seeds.t1_ci"), circuit formation at
-#n("seeds.t2_ci"), and test accuracy reaches 99 % at #n("seeds.tgrok_ci") (mean, 95 % t-interval). Each run uses
-#n("seeds.nkey_ci") key frequencies; single-frequency neurons make up #n("seeds.neurons085_ci") of the MLP, the cosine
-fit explains #n("seeds.logitfve_ci") of the logit variance, and the patching test recovers #n("seeds.patch_key_ci")
-for the key subspace versus #n("seeds.patch_random_ci") for a random one.
+#n("seeds.t2_ci"), and test accuracy reaches 99 % at #n("seeds.tgrok_ci"). Each run uses #n("seeds.nkey_ci") key
+frequencies; single-frequency neurons make up #n("seeds.neurons085_ci") of the MLP, and the cosine fit explains
+#n("seeds.logitfve_ci") of the logit variance (all: mean, 95 % t-interval). The patching test recovers
+#n("seeds.patch_key_ci") for the key subspace versus #n("seeds.patch_random_ci") for a random one (mean, 95 %
+percentile-bootstrap interval).
 
 *Why H4 fails.* H4 conjoins three conditions. Decomposing the preregistered criterion post hoc (counts only, no new
 test): every non-key frequency is individually dispensable in #n("hyp.h4_nonkey_ok") seeds (worst
@@ -296,7 +304,7 @@ make: $a$ is read through a 10-dimensional subspace of a 128-dimensional embeddi
 (H1), the dismantling of memorisation (H2), learned basis-specific sparsity (H3) and the necessity of weight decay
 for grokking within 40,000 full-batch steps in this setup (H5) replicate in every seed, and the patching result
 replicates with the same effect size. (Power et al. observed late generalisation without weight decay in a different
-setup: mini-batch Adam over $10^6$ steps @power2022[App. A.1].) The one failed test (H4)
+setup: mini-batch Adam over $10^6$ steps @power2022[App. A.1.2].) The one failed test (H4)
 shows that "the key frequencies" is less sharply defined than the paper's single model suggests: which frequencies
 count depends on whether one ranks them by weight norm or by causal effect.
 
@@ -304,7 +312,8 @@ count depends on whether one ranks them by weight norm or by causal effect.
 settings, where other algorithms are known to arise @zhong2023. (ii) Four of the paper's numbers could not be
 reproduced because procedures are under-specified; we do not use them as evidence. (iii) Phase boundaries come from
 rules we calibrated on the paper's run before seeing our runs; other reasonable rules shift them. (iv) Our runs last
-40,000 steps; the paper's late change near step 43,000 is outside this window. (v) Training is bitwise reproducible
+40,000 steps; the late change that ARENA @arena152 reports near epoch 43,000 of the released run is outside this
+window. (v) Training is bitwise reproducible
 only on the same software and hardware stack. (vi) Our seed 0 shares the paper's initialisation and split, so it is
 not independent of the paper's run (it is independent of our other seeds). (vii) The H4 decomposition, the
 same-initialisation comparison and the loss spikes are post hoc and descriptive.
@@ -325,9 +334,10 @@ weights; the pipeline, data and preregistration make it reproducible.
 Code, data formats and the full pipeline: `github.com/BurnyCoder/visualizing-grokking-modular-addition`
 (`uv run grokviz --phases all`). Runs: Hugging Face `BurnyCoder/grokking-modular-addition-runs`; site data:
 `BurnyCoder/grokking-modular-addition-site-data`. Hardware: one RTX 5070 Laptop GPU; training of all 22 runs takes
-≈ 73 minutes, per-checkpoint analysis ≈ 72 minutes. Per-experiment reports with learnings are in `reports/`.
+≈ 73 minutes, per-checkpoint analysis of those 22 runs ≈ 72 minutes (the paper run's 500 checkpoints ≈ 3 minutes).
+Per-experiment reports with learnings are in `reports/`.
 
 #heading(numbering: none)[AI statement]
 
-Libor Burian provided the exact idea for this project. Claude Code (Anthropic) wrote the codebase, ran the analyses
-and wrote this paper. Human cleanup and rewriting are in progress.
+Libor Burian provided the exact specification that Claude Code (Anthropic) executed. Claude Code wrote the codebase,
+ran the analyses and wrote this paper. Human cleanup and rewriting are in progress.

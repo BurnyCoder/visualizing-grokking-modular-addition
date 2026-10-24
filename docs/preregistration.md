@@ -105,17 +105,26 @@ No hypothesis, metric, threshold, run or test was changed after the tag. The imp
 after it. For transparency, here is everything that happened after the tag, with the information available at each point:
 
 - **Analysis code written after the tag** (2026-10-18 18:04:39 +02:00, one minute after the tag).
-  - **What.** `src/grokviz/hypotheses.py` was written, implementing the tests exactly as worded above. The tag itself
-    contains only this document.
+  - **What.** `src/grokviz/hypotheses.py` was written, implementing the tests exactly as worded above. The tag points
+    at the whole repository as it was then, which did not yet contain `hypotheses.py`.
+  - **One case the text leaves open.** In H1, a run whose restricted loss falls tenfold but whose test loss never does
+    counts as Δ = +∞, a pass (already in the first committed version, `ad8e69d`). No run hit this case.
   - **When relative to results.** The first training launch started at 18:03:59. Its first log line, at 18:07:50,
     came after the file was written.
   - **When committed.** Only on 2026-10-21 (`ad8e69d`), because an OS restart interrupted the session.
 - **Information seen during training.** The training log prints test accuracy for `wd1_s0`–`wd1_s5` every 2,000
   steps. This is the input of H5 on the weight-decay side. No metric used by H1–H4 was computed for any of our runs
   before the analysis code was final.
-- **Later code edits (2026-10-21, `158e527`).** These did not touch the test logic or thresholds:
-  - `analyse_final` uses the paper's analysis checkpoint (epoch 40k) for the paper run, which is not part of any test;
-  - runs without per-checkpoint metrics are skipped.
+- **Later code edits.** These did not change the test logic, a threshold or any outcome:
+  - `158e527` (2026-10-21 00:35): `analyse_final` uses the paper's analysis checkpoint (epoch 40k) for the paper run,
+    which is not part of any test; runs without per-checkpoint metrics are skipped;
+  - `c872ae1` (2026-10-21 01:18, before training finished at 01:20): H1's Δ = +∞ is stored as null so the JSON stays
+    standard, and `H1_ok` keeps the +∞ meaning; `test_hypotheses` reads every run whatever `--runs` says, writes its
+    table atomically and skips when no wd1 run is analysed;
+  - `9f66e15` (2026-10-21 10:32): `analyse_final` also stores a descriptive cluster ablation for the site; no test
+    reads it;
+  - `2f56492` (2026-10-23 00:37): the tenfold-drop helper moved unchanged to `phases.drop_time`, so the prose can
+    quote the paper run's drop steps.
 - **Training code changes after the tag.** These do not change what is trained:
   - `train.py` gained crash-resume support (`38d0510`); the resumed and uninterrupted trajectories are bitwise identical
     (`tests/test_train.py`);
@@ -123,3 +132,7 @@ after it. For transparency, here is everything that happened after the tag, with
 - **Logging cadence.** During training, test loss and accuracy are logged every 10 steps (`GROKVIZ_TEST_EVERY`), not
   every step. This does not affect the tests: the phase rules and the hypotheses read test loss and accuracy from the
   per-checkpoint metrics (every 100 steps), as stated.
+- **Corrected note (2026-10-24).** The note under *Key frequencies K* in `operationalizations.md` gave the range of τ
+  that yields the paper model's five key frequencies as (0.06, 0.83); recomputed, it is (0.060, 0.826]. Only the note
+  changed; the definition and τ = 0.25 are unchanged. Likewise, S3 above attributes "< 0.55 %" to the squared
+  residual, but the paper (p. 6) states it for the residual's Frobenius norm; S3's metric (the squared residual) is unchanged.

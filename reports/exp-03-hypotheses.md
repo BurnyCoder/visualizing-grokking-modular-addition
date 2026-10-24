@@ -6,7 +6,7 @@ for 11 independently trained seeds with weight decay? The claims are:
 - dismantling of memorisation;
 - learned Fourier sparsity;
 - necessary key frequencies;
-- weight decay is necessary.
+- weight decay is necessary for grokking (tested within 40,000 full-batch steps in this setup).
 
 **Status:** done. The phases, in order, are `compute_checkpoint_metrics`, `compute_gradient_dynamics`,
 `compute_geometry`, `detect_phases`, `analyse_final_models` and `test_hypotheses`. Outputs:
@@ -23,6 +23,8 @@ calibrated on the paper's run only, and frozen before any of our runs was analys
 Everything that happened after the tag is listed under *Deviations* in the preregistration. In short:
 - the analysis code was written one minute after the tag, before any training output;
 - training logs showed the test accuracy of six seeds while training ran;
+- the code settles one case the text leaves open (H1 passes a run whose restricted loss falls tenfold but whose test
+  loss never does); no run hit it;
 - no test, threshold or run was changed.
 
 ## Methods (summary)
@@ -50,7 +52,8 @@ Everything that happened after the tag is listed under *Deviations* in the prere
   - H1–H4: one-sided exact sign tests over the 11 seeds;
   - H5: one-sided Fisher exact test, wd1 vs wd0;
   - Holm correction over the five tests;
-  - "supported" means fewer than two failing seeds *and* a Holm-adjusted p < 0.05.
+  - "supported" means fewer than two failing seeds *and* a Holm-adjusted p < 0.05 (H1–H4); for H5, every wd1 run
+    groks, no wd0 run does, *and* the Holm-adjusted p < 0.05.
 - **Secondary statistics:** 95 % t-intervals over seeds, with bootstrap intervals for the patching fractions.
 
 ## Results
@@ -65,7 +68,7 @@ The table below is [`tables/hypotheses.md`](tables/hypotheses.md), produced by `
 | H2: excluded loss rises ≥ 10× during circuit formation | 11/11 | 4.9 × 10⁻⁴ | 0.0020 | supported |
 | H3: Fourier sparsity is learned and basis-specific | 11/11 | 4.9 × 10⁻⁴ | 0.0020 | supported |
 | H4: key frequencies necessary, others dispensable | 6/11 | 0.50 | 0.50 | **not supported** |
-| H5: weight decay is necessary | wd1 11/11 vs wd0 0/5 grokked | 2.3 × 10⁻⁴ | 0.0011 | supported |
+| H5: weight decay is necessary for grokking within 40,000 steps | wd1 11/11 vs wd0 0/5 grokked | 2.3 × 10⁻⁴ | 0.0011 | supported |
 
 Effect sizes behind each pass, as ranges over the 11 seeds (from `tables/hypotheses.json` and
 `runs/wd1_s*/analysis/final.json`):
@@ -76,6 +79,8 @@ Effect sizes behind each pass, as ranges over the 11 seeds (from `tables/hypothe
   - initial values of 0.03–0.04;
   - 99th percentiles of the random-basis null of 0.12–0.18 (W_E) and 0.13–0.19 (W_L).
 - **H5.** Every wd1 run reaches 100 % test accuracy. The wd0 runs end at 1.9–21.5 % test accuracy (100 % train).
+  This holds for 40,000 full-batch steps in this setup; Power et al. (2022, App. A.1.2) report late generalisation
+  without weight decay in another setup (minibatch Adam, 10⁶ steps).
 
 ### Why H4 fails (post-hoc decomposition of the preregistered criterion; counts only, no new test)
 
@@ -87,10 +92,11 @@ Effect sizes behind each pass, as ranges over the 11 seeds (from `tables/hypothe
 
 - **Parts (i) and (iii)** concern the rule that names the key frequencies (W_L Fourier norm ≥ 25 % of the largest), not
   the claim that a few frequencies carry the computation.
-  - **(i): weight norm is not importance.** The rule picks frequency 2 in s1, which has a large W_L norm but a small
-    effect when ablated. Every other key frequency of s1 costs ≥ 1.5 × 10⁵× when removed.
-  - **(iii): small contributions add up.** In the three seeds with 3–4 key frequencies, no single non-key frequency
-    matters (each ≤ 1.84×), yet all of them together multiply a loss of ~10⁻⁷ by 1.6–2.8.
+  - **(i): weight norm is not importance.** The rule admits frequency 2 in s1 at 27 % of the largest W_L norm, just
+    above τ = 25 %; removing it costs 5.9×, while every other key frequency of s1 costs ≥ 1.4 × 10⁵×. In s8,
+    frequency 46 (58 % of the largest norm) costs 70×, just short of 100×.
+  - **(iii): small contributions add up.** In three of the six seeds with 3–4 key frequencies (s4, s9, s10), no
+    single non-key frequency matters (each ≤ 1.84×), yet all of them together multiply a loss of ~10⁻⁷ by 1.6–2.8.
 - **Our reading.** The paper's "few key frequencies, everything else irrelevant" is approximately true in every seed.
   It is not exact enough to meet thresholds calibrated on the paper's own model, whose keep-only-key ratio is 0.30.
 
@@ -100,7 +106,7 @@ Effect sizes behind each pass, as ranges over the 11 seeds (from `tables/hypothe
 |---|---|---|
 | S1: neurons with single-frequency FVE > 0.85 | 80.2 % [75.3, 85.2] (range 62.7–90.4 %) | 84.6 % (433/512) |
 | S2: logit cosine-fit FVE | 96.5 % [95.3, 97.7] | 96.1 % (ours on the paper model; paper reports 95 %) |
-| S3: W_L squared residual outside the key directions | 0.58 % [0.30, 0.86] | 0.55 % |
+| S3: W_L squared residual outside the key directions | 0.58 % [0.30, 0.86] | 0.552 % (ours on the paper model; the paper's "< 0.55 %" is stated for the norm) |
 | S4: patching recovery, key subspace | 0.997 [0.995, 0.998] | 0.997 |
 | S4: complement subspace | 0.003 [0.002, 0.005] | 0.002 |
 | S4: random subspace of equal dimension | 0.058 [0.049, 0.067] | 0.062 |
@@ -125,7 +131,8 @@ Per-run values (accuracies, phase boundaries, key frequencies) are tabulated in 
 ### Exploratory observations (not preregistered)
 
 1. **Same initialisation, same frequencies.**
-   - **The setup.** Our `wd1_s0` starts from the paper's exact initial weights (max |Δ| = 3.0 × 10⁻⁸) with the paper's split.
+   - **The setup.** Our `wd1_s0` starts from the paper's initial weights, equal up to float32 rounding
+     (max |Δ| = 3.0 × 10⁻⁸), with the paper's split.
    - **Divergence.** The two training losses agree to 5 significant digits for 52 steps, then diverge. Weight cosine
      similarity at step 40,000 is 0.74.
    - **Same outcome.** Both runs end with key frequencies {14, 35, 41, 42, 52}, and t_grok is 10,600 vs 10,601.
@@ -133,7 +140,8 @@ Per-run values (accuracies, phase boundaries, key frequencies) are tabulated in 
      frequencies. This rests on n = 1 same-init pair.
 2. **Late loss spikes.**
    - **Where.** In 2 of the 14 grokked runs (`wd1_s4`: 4 spikes; `split0_init102`: 6 spikes), the test loss repeatedly jumps
-     more than 100× above its running minimum after grokking. It peaks at 0.25 and 0.64, with test accuracy dipping to 93 %
+     more than 100× above its running minimum, counted from 2,000 steps after t_grok on (jumps more than 500 steps
+     apart count as separate spikes). It peaks at 0.25 and 0.64, with test accuracy dipping to 93 %
      and 87 %, and recovers each time.
    - **Similar reports.** Spikes like these with adaptive optimisers have been called the slingshot mechanism
      (Thilak et al. 2022, arXiv:2206.04817).

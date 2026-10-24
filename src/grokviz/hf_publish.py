@@ -4,8 +4,8 @@ Local explanation:
 - `publish_runs_to_hub` uploads every run we trained (checkpoints, curves, metadata, analysis) to one model
   repository with a model card, and gathers it — together with the site-data dataset, this project's older
   checkpoint repo and the paper's original checkpoints — in a Hugging Face collection.
-- `publish_site_data` uploads site/data (the website's arrays and weights) to a dataset repository and records the
-  resulting commit in site-data.lock, which the GitHub Pages workflow downloads at deploy time (the data is too
+- `publish_site_data` uploads site/data (the website's arrays and weights) to a dataset repository, with a dataset
+  card (README.md at the repository root), and records the resulting commit in site-data.lock, which the GitHub Pages workflow downloads at deploy time (the data is too
   large to keep in git).
 The paper's own run is never re-uploaded as checkpoints (it stays at its original repository); the website data
 contains float16 copies of its weights, with attribution (decision recorded in NOTICE.md).
@@ -47,6 +47,40 @@ Each folder holds `checkpoints.safetensors` (every parameter stacked over checkp
 paper's code, so `GrokTransformer` in the code repository loads them with `strict=True`), `curves.npz` (per-step
 train loss/accuracy, test loss/accuracy every 10 steps, per-parameter weight/gradient/update norms) and
 `analysis/` (all measurements shown on the website).
+
+Code, website and reports: {github}. Author: Libor Burian.
+"""
+
+# Dataset card for the site-data repository (Hub card metadata: https://huggingface.co/docs/hub/datasets-cards);
+# licence terms as recorded in NOTICE.md.
+DATASET_CARD = """---
+license: other
+license_name: mixed
+license_link: {github}/blob/main/NOTICE.md
+pretty_name: Grokking modular addition, website data
+tags: [grokking, mechanistic-interpretability, modular-arithmetic, transformer]
+---
+# Grokking modular addition — website data
+
+The data read by the website https://burnycoder.github.io/visualizing-grokking-modular-addition/ (code: {github}):
+per-checkpoint measurements, loss curves, Fourier spectra, activation geometry and float16 weights of the mainline
+run of Nanda et al. 2023, *Progress measures for grokking via
+mechanistic interpretability* (arXiv:2301.05217), and of our 22 retrained runs (their full checkpoints are in
+https://huggingface.co/{runs_repo}). Written by the `export_site_data` phase; `docs/data-formats.md` in the code
+repository documents every file.
+
+`data/` contains:
+- `manifest.json`: every run (key frequencies, phases, checkpoint steps) and every array (file, dtype, shape, sha256);
+- `runs/<id>/<name>.bin`: little-endian arrays over checkpoints (float32, float16, int16 or quantised uint8);
+- `runs/<id>/w_<step>.bin`: float16 weights at selected checkpoints, for the in-browser model;
+- `train_mask_seed<s>.bin`: the train/test split of each seed;
+- `summary.json`: the numbers and tables quoted in the website's prose.
+
+Licence and attribution:
+- `data/runs/paper/w_*.bin` are float16 copies of the weights of Nanda et al. 2023 (arXiv:2301.05217), downloaded
+  from https://huggingface.co/{paper_repo} at revision `{paper_rev}`. No licence was found for them; they are
+  re-published with attribution so the website can run the paper's network in the browser.
+- Everything else (the arrays we computed, and our runs' weights) is MIT-licensed.
 
 Code, website and reports: {github}. Author: Libor Burian.
 """
@@ -98,6 +132,12 @@ def publish_site_data(ctx: PipelineContext) -> None:
     api = HfApi()
     repo = ctx.cfg.hf_site_data_repo
     api.create_repo(repo, repo_type="dataset", exist_ok=True)
+    # the card sits at the repo root, outside data/, so the delete_patterns of the data upload below never remove it;
+    # uploading it first puts it in the commit that site-data.lock pins
+    card = DATASET_CARD.format(github=GITHUB_URL, runs_repo=ctx.cfg.hf_runs_repo, paper_repo=ctx.cfg.paper_hf_repo,
+                               paper_rev=ctx.cfg.paper_hf_revision)
+    api.upload_file(path_or_fileobj=card.encode("utf-8"), path_in_repo="README.md", repo_id=repo, repo_type="dataset",
+                    commit_message="Dataset card")
     data_dir = ctx.cfg.site_dir / "data"
     # delete_patterns="*": remote files under data/ that are not in this upload are deleted, so the dataset mirrors the
     # local export (no stale arrays shipped to Pages; https://huggingface.co/docs/huggingface_hub/guides/upload#upload-a-folder)

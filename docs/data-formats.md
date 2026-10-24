@@ -18,8 +18,8 @@ Step semantics: checkpoint t holds the parameters after `ckpt_steps[t]` optimize
 - `manifest.json`: `{schema_version, p, basis_names, train_masks, scalar_columns, runs: [...]}`; each run has `id`, `title`,
   `group`, `key_freqs`, `ckpt_steps`, `geometry_steps`, `weight_steps`, `param_layout` (name + shape in flat order),
   `phases`, `final` (final-checkpoint analysis) and `arrays: {name: {file, dtype, shape, desc, bytes, sha256, [min, max], [columns]}}`.
-  `sha256` holds the first 16 hex digits of the file's SHA-256. Showcase runs (`paper`, `wd1_s0`) also have `spectra_steps`
-  (frames of the 2D-Fourier maps `spec_*`); other runs have these maps at their final checkpoint only.
+  `sha256` holds the first 16 hex digits of the file's SHA-256. Every run has `spectra_steps`, the frames of the 2D-Fourier
+  maps `spec_*`: many frames for the showcase runs (`paper`, `wd1_s0`), only the final checkpoint for the others.
   `adam_scalars` (with `steps`) and `update_norm` exist for our retrained runs only.
 - Array files `runs/<id>/<name>.bin`: little-endian; `dtype` ∈ `f32`, `f16`, `i16`, `u8q` (uint8, value = min + q/255·(max − min)).
   Shapes are row-major; e.g. `we_fourier` is `[T, 113]` (Const, cos 1, sin 1, …, sin 56); `attn_C` is `[T, 4, 113]`, each head's
@@ -33,4 +33,5 @@ Step semantics: checkpoint t holds the parameters after `ckpt_steps[t]` optimize
 - `train_mask_seed<s>.bin`: 12,769 bytes, 1 = training pair (row a·113 + b).
 - `summary.json`: `{key: {value, fmt}}`, every number quoted in the prose (`src/grokviz/summary.py`). Entries with
   `fmt: "json"` are structured data for the figures (`hypotheses.verdict`, `hypotheses.per_run`, `hypotheses.controls`
-  from `reports/tables/hypotheses.json`); the site build rejects them in `{{num:}}`.
+  from `reports/tables/hypotheses.json`); the site build rejects them in `{{num:}}`. `rchecks.rows` (the R-check table
+  from `runs/paper/analysis/rchecks.json`) is a list of row objects stored with `fmt: "str"`.

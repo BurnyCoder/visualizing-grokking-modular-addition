@@ -40,8 +40,9 @@ All 30 rows are in [`tables/exp01_rchecks.md`](tables/exp01_rchecks.md). **26 of
 tolerances. Two of the rows check claims about the training trajectory rather than the final model:
 - **R15:** the sum of squared weights at the paper's phase boundaries falls 3,373 → 2,001 → 996. It falls faster per
   step during cleanup (0.22) than during circuit formation (0.17), as in the paper's Fig. 7, which gives no numbers.
-- **R20:** ARENA's late-phase observations. Total SSW goes from 955.4 at step 40,001 to 941.8 at the last checkpoint
-  (ARENA: 955 → 942). Between steps 40,001 and 45,001, heads 0 and 2 go from 0.4 % to 11.3 % and 9.1 % attention on "=".
+- **R20:** ARENA's late-phase observations (§3 "Analysis During Training"). Total SSW goes from 955.4 at step 40,001
+  to 941.8 at the last checkpoint (ARENA: 955 → 942). Between steps 40,001 and 45,001, heads 0 and 2 go from 0.4 % to
+  11.3 % and 9.1 % attention on "=". ARENA only says attention to "=" returns; "two heads" is our match criterion.
 
 The matching rows also include:
 - loss 2.412 × 10⁻⁷;
@@ -60,7 +61,9 @@ The matching rows also include:
 
 1. **"Test loss" 2.41 × 10⁻⁷ is the all-pairs loss.** On test pairs only, the loss is 3.02 × 10⁻⁷. We found this
    because our first test-only comparison missed by 25 %.
-2. **"W_L residual under 0.55 %" is a squared ratio.** The Frobenius norm ratio is 7.43 %; its square is 0.552 %.
+2. **"W_L residual under 0.55 %" matches only as a squared ratio.** The paper's text gives the residual's Frobenius
+   norm as under 0.55 % of ‖W_L‖ (p.6); our norm ratio is 7.43 %, which does not match. Its square is 0.552 % at
+   step 40,001 (R4 counts a match below 0.6 %) and 0.520 % at the released run's last checkpoint, step 49,901.
 3. **The restricted loss must use the logits.** It is defined on the logits with a bias correction (paper code
    `calculate_trig_loss`); this gives 5.5474 × 10⁻⁸, identical to ARENA. The paper's text describes the strict ablation
    (5.54 × 10⁻⁸) as restricting each *neuron*. Restricting neurons individually gives 1.12 × 10⁻⁷, so we conclude the

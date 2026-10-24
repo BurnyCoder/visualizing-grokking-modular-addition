@@ -43,12 +43,13 @@ def _close(x: float, y: float, rel: float) -> bool:
 
 
 @torch.no_grad()
-@torch.no_grad()
 def _dynamics_rows(store: RunStore, grid: metrics.Grid, device) -> list[dict]:
-    """R15 (paper Fig. 7) and R20 (ARENA bonus) — claims about the training trajectory, checked at a few checkpoints.
+    """R15 (paper Fig. 7) and R20 (ARENA §3 "Analysis During Training") — claims about the training trajectory,
+    checked at a few checkpoints.
 
     R15: the sum of squared weights falls through circuit formation and faster during cleanup (qualitative; the paper
-    gives only the plot). R20: after ~43k epochs total SSW drops from ≈955 to ≈942, and two heads attend to "=" again.
+    gives only the plot). R20: after ~43k epochs total SSW drops from ≈955 to ≈942, and attention to "=" returns
+    (ARENA gives no head count; "two heads rising ≥ 5× to > 5 %" is our criterion).
     """
     def at(step: int):  # model at the checkpoint nearest to `step` optimiser updates
         return store.load_model(int(np.argmin(np.abs(np.asarray(store.ckpt_steps) - step))), device)
@@ -66,9 +67,10 @@ def _dynamics_rows(store: RunStore, grid: metrics.Grid, device) -> list[dict]:
         _row("R15", "SSW at the paper's phase boundaries 1.4k / 9.4k / 14k (Fig. 7)", "falls; steepest in cleanup", [s1, s2, s3],
              s1 > s2 > s3 and rate_cleanup > rate_circuit, "p.9 Fig. 7", f"qualitative; fall per step {rate_circuit:.3f} (circuit formation) vs {rate_cleanup:.3f} (cleanup)"),
         _row("R20a", "total SSW at epoch 40k and at the end of training", [955, 942], [s40, s_end],
-             abs(s40 - 955) < 2 and abs(s_end - 942) < 2, "ARENA bonus (training dynamics)", f"last checkpoint: step {store.ckpt_steps[-1]}"),
-        _row("R20b", "heads attending to '=' again after ~43k (attention at 40k → 45k)", "2 heads", [eq40, eq45],
-             risen == 2, "ARENA bonus (training dynamics)", f"{risen} heads rise ≥5× to >5 %"),
+             abs(s40 - 955) < 2 and abs(s_end - 942) < 2, "ARENA §3 Analysis During Training", f"last checkpoint: step {store.ckpt_steps[-1]}"),
+        _row("R20b", "attention to '=' returns after ~43k (attention at 40k → 45k)", "attends to '=' again", [eq40, eq45],
+             risen == 2, "ARENA §3 Analysis During Training",
+             f"{risen} heads rise ≥ 5× to > 5 %; 2 such heads is our match criterion (ARENA gives no head count)"),
     ]
 
 
@@ -91,6 +93,8 @@ def compute_rchecks(store: RunStore, device) -> dict:
     coef, logit_fve, fit = metrics.logit_cos_fit(acts.logits, grid, K)
     abl = interventions.freq_ablation_table(acts, grid, K)
     wlp = interventions.wl_direction_projection(model, acts, grid, K)
+    # R4's squared-norm share again at the released run's last checkpoint (step 49,901), for the note
+    wl_last = metrics.wl_residual_sq_frac(metrics.paper_matrices(store.load_model(-1, device), p)["W_L"], fourier.key_rows(grid.F, K))
     poly = interventions.neuron_polynomial_replacement(model, acts, grid, freqs, fve, K)
     skip = interventions.skip_and_attention_ablations(model, acts, grid)
     heads = interventions.fit_attention_heads(model, acts, grid)
@@ -108,7 +112,9 @@ def compute_rchecks(store: RunStore, device) -> dict:
         _row("R3", "non-negligible W_E frequencies", 6, we_nonneg, we_nonneg == 6, "p.4", "threshold 10 % of max; the 6th is k=31"),
         _row("R4", "W_L residual after 10-direction approximation", "<0.55 %", wlp["wl_residual_sq_frac"],
              wlp["wl_residual_sq_frac"] < 0.006, "p.6",
-             f"norm ratio {wlp['wl_residual_norm_frac']:.4f}; the paper's '<0.55 %' matches the squared-norm ratio"),
+             f"squared-norm ratio {100 * wlp['wl_residual_sq_frac']:.3f} % at step 40,001 (match: < 0.6 %) and "
+             f"{100 * wl_last:.3f} % at the last checkpoint (step {store.ckpt_steps[-1]:,}); the norm ratio, "
+             f"{100 * wlp['wl_residual_norm_frac']:.1f} %, does not match the paper's wording (Frobenius norm under 0.55 % of ‖W_L‖)"),
         _row("R5", "neurons with >85 % FVE at one frequency", 433, n_clustered, n_clustered == 433, "p.6"),
         _row("R6", "neurons in the k=14 cluster", 44, k14, k14 == 44, "p.7"),
         _row("R7", "Table 1 FVE of u_k/v_k read-offs (mean of 10)", 0.9624, sum(r["fve"] for r in table1) / len(table1),
@@ -123,8 +129,8 @@ def compute_rchecks(store: RunStore, device) -> dict:
              _close(wlp["nullspace"]["mlp_only_bias_corrected"], 5.27, 0.05), "p.8", "closest variant (MLP-only, bias-corrected) shown"),
         _row("R10a", "clustered neurons replaced by degree-2 polynomial", 2.48e-7, poly["polynomial"], _close(poly["polynomial"], 2.48e-7, 0.02), "p.7"),
         _row("R10b", "neurons restricted to cos/sin(w_k(a+b)) terms", 5.54e-8, poly["strict_trig_only"], _close(poly["strict_trig_only"], 5.54e-8, 0.02), "p.7",
-             "per-neuron restriction gives this value; the paper's 5.54e-8 equals the restricted-LOGITS loss (R19a), so the "
-             "paper likely restricted logits"),
+             "per-neuron restriction gives this value; the paper's 5.54e-8 matches the restricted-LOGITS loss (R19a, "
+             f"{restricted:.4g}) within 0.2 %, so the paper likely restricted logits"),
         _row("R11a", "MLP skip connection zero-ablated", 9.12e-7, skip["mlp_skip_zero"], _close(skip["mlp_skip_zero"], 9.12e-7, 0.05), "p.13"),
         _row("R11b", "MLP skip connection mean-ablated", 7.25e-7, skip["mlp_skip_mean"], _close(skip["mlp_skip_mean"], 7.25e-7, 0.02), "p.13"),
         _row("R11c", "attention heads zero-ablated", 24.3, skip["attention_zero"], _close(skip["attention_zero"], 24.3, 0.02), "p.13"),

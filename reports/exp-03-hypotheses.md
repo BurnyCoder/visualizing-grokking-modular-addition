@@ -120,11 +120,20 @@ Per-run values (accuracies, phase boundaries, key frequencies) are tabulated in 
 ### Controls
 
 - **No weight decay (wd0).** All five memorise (100 % train) and none generalises.
-  - Test accuracy ends at 1.9–21.5 %, and the W_E Gini stays at 0.07–0.08 (initially 0.03).
+  - Test accuracy ends at 1.9–21.5 %.
+  - The Gini rises only from 0.03–0.04 to 0.07–0.08 (W_E) and 0.07–0.10 (W_L). That is slightly above each run's
+    random-basis null (99th percentile 0.05–0.06), but far below H3's bar (initial + 0.3) and the 0.61–0.88 of the 14
+    runs that grokked.
   - All 56 frequencies pass the 25 % rule, i.e. there is no sparse Fourier structure.
+  - The preregistered K-free maximum excluded loss (largest single-frequency excluded loss over training, which needs
+    no key set) peaks at initialisation in all five runs (4.75–4.77) and never rises above it. This is consistent
+    with the paper's "excluded loss does not increase" without weight decay. The measure does not separate the groups,
+    though: it also peaks at initialisation in 7 of the 11 wd1 runs (the other four rise to 5.6–10.8). We report it
+    descriptively only.
 - **Random labels (rand).** They memorise a table with nothing to generalise.
   - Test accuracy is 0.8–0.9 %, which is chance (1/113 = 0.9 %).
-  - The Gini stays at 0.08–0.09.
+  - The Gini rises from 0.03–0.04 to 0.08–0.09 (W_E) and 0.08 (W_L), about each run's random-basis null (99th
+    percentile 0.08–0.09).
 - **Paper's split, new initialisations (split0, exploratory).** All three grok, with key frequencies {2, 14, 27, 30, 37, 52},
   {9, 14, 15, 27} and {7, 38, 49, 53}. They share at most two frequencies (14, 52) with the paper's {14, 35, 41, 42, 52}.
 
@@ -165,6 +174,6 @@ Per-run values (accuracies, phase boundaries, key frequencies) are tabulated in 
 - **Phase rule under λ = 0.** The memorisation rule (train loss stops falling) fires at about 11,800 steps for wd0 runs,
   versus about 1,570 with weight decay. Without decay the train loss keeps creeping down instead of reaching a decay
   floor. Rules calibrated on λ = 1 runs should not be read as "memorisation ends later" for λ = 0.
-- **Where the effort went.** Computing every metric at every checkpoint took 72 minutes for 23 runs (≈ 0.5 s per
+- **Where the effort went.** Computing every metric at every checkpoint took 72 minutes for the 22 trained runs (≈ 0.5 s per
   checkpoint on GPU). The controls were slowest: with all 56 "key" frequencies, the restricted-loss projection covers
   112 directions.

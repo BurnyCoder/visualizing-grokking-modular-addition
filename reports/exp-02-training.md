@@ -32,7 +32,8 @@ hardware gives the same runs.
 ## Implementation choices and what we learned
 
 1. **Sequential training was too slow, so all runs train at once.**
-   - **The problem.** One run took ≈ 30 ms per step, so 22 runs × 40,000 steps would take ≈ 7.5 h. The model has
+   - **The problem.** One run took ≈ 30 ms per step (timed interactively; not in the logs), so 22 runs × 40,000 steps
+     would take ≈ 7.3 h. The model has
      only 226,816 parameters, so the GPU was mostly idle, waiting on kernel launches.
    - **The fix.** We stack the 22 parameter sets with `torch.func.stack_module_state` and run forward and backward for
      all of them in one call (`torch.func.vmap` over `functional_call`). This follows the PyTorch model-ensembling
@@ -43,7 +44,7 @@ hardware gives the same runs.
    - **Cheaper forward pass.** The logits are only needed at the last position, so the forward pass slices the
      residual stream to that position before the MLP (`last_only=True`).
    - **Sparser test logging.** The test loss is logged every 10 steps rather than every step. This matches the
-     paper's own logging interval.
+     released run file (5,000 test losses over 50,000 epochs); the released `transformers.py` logs it every epoch.
    - **Result.** About 2,000 steps per 210 s for all 22 runs together, or 73 min in total: roughly 6× faster.
 2. **A float-rounding surprise: early training amplifies tiny differences.**
    - **The observation.** Our first equivalence test failed. It compared batched against single-run training over a
@@ -81,7 +82,7 @@ hardware gives the same runs.
      so far. It is saved atomically (write, then rename) every 2,000 steps to `runs/_resume/state.pt`, while
      checkpoints stream to memory-mapped files. Full-batch training draws no random numbers after initialisation, so
      no RNG state is needed.
-   - **Relaunch.** We deleted the partial runs and relaunched from scratch three days later. The logged test
+   - **Relaunch.** We deleted the partial runs and relaunched from scratch about two days later (18 Oct 18:03 → 21 Oct 00:07). The logged test
      accuracies of the second launch at steps 2,000, 4,000, …, 10,000 are identical to the first launch to every
      printed digit. For example, at step 10,000 `wd1_s0` = 0.782 and `wd1_s4` = 1.000 in both logs.
    - **Conclusion.** The tests show bitwise reproducibility within a process and across resume. Across processes we

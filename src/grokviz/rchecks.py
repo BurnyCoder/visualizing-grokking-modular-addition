@@ -65,7 +65,7 @@ def _dynamics_rows(store: RunStore, grid: metrics.Grid, device) -> list[dict]:
     risen = sum(after > 5 * before and after > 0.05 for before, after in zip(eq40, eq45))
     return [
         _row("R15", "SSW at the paper's phase boundaries 1.4k / 9.4k / 14k (Fig. 7)", "falls; steepest in cleanup", [s1, s2, s3],
-             s1 > s2 > s3 and rate_cleanup > rate_circuit, "p.9 Fig. 7", f"qualitative; fall per step {rate_circuit:.3f} (circuit formation) vs {rate_cleanup:.3f} (cleanup)"),
+             s1 > s2 > s3 and rate_cleanup > rate_circuit, "p.8 Fig. 7; boundaries p.9", f"qualitative; fall per step {rate_circuit:.3f} (circuit formation) vs {rate_cleanup:.3f} (cleanup)"),
         _row("R20a", "total SSW at epoch 40k and at the end of training", [955, 942], [s40, s_end],
              abs(s40 - 955) < 2 and abs(s_end - 942) < 2, "ARENA §3 Analysis During Training", f"last checkpoint: step {store.ckpt_steps[-1]}"),
         _row("R20b", "attention to '=' returns after ~43k (attention at 40k → 45k)", "attends to '=' again", [eq40, eq45],
@@ -136,7 +136,9 @@ def compute_rchecks(store: RunStore, device) -> dict:
         _row("R11c", "attention heads zero-ablated", 24.3, skip["attention_zero"], _close(skip["attention_zero"], 24.3, 0.02), "p.13"),
         _row("R11d", "skip around attention zero-ablated", 19.1, skip["attention_skip_zero"], _close(skip["attention_skip_zero"], 19.1, 0.05), "p.13",
              "not reproduced: our ablation sets resid_mid = attention output (the paper does not specify its hook)"),
-        _row("R12", "mean attention from '=' to '=' (per head)", "0.1–0.4 %", eq_attn, all(0.0005 < v < 0.0045 for v in eq_attn), "p.13"),
+        _row("R12", "mean attention from '=' to '=' (per head)", "0.1–0.4 %", eq_attn, all(0.0005 < v < 0.0045 for v in eq_attn), "p.13",
+             "match range 0.05–0.45 % (the paper's 0.1–0.4 % at its printed precision); our largest values, 0.44 %, "
+             "round to the paper's 0.4 %"),
         _row("R13a", "linear fit of the attention softmax (variance explained)", 0.975, heads["linear_fve_mean"], abs(heads["linear_fve_mean"] - 0.975) < 0.02, "p.16"),
         _row("R13b", "loss with softmax replaced by its linear fit", 2.12e-7, heads["linearised_softmax_loss"], _close(heads["linearised_softmax_loss"], 2.12e-7, 0.05), "p.16"),
         _row("R14", "head frequencies (Table 2)", [35, 42, 52, 42], [h["freq"] for h in heads["heads"]], [h["freq"] for h in heads["heads"]] == [35, 42, 52, 42], "p.15 Table 2"),

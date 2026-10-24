@@ -1,9 +1,9 @@
 """Phase `build_paper_pdf`: compile the Typst paper `paper/main.typ` into `reports/paper.pdf`.
 
-Local explanation: every number the paper prints comes from the same `site/data/summary.json` the website uses,
-formatted by the website's own `fmt_number`, and is handed to Typst as `sys.inputs` (a string dictionary). Figures
-are the PNGs that `render_report_figures` screenshots from the website. The paper therefore cannot disagree with
-the site, and no number in it is typed by hand.
+Local explanation: every number the paper reports from our runs comes from the same `site/data/summary.json` the
+website uses, formatted by the website's own `fmt_number`, and is handed to Typst as `sys.inputs` (a string
+dictionary). Figures are the PNGs that `render_report_figures` screenshots from the website. The paper therefore
+cannot disagree with the site; only values quoted from other papers, setup constants and simple arithmetic are typed.
 Global context: last phase of the pipeline; the PDF is the compressed write-up of reports/*.md.
 Sources: typst Python bindings (https://pypi.org/project/typst/), `typst.compile(input, output, root, sys_inputs)`;
 Typst `sys.inputs` (https://typst.app/docs/reference/foundations/sys/).

@@ -1,11 +1,13 @@
 // main.typ — the paper: "Grokking, visualized" (compiled by the pipeline phase build_paper_pdf → reports/paper.pdf).
-// Local explanation: prose and structure live here; every number is read from `sys.inputs` (filled by
-// src/grokviz/paper.py from site/data/summary.json and reports/tables/hypotheses.json), figures are the website's
-// own figures rendered to reports/figures/ by render_report_figures.
+// Local explanation: prose and structure live here; every number we measured on the runs is read from `sys.inputs`
+// (filled by src/grokviz/paper.py from site/data/summary.json and reports/tables/hypotheses.json); values quoted from
+// other papers, setup constants, simple arithmetic and the engineering measurements of reports/exp-02 (rounding
+// divergence in Methods, run times in Appendix A) are typed. Figures are the website's own figures rendered to
+// reports/figures/ by render_report_figures.
 // Global context: compressed write-up of reports/exp-*.md; the website is the long-form, interactive version.
 // Sources: Typst reference (https://typst.app/docs/reference/), sys.inputs (https://typst.app/docs/reference/foundations/sys/).
 
-#let n(key) = sys.inputs.at(key, default: "⟨" + key + "⟩")  // bound number; ⟨key⟩ marks a missing one
+#let n(key) = sys.inputs.at(key, default: "⟨" + key + "⟩").replace(" %", "\u{a0}%")  // bound number (no break before %); ⟨key⟩ marks a missing one
 #let fig(id, caption, width: 100%) = figure(image("/reports/figures/" + id + ".png", width: width), caption: caption)
 
 #set document(title: "Grokking, visualized", author: "Libor Burian")
@@ -28,13 +30,13 @@
 #block(inset: (x: 1.2em, y: 0.4em))[
   *Abstract.* Nanda et al. @nanda2023 reverse-engineered a one-layer transformer that groks addition modulo 113 and
   showed that it computes $(a + b) mod 113$ with a Fourier-multiplication algorithm. We (i) re-implement their
-  analysis and that of the ARENA course @arena152, and check it against #n("rchecks.n_rows") numbers they publish for their own network:
+  analysis and that of the ARENA course @arena152, and check it against #n("rchecks.n_rows") numbers and claims they publish for their own network:
   #n("rchecks.n_match") reproduce, and we explain the #n("rchecks.n_miss") that do not; (ii) add a counterfactual causal test — swapping the key-frequency
   subspace of the embedding of $a$ with that of $a'$ moves the output to $a' + b$, recovering #n("paper.patch_key")
   of the logit difference (95 % CI #n("paper.patch_key_lo")–#n("paper.patch_key_hi")) versus #n("paper.patch_complement")
   for the complementary subspace and #n("paper.patch_random") for a random subspace of equal dimension; (iii) retrain the
-  paper's exact recipe for 11 seeds plus no-weight-decay, random-label and fixed-split controls, deterministically and
-  bit-reproducibly, and test five preregistered hypotheses: #n("hyp.summary") (iv) publish an explorable website in
+  paper's recipe for 11 seeds plus no-weight-decay, random-label and fixed-split controls, deterministically
+  (bitwise within a process and across resumption), and test five preregistered hypotheses: #n("hyp.summary") (iv) publish an explorable website in
   which every step of the evidence is shown on the real weights, every term is defined before use, and every number
   is bound to the analysis output.
 ]
@@ -53,7 +55,7 @@ network, and (b) a pre-specified, statistically controlled test of the main clai
 networks. This work provides both.
 
 *Contributions.*
-+ An analysis pipeline whose outputs match #n("rchecks.n_match") of #n("rchecks.n_rows") published numbers on the paper's own checkpoints
++ An analysis pipeline whose outputs match #n("rchecks.n_match") of #n("rchecks.n_rows") published numbers and claims on the paper's own checkpoints
   (@sec-validation), with documented definitional findings (e.g., the reported "test loss" $2.41 times 10^(-7)$ is the
   loss over all 12,769 pairs).
 + A counterfactual subspace-patching test of the claim that the embedding encodes $a$ only through
@@ -70,7 +72,8 @@ A fixed random #n("task.n_train") pairs (30 %) are used for training, the remain
 *Model* @nanda2023[Sec. 3]. One transformer layer with $d_"model" = 128$, four attention heads of size 32, an MLP with
 512 ReLU neurons, no LayerNorm, untied embedding $W_E$ and unembedding $W_U$; #n("model.n_params") parameters.
 It is trained full-batch with AdamW @loshchilov2019 (learning rate $10^(-3)$, weight decay $lambda = 1$,
-$beta = (0.9, 0.98)$) for 40,000 steps.
+$beta = (0.9, 0.98)$). The paper states 40,000 epochs (full-batch steps) @nanda2023[p. 3]; its released run continues
+to 50,000. Our runs train for 40,000 steps, and we analyse the paper's run at step 40,001 (its epoch 40,000).
 
 *The algorithm* @nanda2023[Sec. 4]. For a few *key frequencies* $k$ (with $w_k = 2 pi k \/ 113$), the embedding maps
 $a$ to $cos(w_k a), sin(w_k a)$; attention and MLP compute $cos(w_k (a+b))$ and $sin(w_k (a+b))$ using
@@ -88,7 +91,7 @@ formation* and *cleanup* phases by these measures.
 
 == The paper's run and our analysis code <sec-validation-methods>
 
-We use the authors' published mainline run @paperckpt (500 checkpoints, pinned revision and SHA-256). Our model
+We use the paper's mainline run as uploaded by C. McDougall @paperckpt (500 checkpoints, pinned revision and SHA-256). Our model
 re-implements the paper's parameter layout so the checkpoints load unmodified. Recomputing the training loss from the
 checkpoints shows that the checkpoint labelled "epoch $e$" holds the parameters after $e + 1$ optimiser updates (the
 learning-rate warm-up starts at zero) and confirms that we rebuilt the exact training split. Analysis functions are
@@ -109,7 +112,9 @@ Controls: the complementary subspace, and a random $2|K|$-dimensional subspace. 
 We trained 22 runs with the paper's recipe: `wd1` (11 seeds; seed 0 uses the paper's split), `wd0` (5 seeds,
 $lambda = 0$), `rand` (3 seeds, random label table) and `split0` (3 new initialisations on the paper's split). All runs
 train together with vectorised forward/backward passes; batched and single-run updates agree, runs are bitwise
-independent of their batch partners, and training is bitwise reproducible across processes and resumption. Early
+independent of their batch partners, and training is bitwise reproducible within a process and across resumption
+(tests); a relaunch in a new process reproduced every test accuracy logged by the first launch (steps 2,000–10,000)
+to the printed three decimals. Early
 full-batch Adam training amplifies rounding differences (a mathematically identical forward pass with a different
 summation order diverges from $3 times 10^(-7)$ after 20 steps to $0.24$ after 200 steps in max parameter difference),
 so seed-level results must be compared as distributions, not trajectories.
@@ -118,8 +123,8 @@ Before training, we fixed five hypotheses, their metrics and falsification rules
 *H1* restricted loss falls before test loss; *H2* excluded loss rises ≥ 10× during circuit formation; *H3* the final
 Gini sparsity @hurley2009 of the $W_E$ and $W_L$ Fourier spectra exceeds both its initial value + 0.3 and the 99th
 percentile under 100 random orthonormal bases; *H4* each single key-frequency ablation raises loss ≥ 100×, each
-non-key ablation ≤ 2×, removing all non-key frequencies ≤ 1.5×; *H5* weight decay is necessary (all `wd1` and no
-`wd0` runs reach 99 % test accuracy). H1–H4 use one-sided exact sign tests over the 11 `wd1` seeds, H5 a one-sided
+non-key ablation ≤ 2×, removing all non-key frequencies ≤ 1.5×; *H5* weight decay is necessary for grokking within
+40,000 full-batch steps in this setup (all `wd1` and no `wd0` runs reach 99 % test accuracy). H1–H4 use one-sided exact sign tests over the 11 `wd1` seeds, H5 a one-sided
 Fisher exact test; the five p-values are Holm-corrected @holm1979 at $alpha = 0.05$. Eleven seeds is the smallest
 number at which one dissenting seed still passes the strictest Holm threshold ($P(X >= 10 | 11, 1\/2) = 0.0059 < 0.01$).
 
@@ -127,7 +132,7 @@ number at which one dissenting seed still passes the strictest Holm threshold ($
 
 The site is generated from Markdown with macros: `[[dfn:…]]` defines a term, `[[term:…]]` uses one, and the build fails
 if any term or symbol is used before its definition in reading order, if a quote does not match its PDF page, or if a
-number is not bound to `summary.json`. Every figure is one JavaScript module shared by the chapters and the dashboard;
+`{{num:…}}` key is missing from `summary.json`. Every figure is one JavaScript module shared by the chapters and the dashboard;
 per-input views run a JavaScript copy of the model on float16 weights, tested against PyTorch. The figures in this paper
 are screenshots of the same modules. Clips of the animated figures are recorded the same way, one stored checkpoint per frame
 (@fig-strip).
@@ -141,19 +146,26 @@ the probability of the right answer, at steps 1, 3,801, 7,601, 11,601 and 15,401
 
 Table 1 lists all #n("rchecks.n_rows") checks. #n("rchecks.n_match") match within stated tolerances. Two definitional findings: the paper's
 "test loss" $2.41 times 10^(-7)$ equals the loss over _all_ pairs (test-only: #n("paper.loss40k_test")), and the
-"$W_L$ residual < 0.55 %" is a squared-norm ratio (#n("paper.wl_resid_sq")\; the norm ratio is #n("paper.wl_resid_norm")).
+paper's $W_L$ residual (Frobenius norm "under 0.55 %" of $norm(W_L)$ @nanda2023[p. 6]) matches only as a squared-norm
+ratio: #n("paper.wl_resid_sq") at step 40,001 (marginally above 0.55 %) and
+#n("paper.wl_resid_sq_last") at the released run's last checkpoint, step #n("paper.last_step")\; the norm ratio is
+#n("paper.wl_resid_norm"). R4 counts as a match under the squared-norm reading.
 The four non-reproduced rows are projections and ablations whose exact procedure the paper does not specify; for
-R10b, the paper's value equals our restricted-_logit_ loss rather than a per-neuron restriction.
+R10b, the paper's value ($5.54 times 10^(-8)$) matches our restricted-_logit_ loss (R19a, #n("rc.R19a")) within
+0.2 % rather than a per-neuron restriction.
 
 #let rrows = json(bytes(sys.inputs.at("rchecks.json", default: "[]")))
+// attention lists (fractions) shown as the bound per-head percentages
+#let rshort = ("R12": n("paper.attn_eq_pct"), "R20b": [40k: #n("paper.attn_eq_pct") \ 45k: #n("paper.attn_eq_45k")])
+#show figure.where(kind: table): set block(breakable: true)  // Table 1 may span a page break
 #figure(
-  text(size: 7.5pt, table(
-    columns: (auto, 1fr, auto, auto, auto), stroke: 0.4pt, inset: 3pt,
+  text(size: 7.5pt, { set par(justify: false); table(
+    columns: (auto, 2fr, 1fr, 1fr, auto), stroke: 0.4pt, inset: 3pt, align: (center, left, left, left, center),
     table.header([*ID*], [*Quantity*], [*Paper / ARENA*], [*Ours*], [*Match*]),
-    ..rrows.flatten(),
-  )),
-  caption: [Reproduction checks on the paper's network at epoch 40k (step 40,001). Sources: paper pages and ARENA tests
-  as listed in `reports/tables/exp01_rchecks.md`.],
+    ..rrows.map(r => (..r.slice(0, 3), rshort.at(r.at(0), default: r.at(3)), r.at(4))).flatten(),
+  ) }),
+  caption: [Reproduction checks on the paper's network at epoch 40k (step 40,001), except R15/R20 (training
+  trajectory). Sources: paper pages and ARENA tests as listed in `reports/tables/exp01_rchecks.md`.],
   kind: table,
 )
 
@@ -162,7 +174,7 @@ R10b, the paper's value equals our restricted-_logit_ loss rather than a per-neu
 The embedding is sparse in the Fourier basis: six frequencies carry visible weight (#n("paper.we_top6")), five of which
 recur everywhere in the network and are the key frequencies #n("paper.key_freqs") (@fig-we). #n("paper.neurons_085") of
 512 MLP neurons have more than 85 % of their variance explained by a single frequency, forming clusters of
-#n("paper.cluster_sizes") neurons. The logits are fit by $sum_k alpha_k cos(w_k(a+b-c))$ with
+#n("paper.cluster_sizes") neurons. The logits are fit by $sum_k alpha_k cos(w_k (a+b-c))$ with
 #n("paper.logit_fve") variance explained; replacing the logits by this fit gives loss #n("paper.logit_fit_loss").
 Ablating any single key frequency from the logits multiplies the loss by #n("paper.key_ablation_ratio_range")\; the
 largest effect of a non-key frequency is #n("paper.nonkey_ablation_max_ratio") (@fig-ablation).
@@ -191,8 +203,9 @@ formation at #n("paper.t2"), and the end of cleanup at #n("paper.t3")\; test acc
 test loss. Exploratory gradient analysis (exact full-batch gradients at every checkpoint): the cosine between the
 training-set and test-set gradients is #n("paper.cos_tt_start") at initialisation and becomes negative during
 memorisation and circuit formation (#n("paper.cos_tt_mid") at step #n("paper.mid_step")); after grokking the
-gradient is almost exactly anti-parallel to the weights (cosine #n("paper.cos_gw_40k") at step 40,001), the signature
-of an equilibrium between the loss gradient and weight decay.
+gradient is almost exactly anti-parallel to the weights (cosine #n("paper.cos_gw_40k") at step 40,001). This is a
+first-order statement about steps along $-nabla L$, not about Adam's step; for Adam the relevant balance is between its
+step and weight decay, which we measure separately below.
 
 Across our 11 seeds (exploratory; reports/exp-04) the train-test gradient cosine is negative at #n("seeds.cos_tt_neg_ci")
 of the checkpoints between $t_1$ and $t_2$. Because Adam rescales gradients, we also rebuilt the optimiser's actual
@@ -203,8 +216,8 @@ $cos(d, theta)$ = #n("seeds.adam_cos_w_end_ci"), whereas the raw gradient's cosi
 #n("seeds.adam_dip_near_grok") seeds: weight decay briefly outweighs the loss while the network generalises, consistent
 with the paper's account of cleanup. This last observation is post hoc.
 
-#fig("adam-vs-decay", [Size of Adam's loss step relative to the weight-decay step for seed 0, every 1,000 steps
-(log scale); shading marks the phases.], width: 70%) <fig-adam>
+#fig("adam-vs-decay", [Size of Adam's loss step relative to the weight-decay step for seed 0, every 1,000 steps;
+shading marks the phases.], width: 70%) <fig-adam>
 
 #fig("progress-measures", [Train, test, restricted and excluded loss over training of the paper run (log scale);
 shading marks the three phases from our objective rules.]) <fig-progress>
@@ -239,17 +252,18 @@ test): every non-key frequency is individually dispensable in #n("hyp.h4_nonkey_
 #n("hyp.h4_nonkey_max")×); every key frequency is necessary in #n("hyp.h4_key_ok") (weakest #n("hyp.h4_key_min")×);
 keeping only the key frequencies costs ≤ 1.5× in #n("hyp.h4_keep_ok") (worst #n("hyp.h4_keep_max")×). Both failing
 parts concern the operationalisation of $K$ — frequencies whose $W_L$ Fourier norm is ≥ 25 % of the largest — rather
-than the existence of a sparse set of necessary frequencies: the rule twice admits a frequency with a large weight
-norm but small causal effect, and in seeds with 3–4 key frequencies the many individually negligible non-key
-components jointly matter at the $10^(-7)$ loss scale. Thresholds calibrated on a single model with five
+than the existence of a sparse set of necessary frequencies. The norm rule admits one frequency barely above the 25 %
+cut with a small effect, and one whose effect falls just short of 100×: #n("hyp.h4_key_fails"). Three of the #n("hyp.n_few_keys") seeds
+with 3–4 key frequencies fail the keep-only condition (#n("hyp.h4_keep_fails")): there the many individually
+negligible non-key components jointly matter at the $10^(-7)$ loss scale. Thresholds calibrated on a single model with five
 well-separated frequencies did not transfer to all seeds; a causal (ablation-based) definition of $K$ would be the
 natural preregistered choice in future work.
 
 *Controls.* No weight decay: #n("controls.wd0"). Random labels: #n("controls.rand"). Paper split with new
 initialisations: #n("controls.split0").
 
-*Exploratory: what selects the frequencies.* Our seed 0 starts from the paper's exact initial weights (max
-difference #n("seeds.same_init_diff")) on the paper's split. The two training-loss curves agree to five significant
+*Exploratory: what selects the frequencies.* Our seed 0 starts from the paper's initial weights up to float32
+rounding (max difference #n("seeds.same_init_diff")) on the paper's split. The two training-loss curves agree to five significant
 digits for #n("seeds.same_init_loss_steps") steps and then diverge — full-batch Adam amplifies rounding differences —
 and the final weights have cosine similarity #n("seeds.same_init_cos40k")\; nevertheless both runs end with
 #n("seeds.same_init_keys_equal") key frequencies (#n("seeds.same_init_keys")), whereas three new initialisations on
@@ -280,7 +294,9 @@ mechanistic claims together with an explorable presentation of the full evidence
 Fourier-multiplication account to within a few percent; the patching result is the most direct causal statement we
 make: $a$ is read through a 10-dimensional subspace of a 128-dimensional embedding. Across seeds, hidden progress
 (H1), the dismantling of memorisation (H2), learned basis-specific sparsity (H3) and the necessity of weight decay
-(H5) replicate in every seed, and the patching result replicates with the same effect size. The one failed test (H4)
+for grokking within 40,000 full-batch steps in this setup (H5) replicate in every seed, and the patching result
+replicates with the same effect size. (Power et al. observed late generalisation without weight decay in a different
+setup: mini-batch Adam over $10^6$ steps @power2022[App. A.1].) The one failed test (H4)
 shows that "the key frequencies" is less sharply defined than the paper's single model suggests: which frequencies
 count depends on whether one ranks them by weight norm or by causal effect.
 
@@ -295,8 +311,8 @@ same-initialisation comparison and the loss spikes are post hoc and descriptive.
 
 = Conclusion
 
-On the paper's network, the Fourier-multiplication account survives a counterfactual test: the input is read through
-its key-frequency subspace and essentially nowhere else. Across 11 independently trained seeds, four of five
+On the paper's network, the Fourier-multiplication account survives a counterfactual test: the number $a$ is read
+through its key-frequency subspace and essentially nowhere else. Across 11 independently trained seeds, four of five
 preregistered claims replicate; the fifth fails on how sharply "key frequencies" can be delimited, not on whether a
 few frequencies carry the computation. The website makes every step of this evidence inspectable on the real
 weights; the pipeline, data and preregistration make it reproducible.
@@ -310,3 +326,8 @@ Code, data formats and the full pipeline: `github.com/BurnyCoder/visualizing-gro
 (`uv run grokviz --phases all`). Runs: Hugging Face `BurnyCoder/grokking-modular-addition-runs`; site data:
 `BurnyCoder/grokking-modular-addition-site-data`. Hardware: one RTX 5070 Laptop GPU; training of all 22 runs takes
 ≈ 73 minutes, per-checkpoint analysis ≈ 72 minutes. Per-experiment reports with learnings are in `reports/`.
+
+#heading(numbering: none)[AI statement]
+
+Libor Burian provided the exact idea for this project. Claude Code (Anthropic) wrote the codebase, ran the analyses
+and wrote this paper. Human cleanup and rewriting are in progress.

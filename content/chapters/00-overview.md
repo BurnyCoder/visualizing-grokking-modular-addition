@@ -77,7 +77,7 @@ and along the way passes through three phases — memorisation, circuit formatio
 | [[symdef:k]], [[symdef:wk]] | A [[preview:frequency|frequency]] k (a whole number 1–56) and its angle step w_k = 2πk/p. |
 | [[symdef:K]] | The few [[preview:key-frequencies|key frequencies]] the trained network uses. |
 | [[symdef:alpha]] | How strongly frequency k contributes to the scores. |
-| [[symdef:theta]] | All 226,816 learned numbers of the network. |
+| [[symdef:theta]] | All {{num:model.n_params}} learned numbers of the network. |
 | [[symdef:L]] | The loss: how wrong the network's scores are. |
 | [[symdef:gamma]], [[symdef:lam]] | The [[preview:learning-rate|learning rate]] (0.001) and the weight-decay strength (1). |
 | [[symdef:d]], [[symdef:n]], [[symdef:H]] | Sizes: 128 numbers per position, 512 neurons, 4 attention heads. |
@@ -90,6 +90,6 @@ and along the way passes through three phases — memorisation, circuit formatio
 - **Chapter 21** returns to the three objects above, now with every piece explained, plus the limitations and open questions.
 - **The [dashboard](../dashboard.html)** shows every visualization on one page, linked together and scrubbable through training.
 
-Every number on this site is computed from real networks: by default the paper's own published training run {{cite:paperckpt}}, with our replications one click away. Our analysis code reproduces most of the paper's reported numbers on the paper's own network, and the few it does not are listed with explanations (see the [reproduction page](../reproduce.html)). Where a step or claim comes from somewhere, it is cited; quotations are exact and short.
+Every measured number on this site is computed from real networks: by default the paper's own published training run {{cite:paperckpt}}, with our replications one click away. Our analysis code reproduces most of the paper's reported numbers on the paper's own network, and the few it does not are listed with explanations (see the [reproduction page](../reproduce.html)). Where a step or claim comes from somewhere, it is cited; quotations are exact and short.
 
 This model is a toy: one task, one layer, {{num:model.n_params}} learned numbers. Its value is that its algorithm has been reverse-engineered in unusual detail — the paper's authors call their work a proof of concept for using [[preview:mechanistic-interpretability|mechanistic interpretability]] to understand emergent behaviour in training. The three videos that inspired this site tell the same story from different angles {{cite:video_replication}} {{cite:video_paper}} {{cite:video_welch}}.

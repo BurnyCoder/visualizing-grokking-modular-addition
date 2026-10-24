@@ -37,8 +37,8 @@
   for the complementary subspace and #n("paper.patch_random") for a random subspace of equal dimension; (iii) retrain the
   paper's recipe for 11 seeds plus no-weight-decay, random-label and fixed-split controls, deterministically
   (bitwise within a process and across resumption), and test five preregistered hypotheses: #n("hyp.summary") (iv) publish an explorable website in
-  which every step of the evidence is shown on the real weights, every term is defined before use, and every number
-  is bound to the analysis output.
+  which every step of the evidence is shown on the real weights, every term is defined before use, and every measured
+  number is bound to the analysis output.
 ]
 
 = Introduction

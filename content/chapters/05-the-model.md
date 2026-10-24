@@ -77,6 +77,6 @@ $$\Logits(a,b) = W_U\,x^{(2)}.$$
 | $W_{in}$, $b_{in}$ | 512 × 128, 512 | 66,048 | neuron inputs |
 | $W_{out}$, $b_{out}$ | 128 × 512, 128 | 65,664 | neuron outputs |
 | $W_U$ | 128 × 114 | 14,592 | unembedding |
-| **Total** | | **226,816** | |
+| **Total** | | **{{num:model.n_params}}** | |
 
 There is no layer normalisation and the embedding and unembedding are separate matrices, as in the paper {{cite:nanda2023}}; the only biases are those of the MLP {{cite:paperrepo}}.

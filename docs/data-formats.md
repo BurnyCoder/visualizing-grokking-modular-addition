@@ -33,7 +33,7 @@ Step semantics: checkpoint t holds the parameters after `ckpt_steps[t]` optimize
   every `fine` steps up to t3 + 2,000, then every `coarse` steps (only the coarse grid when no t3 was detected), plus the
   final weights. Spacing comes from `GROKVIZ_SITE_WEIGHT_SNAPSHOTS` (default `1000,4000`).
 - `train_mask_seed<s>.bin`: 12,769 bytes, 1 = training pair (row a·113 + b).
-- `summary.json`: `{key: {value, fmt}}`, every number quoted in the prose (`src/grokviz/summary.py`). Entries with
+- `summary.json`: `{key: {value, fmt}}`, every measured number quoted in the prose (`src/grokviz/summary.py`). Entries with
   `fmt: "json"` are structured data for the figures (`hypotheses.verdict`, `hypotheses.per_run`, `hypotheses.controls`
   from `reports/tables/hypotheses.json`); the site build rejects them in `{{num:}}`. `rchecks.rows` (the R-check table
   from `runs/paper/analysis/rchecks.json`) is a list of row objects stored with `fmt: "str"`.

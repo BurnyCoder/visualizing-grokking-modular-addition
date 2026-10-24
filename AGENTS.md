@@ -51,7 +51,9 @@ Treat it as read-only reference: port code from it with `Source:` links instead 
   (the stored frame), `stepf` (fractional step, only while playing) and `playing` from its store. Playback goes through
   `core/player.js` (one Player per store; the page's is `ui/page-player.js`) and its controls through `ui/player-bar.js`.
   Add browser tests for new animations in `tests/test_site_browser.py`.
-- **Prose numbers.** Every number in the prose comes from `summary.py`, referenced as `{{num:key}}`; never type one by hand.
+- **Prose numbers.** Every number measured on our runs or the paper's run comes from `summary.py`, referenced as
+  `{{num:key}}`; never type one by hand. Typed numbers are limited to values quoted from the paper or ARENA (with the
+  citation), setup constants and arithmetic, and one-off engineering measurements cited to `reports/exp-02`.
 - **Clips.** `render_media` (`src/grokviz/media.py`) records the entries of `media.CLIPS` from the built site: a figure
   selector plus either a range of stored steps or a slider sweep. It needs ffmpeg (`uv sync --extra media`). Committed
   GIFs must stay within `tests/test_media.py`'s budget (≤ 4 MB each, ≤ 15 MB in all); re-render with `--force`.

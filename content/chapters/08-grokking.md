@@ -19,15 +19,15 @@ Here is the paper's own training run. Both curves are plotted on a [[dfn:log-sca
 ::: example
 **Reading the plot** (paper's run; numbers from its logs):
 
-- **Steps 0 – ~200:** both losses start at ln 113 ≈ 4.73 (guessing). Training accuracy reaches 100 % after about 200 steps.
-- **~200 – {{num:paper.t1}}:** training loss keeps falling by orders of magnitude while test loss *rises* to about 26 — worse than guessing: the network confidently gives memorised-looking answers to questions it has never seen.
+- **Steps 0 – {{num:paper.train_acc_full_step}}:** both losses start at ln 113 ≈ 4.73 (guessing). Training accuracy reaches 100 % by step {{num:paper.train_acc_full_step}}.
+- **{{num:paper.train_acc_full_step}} – {{num:paper.t1}}:** training loss keeps falling by orders of magnitude while test loss *rises* to about {{num:paper.loss_test_peak}} — worse than guessing: the network confidently gives memorised-looking answers to questions it has never seen.
 - **{{num:paper.t1}} – {{num:paper.t2}}:** a long plateau. Training loss is tiny and flat; test loss decreases only slowly.
 - **Around {{num:paper.t2}}:** test loss collapses by seven orders of magnitude; test accuracy reaches 99 % at step {{num:paper.t_grok}}.
 :::
 
 {{fig:acc-curves}}
 
-The curves average over many questions. The next picture shows every question at once: each pixel is one of the 12,769 sums a + b (a = row, b = column), coloured by the probability the network gives to the correct answer (yellow = certain and right, dark purple = no chance). While it is on screen it plays the paper's run from the start to just after grokking; pause it or drag its slider to study one moment. Watch the [[term:training-set|training questions]], a random speckle, turn yellow early while the [[term:test-set|test questions]] stay dark through the plateau, until the whole square lights up after step {{num:paper.t2}}.
+The curves average over many questions. The next picture shows every question at once: each pixel is one of the 12,769 sums a + b (a = row, b = column), coloured by the probability the network gives to the correct answer (yellow = certain and right, dark purple = no chance). While it is on screen it plays the paper's run from the start to just after grokking; pause it or drag its slider to study one moment. Watch the [[term:training-set|training questions]], a random speckle, turn yellow early while the [[term:test-set|test questions]] stay mostly dark through the plateau, until the whole square lights up after step {{num:paper.t2}}.
 
 {{anim:pcorrect-grid}}
 
@@ -47,7 +47,7 @@ Grokking in this setup depends on a few ingredients, all reported in the paper {
 
 - **Limited data.** With 30 % of the pairs the network groks; with ≥ 60 % it generalises immediately; with 10–20 % it had not generalised after 40,000 steps (paper App. C.2, Fig. 20).
 - **Regularisation.** With no regulariser at all the networks memorise but never grok; weight decay works, and so does dropout, but an ℓ₁ penalty did not (paper Sec. 5.3, App. D.1).
-- **Time.** Smaller weight decay makes grokking take longer (paper App. D.1).
+- **Time.** Smaller weight decay makes grokking take longer, according to the paper's text (Sec. 5.3, App. D.1). The average times App. D.1 itself gives point the other way (about 3k epochs at λ = 0.3, 5–10k at λ = 1, 20k at λ = 3); see the [errata](../errata.html).
 
 In the paper's words:
 

@@ -100,7 +100,7 @@ x2:
 WU:
   tex: "W_U"
   name: "unembedding matrix"
-  def: "p × d matrix (114 rows in the code; the '=' row is dropped) turning the final residual vector into one logit per answer."
+  def: "p × d matrix (stored transposed in the code as d × 114, with an extra column for '=' that is dropped) turning the final residual vector into one logit per answer."
 logits:
   tex: "\\mathrm{Logits}(a,b)"
   name: "logits"

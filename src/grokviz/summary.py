@@ -70,6 +70,10 @@ def paper_numbers(runs_dir: Path, p: int, frac: float) -> dict:
     for key, col in (("restricted_drop_step", "restricted_loss"), ("test_drop_step", "loss_test")):  # H1's rule on the paper run
         out[f"paper.{key}"] = _v(drop_time(m["steps"], m[col], ph["t1"]), "int")
     out["paper.loss40k_test"] = _v(val["epoch40k_loss_test_113"], "sci")
+    first = val["checks"][0]  # recomputed vs logged training loss at the first checked checkpoint
+    out["paper.val_step"] = _v(first["step"], "int")
+    out["paper.val_loss_recomputed"] = _v(first["train_loss_recomputed"], ".6f")
+    out["paper.val_loss_logged"] = _v(first["train_loss_logged"], ".6f")
     for row in rc["rows"]:  # rc.R* = our value of each reproduction check
         ours = row["ours"]
         out[f"rc.{row['id']}"] = _v(ours, "sci") if isinstance(ours, float) else _v(ours)
@@ -158,6 +162,7 @@ def paper_curve_numbers(m: dict, ph: dict, g: dict, gi) -> dict:
     out["paper.train_acc_full_step"] = _v(int(s[np.argmax(m["acc_train"] >= 1.0)]), "int")  # first checkpoint at 100 %
     out["paper.loss_test_peak"] = _v(float(m["loss_test"].max()), ".0f")
     out["paper.loss_test_t2"] = _v(_at(m, "loss_test", ph["t2"]), ".2f")
+    out["paper.loss_test_5k"] = _v(_at(m, "loss_test", 5001), ".0f")
     ratio = m["loss_test"] / m["restricted_loss"]  # ARENA's "test loss ÷ restricted loss" (figure trig-loss-ratio)
     cf = (s >= ph["t1"]) & (s <= ph["t2"])  # circuit formation
     out["paper.ratio_cf_range"] = _v(f"{ratio[cf].min():.0f}–{ratio[cf].max():.0f}", "str")
@@ -207,6 +212,7 @@ def run_numbers(reports_dir: Path) -> dict:
     out["hyp.summary"] = _v("; ".join(parts) + ".", "str")
     # post-hoc decomposition of H4 into its three preregistered sub-conditions (counts only, no new test)
     pr = hyp["per_run"].values()
+    out["hyp.h4_successes"] = _v(f"{v['H4']['successes']} of {v['H4']['n']}", "str")
     out["hyp.h4_key_ok"] = _v(f"{sum(r['H4_key_min_ratio'] >= 100 for r in pr)}/{len(pr)}", "str")
     out["hyp.h4_nonkey_ok"] = _v(f"{sum(r['H4_nonkey_max_ratio'] <= 2 for r in pr)}/{len(pr)}", "str")
     out["hyp.h4_keep_ok"] = _v(f"{sum(r['H4_keep_ratio'] <= 1.5 for r in pr)}/{len(pr)}", "str")

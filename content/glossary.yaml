@@ -566,7 +566,7 @@ sign-test:
   src: ["https://en.wikipedia.org/wiki/Sign_test"]
 multiple-comparisons:
   name: multiple-comparison correction
-  def: "Making each test stricter when several hypotheses are tested, so the chance of any false alarm stays at 5 % (here Holm's method)."
+  def: "Making each test stricter when several hypotheses are tested, so the chance of any false alarm is at most 5 % (here Holm's method)."
   src: ["https://en.wikipedia.org/wiki/Holm%E2%80%93Bonferroni_method"]
 preregistration:
   name: preregistration

@@ -34,7 +34,7 @@ $\begin{pmatrix}3&0\\0&1\end{pmatrix}$ has singular values 3 and 1. $\begin{pmat
 
 {{fig:we-svals}}
 
-The same singular values at every checkpoint of training (largest at the bottom): by the end, about ten of them stand above the rest.
+The same singular values at every checkpoint of training (largest at the bottom): by the end, ten of them stand well above the rest ({{num:paper.we_svals_top10}} on the paper's run at step 40,001), followed by two smaller ones ({{num:paper.we_svals_next2}}); all others are at most {{num:paper.we_svals_rest_max}}.
 
 {{fig:svals-over-training}}
 

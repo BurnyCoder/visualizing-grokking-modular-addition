@@ -43,10 +43,10 @@ And the whole story in one view once more:
 ## What we learned, in five sentences
 
 1. A one-layer transformer trained on 30 % of all modular sums learns to represent numbers as angles at a few frequencies and adds them with the angle-addition identities ({{cite:nanda2023}}; ch. 12).
-2. Four independent lines of evidence — Fourier sparsity, single-frequency neurons, a rank-10 read-out, and interventions including counterfactual patching — support this description of the trained network (ch. 13–16).
+2. Four lines of evidence — Fourier sparsity, single-frequency neurons, a rank-10 read-out, and interventions including counterfactual patching — support this description of the trained network (ch. 13–16).
 3. Knowing the mechanism lets us measure hidden progress: the restricted loss falls and the excluded loss rises long before the test loss drops (ch. 17).
-4. During memorisation the gradients of the training and test losses point in opposite directions; after grokking the network sits in a balance between the loss and weight decay (ch. 19).
-5. In all 11 of our retrained seeds with weight decay, the Fourier signatures appear — sparse spectra, single-frequency neurons, cosine-shaped logits, and the patching test — each seed with its own key frequencies; the strictest preregistered ablation criterion (H4) held in only 6 of 11, because our rule for naming the key frequencies sometimes includes a weak one or leaves out a little used one. Without weight decay, none of 5 networks grokked (ch. 20).
+4. Throughout circuit formation and over most of memorisation the gradients of the training and test losses partly oppose each other (negative cosine, {{num:paper.cos_tt_cf_range}} in circuit formation), turning positive only during cleanup, after step {{num:paper.cos_tt_last_neg}}; after grokking the network sits in a balance between the loss and weight decay (ch. 19).
+5. In all 11 of our retrained seeds with weight decay, the Fourier signatures appear — sparse spectra, single-frequency neurons, cosine-shaped logits, and the patching test — each seed with its own key frequencies; the strictest preregistered ablation criterion (H4) held in only {{num:hyp.h4_successes}}, because our rule for naming the key frequencies sometimes includes a weak one or leaves out a little used one. Without weight decay, none of 5 networks grokked (ch. 20).
 
 Point 5 at a glance: the three phases of every run whose phases were detected, on one time axis, and the paper's run with its authors' own boundaries:
 

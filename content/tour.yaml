@@ -16,11 +16,11 @@
 - title: "A long plateau"
   panel: acc-curves
   play: {from: 1600, to: 9300, speed: 4}
-  text: "For thousands of steps little seems to happen: training accuracy stays at 100 % while test accuracy stays low."
+  text: "For thousands of steps little seems to happen: training accuracy stays at 100 % while test accuracy creeps up only slowly, from {{num:paper.acc_test_t1}} at about step {{num:paper.t1}} to {{num:paper.acc_test_t2}} at step {{num:paper.t2}}."
 - title: "…but the weights are changing"
   panel: we-fourier-heatmap
   play: {from: 0, to: 15400, speed: 3}
-  text: "The embedding's Fourier spectrum over training (the bright column is the current step): during the plateau a few frequencies — bright rows — separate from the rest, long before the test loss moves."
+  text: "The embedding's Fourier spectrum over training (the bright column is the current step): during the plateau a few frequencies — bright rows — separate from the rest, long before the test loss collapses."
 - title: "Hidden progress"
   panel: progress-measures
   state: {step: 7001}
@@ -60,7 +60,7 @@
 - title: "Late surprise"
   panel: avg-attn
   play: {from: 40000, to: 50000, speed: 2}
-  text: "Training is not over after 40,000 steps: late on, two heads attend to '=' again (heads 0–3: {{num:paper.attn_eq_45k}} at step 45,001, up from {{num:paper.attn_eq_pct}} at 40,001) — a small change nobody has explained yet."
+  text: "Training is not over after 40,000 steps: late on, two heads attend to '=' again (heads 0–3: {{num:paper.attn_eq_45k}} at step 45,001, up from {{num:paper.attn_eq_pct}} at 40,001) — a small change that neither the paper nor ARENA explains."
 - title: "Not a fluke"
   panel: seed-test-loss
   state: {step: 40001}

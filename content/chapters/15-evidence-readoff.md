@@ -10,7 +10,7 @@ Over the whole run: how strongly each frequency's wave appears in the logits (or
 
 {{fig:alpha-growth}}
 
-Only the ten key-frequency components are visible: $W_L$ has [[term:rank]] about 10. Approximating $W_L$ by its projection onto those ten waves leaves a residual whose squared [[dfn:frobenius-norm]] is {{num:paper.wl_resid_sq}} of $W_L$'s (residual norm ratio {{num:paper.wl_resid_norm}}). The paper reports “under 0.55 %”, which matches the *squared* ratio; we flag the wording on the [errata page](../errata.html).
+Only the ten key-frequency components are visible: $W_L$ has [[term:rank]] about 10. Approximating $W_L$ by its projection onto those ten waves leaves a residual whose squared [[dfn:frobenius-norm]] is {{num:paper.wl_resid_sq}} of $W_L$'s at step 40,001 ({{num:paper.wl_resid_sq_last}} at the released run's last checkpoint, step {{num:paper.last_step}}); its norm itself is {{num:paper.wl_resid_norm}} of $W_L$'s. The paper reports a residual norm “under 0.55 %”: that is close to our *squared* ratio (marginally above 0.55 % at step 40,001), not to the norm ratio; we flag the wording on the [errata page](../errata.html).
 
 Writing the ten rows as $W_L \approx \sum_{k}\cos(w_k)\,u_k^\top + \sin(w_k)\,v_k^\top$ (paper eq. 2) defines, for each key frequency, two directions [[symdef:uk]] in the 512-dimensional neuron space: whatever lies along $u_k$ is written into the logits as $\cos(w_k c)$, whatever lies along $v_k$ as $\sin(w_k c)$.
 

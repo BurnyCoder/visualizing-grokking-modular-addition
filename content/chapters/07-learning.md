@@ -54,17 +54,17 @@ Settings chosen before training are [[dfn:hyperparameter|hyperparameters]]. The 
 | Learning rate γ | 0.001, warm-up min(step/10, 1) | same |
 | Weight decay λ | 1 | 1 (and 0 for a control) |
 | Batch | full (3,830 examples) | same |
-| Steps | 50,000 (paper analyses 40,000) | 40,000 |
+| Steps | 40,000 in the paper's text (its released code and run continue to 50,000) | 40,000 |
 | Loss | cross-entropy over all 114 outputs | same, computed in float64 |
-| Initialization | Gaussian, scale 1/√128 (W_U: 1/√114); not seeded | same rule, seeded |
+| Initialization | Gaussian, scale 1/√128 (W_U: 1/√114); no seed call in the released code, yet equal to our seed-0 draw up to rounding (chapter 20) | same rule, seeded |
 | Split | python random.shuffle, seed 0 | seed = run's seed (seed 0 = paper's split) |
 
-Sources: paper Sec. 3 {{cite:nanda2023}} and the paper's training code {{cite:paperrepo}}. Two details matter for exact reproduction: the warm-up multiplies the learning rate by 0 at the very first step (so the first update changes nothing), and the paper's checkpoint labelled “epoch e” holds the weights after e + 1 updates. We verified both by recomputing the paper's logged losses from its checkpoints (see [Reproduce](../reproduce.html)).
+Sources: paper Sec. 3 {{cite:nanda2023}} and the paper's training code {{cite:paperrepo}}. Two details matter for exact reproduction: the warm-up multiplies the learning rate by 0 at the very first step (so the first update leaves the weights unchanged, though Adam's running averages are updated), and the paper's checkpoint labelled “epoch e” holds the weights after e + 1 updates. We verified both by recomputing the paper's logged losses from its checkpoints (see [Reproduce](../reproduce.html)).
 
 ## Overfitting
 
 [[dfn:overfitting]] is doing much better on the training set than on unseen data. A network with 226,816 parameters and only 3,830 training examples can overfit easily: it has more than enough capacity to memorise. The next chapter shows what happens next.
 
 ::: nuance
-**Chaos in early training.** While retraining, we found that early full-batch Adam training is extremely sensitive to tiny numerical differences: two mathematically identical implementations differ by 3 × 10⁻⁷ after 20 steps but by ~0.02 after 50 and ~0.2 after 200 steps (tiny rounding differences are amplified by orders of magnitude within tens of steps). Runs are still exactly repeatable on the same hardware and software (we use PyTorch's deterministic mode), but they are not reproducible bit-for-bit across different GPU kernels — one reason to report results over many seeds, as we do in chapter 20.
+**Chaos in early training.** While retraining, we found that early full-batch Adam training is extremely sensitive to tiny numerical differences: the largest parameter difference between two mathematically identical implementations is 3 × 10⁻⁷ after 20 steps but ~0.02 after 50 and ~0.2 after 200 steps (tiny rounding differences are amplified by orders of magnitude within tens of steps). Runs are still exactly repeatable on the same hardware and software (we use PyTorch's deterministic mode), but they are not reproducible bit-for-bit across different GPU kernels — one reason to report results over many seeds, as we do in chapter 20.
 :::

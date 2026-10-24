@@ -2,7 +2,7 @@
 # Each: slug (file content/chapters/<slug>.md), title, summary (one line), sources (shown under the title).
 - slug: 00-overview
   title: "The whole picture, first"
-  summary: "What this site explains, the two mathematical objects at its heart, and how to read the rest."
+  summary: "What this site explains, the three mathematical objects at its heart, and how to read the rest."
   sources: ["{{cite:nanda2023}} abstract, Sec. 3", "{{cite:arena152}} intro", "{{cite:video_welch}}"]
 - slug: 01-clock-arithmetic
   title: "Counting on a clock"

@@ -22,8 +22,8 @@ The phase-by-phase diagram is in the README ([What happens when you run it](../R
   parameter layout loads the paper's checkpoints without conversion and is mirrored in JavaScript (`forwardDetailed` step by step;
   the fast path through per-token tables).
 - **Batched training.** The model is tiny, so one run leaves the GPU idle; all 22 runs train together with
-  `torch.func.vmap` (runs provably independent, see `tests/test_train.py`): 73 minutes, against an estimated ~7.5 hours
-  run by run (exp-02).
+  `torch.func.vmap` (runs tested to be independent, see `tests/test_train.py`): 73 minutes, against an estimated ~7.3
+  hours run by run (exp-02).
 - **Static site, one implementation per figure.** Figures are ES modules registered by id; chapters and the
   dashboard place the same implementation, so the step-by-step text and the dashboard cannot disagree.
 - **Numbers are bound, not typed.** Measured numbers in the prose come from `site/data/summary.json` via `{{num:key}}`.

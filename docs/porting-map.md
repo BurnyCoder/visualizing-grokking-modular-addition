@@ -20,10 +20,10 @@ All functions were re-implemented. None was copied verbatim: P, PC and A have no
 | `losses.bias_correct` | P26 `test_logits(bias_correction=True)` | Factored out. |
 | `fourier.fourier_basis` | P30, PC `make_fourier_basis`, A `make_fourier_basis` | cos at 2k−1, sin at 2k. T74 uses the opposite order. |
 | `fourier.fft2d`, `basis_term_2d`, `cos_apb_dir`, `sin_apb_dir`, `extract_freq_2d` | P31, PC helpers, A `fft2d`, `get_trig_sum_directions` | Adds `ifft2d`. `extract_freq_2d` covers k = 56, which A's `arrange_by_2d_freqs` skips. |
-| `fourier.gini` | Hurley & Rickard 2009 | Not in any notebook; the paper only cites the paper. |
+| `fourier.gini` | Hurley & Rickard 2009 | Not in any notebook; the paper cites Hurley & Rickard (p. 8) without writing out the formula. |
 | `metrics.key_frequencies` | Paper p.18 text; PC `calculate_key_freqs` | Threshold τ on the W_L Fourier norms (docs/operationalizations.md). |
 | `metrics.restricted_loss` | PC `calculate_trig_loss`, P66, A `trig_loss` | Same definition. |
-| `metrics.excluded_loss(_per_freq)` | PC `calculate_excluded_loss`, P60–62, A `excl_loss` | Same definition. Per-frequency version over all 56 frequencies. |
+| `metrics.excluded_loss(_per_freq)` | All K at once: P61 `calculate_excluded_loss_2D_full`. One frequency at a time: P60 (every k), PC `calculate_excluded_loss` and A `excl_loss` (k ∈ K) | Same definitions. The per-frequency version covers all 56 frequencies. |
 | `metrics.cos_coefficients` | PC `calculate_coefficients`, P50 | Loops over k so memory stays small. |
 | `metrics.logit_cos_fit` | Paper Sec. 4.2; T131–136 | OLS with an intercept; reports the centred FVE. T133's "~2 %" comment is wrong: its uncentred residual was 18.8 %. |
 | `metrics.neuron_frequencies` | PC `calculate_key_freqs`, P47–49, A `find_neuron_freqs`, `get_frac_explained` | Covers k = 56. Also returns the quadratic share. |

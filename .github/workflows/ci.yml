@@ -1,6 +1,7 @@
 # ci.yml — run the fast test suite on every push and pull request (CPU only, no downloads).
-# Global context: GPU, network and slow tests (training, paper checkpoint download, quote checks against PDFs)
-# run locally; CI guards the core math, metrics, site build checks and the JavaScript model.
+# Global context: GPU, network, slow and browser tests (paper checkpoint download, clip rendering, the built-site
+# browser test) run locally, and the quote checks skip without the downloaded PDFs; CI guards the core math, metrics,
+# short CPU training tests, site build checks and the JavaScript model.
 # Sources: astral-sh/setup-uv (https://github.com/astral-sh/setup-uv); pytest markers (pyproject.toml).
 name: CI
 on:

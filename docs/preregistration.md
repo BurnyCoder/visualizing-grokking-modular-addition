@@ -1,6 +1,8 @@
 # Preregistration: replicating the grokking mechanism across seeds, with controls
 
-- **Frozen at:** git tag `prereg-v1`, pushed **before** any full training run.
+- **Frozen at:** git tag `prereg-v1` (commit `9e2207c`), pushed **before** any full training run: the repository's
+  GitHub event log records the push of `9e2207c` to `main` at 2026-10-18 16:03:34 UTC (18:03:34 CEST), 25 s before the
+  first full training run started at 18:03:59 (`logs/20261018-180359_pipeline.log`).
 - **Definitions:** exact definitions of every metric and phase boundary are in [`operationalizations.md`](operationalizations.md). They were checked only on the paper's published model (`runs/paper`).
 - **Analysis code:** `src/grokviz/hypotheses.py` implements exactly the tests below.
 - **Changes after the freeze:** any change made after this tag is listed under *Deviations*, with its reason.
@@ -77,7 +79,8 @@ Logit-frequency ablations at the final checkpoint.
 - **split0:** do the three runs that share the paper's split choose the paper's key frequencies {14, 35, 41, 42, 52}? This is exploratory; no hypothesis.
 
 ## Power and sample size
-Computed with `grokviz.stats.power_table`. The numbers in the table are reproduced in the logs.
+Computed with `grokviz.stats.power_table`, which recomputes the whole table; `tests/test_phases_stats.py` checks the
+n = 11 row.
 
 | Seeds n | P(all n agree by chance) | Sign-test power if the true agreement rate is 0.95 (α = 0.01, the strictest Holm level) | Smallest effect d with 80 % power, one-sided t-test at α = 0.01 |
 |---|---|---|---|
@@ -109,7 +112,7 @@ after it. For transparency, here is everything that happened after the tag, with
     at the whole repository as it was then, which did not yet contain `hypotheses.py`.
   - **One case the text leaves open.** In H1, a run whose restricted loss falls tenfold but whose test loss never does
     counts as Δ = +∞, a pass (already in the first committed version, `ad8e69d`). No run hit this case.
-  - **When relative to results.** The first training launch started at 18:03:59. Its first log line, at 18:07:50,
+  - **When relative to results.** The first training launch started at 18:03:59. Its first test-accuracy line, at 18:07:50,
     came after the file was written.
   - **When committed.** Only on 2026-10-21 (`ad8e69d`), because an OS restart interrupted the session.
 - **Information seen during training.** The training log prints test accuracy for `wd1_s0`–`wd1_s5` every 2,000
@@ -121,6 +124,11 @@ after it. For transparency, here is everything that happened after the tag, with
   - `c872ae1` (2026-10-21 01:18, before training finished at 01:20): H1's Δ = +∞ is stored as null so the JSON stays
     standard, and `H1_ok` keeps the +∞ meaning; `test_hypotheses` reads every run whatever `--runs` says, writes its
     table atomically and skips when no wd1 run is analysed;
+  - `ea22339` (2026-10-21 01:18, before training finished): a refactor that moves the W_L-residual and key-row
+    formulas into shared helpers (`metrics.wl_residual_sq_frac`, `fourier.key_rows`); same formulas, used by S3 and
+    the R-checks, not by H1–H5;
+  - `ee01e16` (2026-10-21 01:18): atomic analysis writes, a resume fingerprint, `--force` clears resume state, and the
+    exploratory gradient/decay ratio is NaN for λ = 0 runs; no test reads any of these;
   - `9f66e15` (2026-10-21 10:32): `analyse_final` also stores a descriptive cluster ablation for the site; no test
     reads it;
   - `2f56492` (2026-10-23 00:37): the tenfold-drop helper moved unchanged to `phases.drop_time`, so the prose can
@@ -129,6 +137,10 @@ after it. For transparency, here is everything that happened after the tag, with
   - `train.py` gained crash-resume support (`38d0510`); the resumed and uninterrupted trajectories are bitwise identical
     (`tests/test_train.py`);
   - all runs were relaunched from scratch after the interruption.
+- **Two readings the text leaves open** (both in the code since the tag or since `hypotheses.py` was first written,
+  documented 2026-10-24): X(t1) in H1 and excl(t1) in H2 are read at the first checkpoint at or after t1, because
+  t1 is a per-step value while the metrics exist every 100 steps; and the t1 rule ignores steps ≤ 100, the warm-up
+  transient (`phases.py`, unchanged since the tag).
 - **Logging cadence.** During training, test loss and accuracy are logged every 10 steps (`GROKVIZ_TEST_EVERY`), not
   every step. This does not affect the tests: the phase rules and the hypotheses read test loss and accuracy from the
   per-checkpoint metrics (every 100 steps), as stated.

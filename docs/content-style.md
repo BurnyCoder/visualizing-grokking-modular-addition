@@ -16,7 +16,8 @@ enforces the mechanical parts of that promise; the rest is editorial.
   deploy time.
 - **Glossary entries** (`content/glossary.yaml`): one sentence, ≤ 35 words, ending with a period, with ≥ 1 source URL.
 - **Quotes** (`content/quotes.yaml`): ≤ 25 words each, ≤ 100 quoted words per chapter; rendered with source and page.
-  `tests/test_quotes.py` verifies every quote verbatim against the cited PDF page.
+  Not part of the build: `tests/test_quotes.py` verifies every quote verbatim against the cited PDF page (skipped until
+  `acquire_paper_sources` has downloaded the PDFs).
 - **References:** every `{{cite:key}}` exists in `content/references.yaml` (numbered in file order).
 - **Numbers:** every `{{num:key}}` exists in `site/data/summary.json` — prose numbers are never typed by hand.
 - **Figures/widgets:** every `{{fig:id}}` / `{{widget:id}}` has metadata and a registered JS implementation.

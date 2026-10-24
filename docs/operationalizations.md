@@ -46,8 +46,11 @@ L_r = bias_correct(P_K L), evaluated on **all pairs**.
 
 ### Excluded loss
 L − P_K L, evaluated on the **train** pairs, with no bias correction.
-- Source: paper code `calculate_excluded_loss` and ARENA `excl_loss`.
-- Per-frequency variant: remove one k at a time, for k = 1..56.
+- Source for this all-K form (the progress measure of paper Sec. 5.1 and Fig. 7): the paper's notebook,
+  `calculate_excluded_loss_2D_full` (submodule `grokking-original.ipynb`, cell 61).
+- Per-frequency variant: remove one k at a time, for k = 1..56. Paper code `calculate_excluded_loss` and ARENA
+  `excl_loss` do this for each k ∈ K, notebook cell 60 (`calculate_excluded_loss_2D`) for every k; R16 checks the
+  k ∈ K values against ARENA's test.
 - K-free variant: the maximum over k (paper footnote 3). This is the only excluded loss used for the wd=0 and random-label controls.
 - Check on the paper model: ARENA's test values, exactly.
 
@@ -89,8 +92,11 @@ C_j[a] = (W_Q^j x₂)·(W_K^j W_E[:,a]) / √d_head, where x₂ = W_E[:, '='] + 
 ## Phase boundaries
 These use only losses, accuracy and SSW, never the progress measures. Constants were calibrated on the paper run.
 
-- **t1**: first step after which train loss falls by < 1 % over the next 100 steps.
+- **t1**: first step after which train loss falls by < 1 % over the next 100 steps, ignoring steps ≤ 100 (the
+  warm-up transient).
   - Paper run: 1,567. Paper: ≈1.4k, drawn by eye.
+  - t1 is a per-step value, but per-checkpoint quantities "at t1" (H1's X(t1), H2's excl(t1)) are read at the first
+    checkpoint at or after t1 (e.g. 1,567 → checkpoint 1,601).
 - **t2**: first checkpoint after t1 with test loss ≤ 0.2 × median(test loss over [t1, t1+2000]).
   - Paper run: 9,301. Paper: 9.4k.
 - **t3**: first checkpoint after t2 with SSW ≤ SSW_final + 0.05·(SSW(t2) − SSW_final), where SSW_final is the median over the last 5,000 steps.

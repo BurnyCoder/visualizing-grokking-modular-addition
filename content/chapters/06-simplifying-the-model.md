@@ -12,11 +12,10 @@ A [[dfn:skip-connection]] is a path that carries a layer's input around the laye
 | Ablation | Loss | Interpretation |
 |---|---|---|
 | Zero the attention output | {{num:rc.R11c}} | attention is essential (worse than guessing) |
-| Zero the skip connection around the MLP | {{num:rc.R11a}} | negligible: accuracy unchanged |
+| Zero the skip connection around the MLP | {{num:rc.R11a}} | negligible (the paper reports accuracy unchanged) |
 | Mean-ablate the skip connection around the MLP | {{num:rc.R11b}} | negligible |
-| Attention from “=” to itself (per head) | {{num:paper.attn_eq_pct}} | tiny, can be ignored |
 
-The paper reports 24.3, 9.12 × 10⁻⁷ and 7.25 × 10⁻⁷ for the first three and 0.1–0.4 % for the last {{cite:nanda2023}} (App. A.1).
+Attention from “=” to itself is tiny and can be ignored: {{num:paper.attn_eq_pct}} for heads 0–3. The paper reports 24.3, 9.12 × 10⁻⁷ and 7.25 × 10⁻⁷ for the three ablations and 0.1–0.4 % for the attention {{cite:nanda2023}} (App. A.1).
 :::
 
 {{quote:nanda-skip}}
@@ -66,5 +65,5 @@ $$\begin{aligned}\Logits(a,b) \approx W_L\,\ReLU\Big(W_{in}\big[\,&x_2 + \textst
 where $E_t$ is token t's embedding plus its positional vector. Everything that depends on the input enters through the embeddings $E_a$, $E_b$, the lookup tables $C_j$, a ReLU, and the neuron–logit map $W_L$. The rest of the site explains what each of these does.
 
 ::: nuance
-These simplifications are justified *empirically for the trained network*. Early in [[preview:training|training]], the skip connections and attention to “=” can matter; the dashboard's attention panels show attention to “=” jumping back up around step 43,000 — a late change that neither the paper nor ARENA explains {{cite:arena152}}.
+These simplifications are justified *empirically for the trained network*. They need not hold at every point of [[preview:training|training]]: the dashboard's attention panels show attention to “=” at almost zero from step {{num:paper.attn_eq_drop_step}} on, then rising again around step 43,000 — a late change that neither the paper nor ARENA explains {{cite:arena152}}.
 :::

@@ -4,7 +4,7 @@ Local explanation: chapters are markdown files with small macros that the build 
   [[dfn:id]] / [[dfn:id|text]]      — the place a term is defined (highlighted, tooltip from glossary.yaml)
   [[term:id]] / [[term:id|text]]    — a later use of a defined term (tooltip, link to the glossary)
   [[symdef:id]] / [[sym:id]]        — definition / use of a mathematical symbol (KaTeX + one-sentence card)
-  {{quote:id}}                      — an exact quotation from quotes.yaml (verified against the PDF page)
+  {{quote:id}}                      — an exact quotation from quotes.yaml (verified against the PDF page by tests/test_quotes.py)
   {{num:key}}                       — a number from site/data/summary.json (so prose cannot drift from data)
   {{fig:id}} / {{widget:id}}        — a live figure from figures.yaml / an interactive teaching widget
   {{anim:id}}                       — the figure as an animation with its own step, played while on screen

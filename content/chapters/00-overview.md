@@ -53,7 +53,7 @@ The trick at the heart of it, on a clock with 113 hours: turning by a and then b
 
 $$\theta \;\leftarrow\; \theta\,(1 - \gamma\lambda) \;-\; \gamma\cdot \text{AdamStep}\big(\nabla_\theta \mathcal{L}\big)$$
 
-and along the way passes through three phases — memorisation, circuit formation, cleanup — that can be measured before the sudden jump in test [[preview:accuracy|accuracy]] happens.
+and along the way passes through three phases — memorisation, circuit formation, cleanup — the first two of which can be measured before the sudden jump in test [[preview:accuracy|accuracy]], which happens during cleanup.
 :::
 
 | Symbol | Meaning (one sentence) |
@@ -92,4 +92,4 @@ and along the way passes through three phases — memorisation, circuit formatio
 
 Every number on this site is computed from real networks: by default the paper's own published training run {{cite:paperckpt}}, with our replications one click away. Our analysis code reproduces most of the paper's reported numbers on the paper's own network, and the few it does not are listed with explanations (see the [reproduction page](../reproduce.html)). Where a step or claim comes from somewhere, it is cited; quotations are exact and short.
 
-This model is a toy: one task, one layer, ~227 thousand learned numbers. Its value is that its algorithm has been reverse-engineered in unusual detail — the paper's authors used it as a proof of concept for measuring hidden progress in training. The three videos that inspired this site tell the same story from different angles {{cite:video_replication}} {{cite:video_paper}} {{cite:video_welch}}.
+This model is a toy: one task, one layer, {{num:model.n_params}} learned numbers. Its value is that its algorithm has been reverse-engineered in unusual detail — the paper's authors call their work a proof of concept for using [[preview:mechanistic-interpretability|mechanistic interpretability]] to understand emergent behaviour in training. The three videos that inspired this site tell the same story from different angles {{cite:video_replication}} {{cite:video_paper}} {{cite:video_welch}}.

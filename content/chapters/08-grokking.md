@@ -19,7 +19,7 @@ Here is the paper's own training run. Both curves are plotted on a [[dfn:log-sca
 ::: example
 **Reading the plot** (paper's run; numbers from its logs):
 
-- **Steps 0 – {{num:paper.train_acc_full_step}}:** both losses start at ln 113 ≈ 4.73 (guessing). Training accuracy reaches 100 % by step {{num:paper.train_acc_full_step}}.
+- **Steps 0 – {{num:paper.train_acc_full_step}}:** both losses start near ln 113 ≈ 4.73, the loss of uniform guessing. Training accuracy reaches 100 % by step {{num:paper.train_acc_full_step}}.
 - **{{num:paper.train_acc_full_step}} – {{num:paper.t1}}:** training loss keeps falling by orders of magnitude while test loss *rises* to about {{num:paper.loss_test_peak}} — worse than guessing: the network confidently gives memorised-looking answers to questions it has never seen.
 - **{{num:paper.t1}} – {{num:paper.t2}}:** a long plateau. Training loss is tiny and flat; test loss decreases only slowly.
 - **Around {{num:paper.t2}}:** test loss collapses by seven orders of magnitude; test accuracy reaches 99 % at step {{num:paper.t_grok}}.

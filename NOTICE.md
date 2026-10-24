@@ -1,7 +1,9 @@
 # NOTICE — third-party material, provenance and terms
 
-This repository's own code and text are MIT-licensed (see `LICENSE`). Everything listed below is
-third-party material that keeps its own terms. Each entry says what we use, how, and under which terms.
+This repository's own code and text are MIT-licensed (see `LICENSE`, the verbatim
+[MIT text](https://choosealicense.com/licenses/mit/)). That license covers only the code and original text written for
+this repository. Everything listed below is third-party material that keeps its own terms. Each entry says what we
+use, how, and under which terms.
 
 | Material | Where it is used | Terms as found | How we use it |
 |---|---|---|---|

@@ -20,7 +20,7 @@ outputs `runs/paper/analysis/{validation,rchecks}.json`, table [`tables/exp01_rc
 ## Step 1 — Checkpoint and split alignment
 
 **Method.** Rebuild the paper's train/test split (`random.seed(0); random.shuffle(pairs)`, first 3,830 pairs train). Then
-recompute the 114-way training loss of checkpoints between step 100 and 49,900 and compare it with the logged
+recompute the 114-way training loss of checkpoints between step 101 and 49,901 (epochs 100–49,900) and compare it with the logged
 `train_losses`.
 
 **Result.**
@@ -71,7 +71,9 @@ The matching rows also include:
 4. **The neuron polynomial replacement uses the MLP-only path.** It reproduces 2.48 × 10⁻⁷ only through the MLP path
    W_L · MLP with bias correction, which is ARENA's method. Including the skip connection gives 1.52 × 10⁻⁷. The paper's
    own text approximates Logits ≈ W_L·MLP (App. A.1), consistent with this.
-5. **The Gini definition is unspecified in the paper.** Hurley & Rickard's definition on the 113 per-component norms gives
+5. **The Gini formula is not written out in the paper.** It cites Hurley & Rickard (2009) for "the Gini coefficient
+   … of the norms of the Fourier components of W_E and W_L" (p. 8) but does not say whether those are the 113
+   per-component norms or the 56 per-frequency norms. Hurley & Rickard's definition on the 113 per-component norms gives
    final values 0.736 (W_E) and 0.801 (W_L). These are consistent with the paper's Fig. 7, which reports no numeric
    mainline values.
 6. **The Fig. 3 sin/cos labels cannot be checked from the weights.**

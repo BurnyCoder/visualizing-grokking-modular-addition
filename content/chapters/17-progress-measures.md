@@ -41,7 +41,7 @@ Two more measures track the same story. The [[term:gini]] coefficient of the Fou
 
 {{fig:gini-curves}}
 
-and the [[dfn:sum-squared-weights|sum of squared weights]] — the quantity weight decay pushes down — rises during memorisation to a peak of {{num:paper.ssw_peak}} (step {{num:paper.ssw_peak_step}}), falls steadily during circuit formation, and drops steeply during cleanup to {{num:paper.ssw_t3}} at step {{num:paper.t3}}:
+and the [[dfn:sum-squared-weights|sum of squared weights]] — the quantity weight decay pushes down — rises early in memorisation to a peak of {{num:paper.ssw_peak}} (step {{num:paper.ssw_peak_step}}), is already down to {{num:paper.ssw_t1}} when memorisation ends, keeps falling through circuit formation, and falls fastest on average during cleanup, to {{num:paper.ssw_t3}} at step {{num:paper.t3}}:
 
 {{fig:ssw-curves}}
 
@@ -49,7 +49,7 @@ Per frequency, the excluded loss shows each key frequency taking over part of th
 
 {{fig:excluded-per-freq}}
 
-Computing the restricted loss separately on the training and the test questions shows why it measures hidden progress: the two curves coincide at every step, so the part of the logits that uses only the key frequencies generalises from the start, while the ordinary test loss is still dominated by memorised answers.
+Computing the restricted loss separately on the training and the test questions shows why it measures hidden progress: the two curves nearly coincide at every step, so the part of the logits that uses only the key frequencies generalises from the start, while the ordinary test loss is still dominated by memorised answers.
 
 {{fig:restricted-split-curves}}
 

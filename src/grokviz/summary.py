@@ -18,6 +18,7 @@ import numpy as np  # arrays
 import torch  # weights
 
 from grokviz import stats, task  # intervals over seeds; split sizes
+from grokviz.formatting import fmt_number  # one number format for ranges built here
 from grokviz.phases import drop_time  # tenfold-fall time points (H1's rule)
 from grokviz.runstore import RunStore  # paper run
 from grokviz.sources import PAPER_ANALYSIS_INDEX  # index of the paper's epoch-40k checkpoint
@@ -74,6 +75,7 @@ def paper_numbers(runs_dir: Path, p: int, frac: float) -> dict:
     out["paper.val_step"] = _v(first["step"], "int")
     out["paper.val_loss_recomputed"] = _v(first["train_loss_recomputed"], ".6f")
     out["paper.val_loss_logged"] = _v(first["train_loss_logged"], ".6f")
+    out.update(logged_precision_numbers(store.curves()))
     for row in rc["rows"]:  # rc.R* = our value of each reproduction check
         ours = row["ours"]
         out[f"rc.{row['id']}"] = _v(ours, "sci") if isinstance(ours, float) else _v(ours)
@@ -141,6 +143,7 @@ def paper_numbers(runs_dir: Path, p: int, frac: float) -> dict:
     ssw = m["ssw_total"]
     out["paper.ssw_peak"] = _v(float(ssw.max()), ",.0f")
     out["paper.ssw_peak_step"] = _v(int(m["steps"][int(ssw.argmax())]), "int")
+    out["paper.ssw_t1"] = _v(_at(m, "ssw_total", ph["t1"]), ",.0f")
     out["paper.ssw_t3"] = _v(_at(m, "ssw_total", ph["t3"]), ",.0f")
     mid = int(m["steps"][int(np.argmin(np.abs(m["steps"] - (ph["t1"] + ph["t2"]) / 2)))])  # midpoint of circuit formation
     gi = lambda s: int(np.argmin(np.abs(g["steps"] - s)))  # noqa: E731 — nearest gradient checkpoint
@@ -185,6 +188,38 @@ def paper_curve_numbers(m: dict, ph: dict, g: dict, gi) -> dict:
     out["paper.we_svals_top10"] = _v(f"{sv[9]:.1f}–{sv[0]:.1f}", "str")
     out["paper.we_svals_next2"] = _v(f"{sv[10]:.2f} and {sv[11]:.2f}", "str")
     out["paper.we_svals_rest_max"] = _v(float(sv[12]), ".2f")
+    out["paper.wl_outside_init"] = _v(float(m["wl_resid_sq_frac"][0]), "pct")  # share of W_L outside the key frequencies
+    out["paper.wl_outside_t3"] = _v(_at(m, "wl_resid_sq_frac", ph["t3"]), "pct")
+    r = g["grad_ratio_decay"][g["steps"] >= ph["t1"]]  # ‖∇L‖ ÷ λ‖θ‖ after memorisation
+    out["paper.grad_decay_ratio"] = _v(f"{fmt_number(_v(r.min(), 'sci'))} to {fmt_number(_v(r.max(), 'sci'))}", "str")
+    C = m["attn_C_fourier"]  # [T, heads, p]: each head's attention lookup C_j in the Fourier basis
+    energy = C[..., 1::2] ** 2 + C[..., 2::2] ** 2  # per frequency k: cos² + sin² (constant left out)
+    share = energy.max(-1) / energy.sum(-1)  # each head's largest single-frequency share
+    out["paper.head_lookup_plateau_max"] = _v(float(share[cf].max()), "pct")
+    sh = share[int(np.argmin(np.abs(s - 40001)))]
+    out["paper.head_lookup_share_40k"] = _v(f"{100 * sh.min():.1f}–{100 * sh.max():.1f} %", "str")
+    eq = m["avg_attn"][:, :, 2]  # mean attention from '=' to '=' per head
+    out["paper.attn_eq_drop_step"] = _v(int(s[np.argmax((eq < 0.01).all(1))]), "int")  # first checkpoint with every head < 1 %
+    return out
+
+
+def logged_precision_numbers(c: dict) -> dict:
+    """paper.logged_losses_*: how many of the released run's logged losses are exactly representable in float32. A loss
+    computed in float32 and read with .item() always is, so a count of 0 shows that the run's loss was float64."""
+    x = np.concatenate([c["train_loss"], c["test_loss"]]).astype(np.float64)
+    return {"paper.logged_losses_n": _v(len(x), "int"), "paper.logged_losses_f32": _v(int((x.astype(np.float32) == x).sum()), "int")}
+
+
+def seed_spread_numbers(runs_dir: Path) -> dict:
+    """seeds.n_grokked: our runs that grokked; controls.gini_*: final Gini of the W_E and W_L spectra, as a range over
+    the runs that grokked and a maximum over those that did not (figure gini-vs-null)."""
+    runs = [(_load(d / "analysis" / "phases.json"), _load(d / "analysis" / "final.json")) for d in sorted(runs_dir.iterdir()) if d.name != "paper"]
+    runs = [(ph, fin) for ph, fin in runs if ph and fin]
+    gini = lambda grok: [f[k] for ph, f in runs if (ph.get("t_grok") is not None) == grok for k in ("gini_we", "gini_wl")]  # noqa: E731
+    out = {"seeds.n_grokked": _v(sum(ph.get("t_grok") is not None for ph, _ in runs), "int")}
+    if gini(True) and gini(False):
+        out["controls.gini_sparse_range"] = _v(f"{min(gini(True)):.2f}–{max(gini(True)):.2f}", "str")
+        out["controls.gini_flat_max"] = _v(max(gini(False)), ".2f")
     return out
 
 
@@ -263,11 +298,11 @@ def h4_detail_numbers(runs_dir: Path) -> dict:
     if not few and not key_fails and not keep_fails:
         return {}
     return {"hyp.h4_key_fails": _v("; ".join(key_fails) or "none", "str"), "hyp.h4_keep_fails": _v(", ".join(keep_fails) or "none", "str"),
-            "hyp.n_few_keys": _v(few, "int")}
+            "hyp.n_few_keys": _v(few, "int"), "hyp.h4_keep_fail_n": _v(len(keep_fails), "int")}
 
 
 def spectra_numbers(runs_dir: Path) -> dict:
-    """paper.*_linear_share: share of the 2D-Fourier energy in linear terms (row/column 0 = Const in b / in a) at the
+    """paper.*_linear_share: share of the 2D-Fourier energy in linear terms (row 0 = Const in a, column 0 = Const in b) at the
     paper's analysis checkpoint, for the neurons (mean over neurons) and for the logits (geometry.spectra)."""
     path = runs_dir / "paper" / "analysis" / "geometry.npz"
     g = np.load(path) if path.exists() else None
@@ -362,4 +397,4 @@ def late_spike_numbers(runs_dir: Path, factor: float = 100.0, gap: int = 2000) -
 def build_summary(runs_dir: Path, reports_dir: Path, p: int, frac: float) -> dict:
     """All prose numbers."""
     return {**paper_numbers(runs_dir, p, frac), **run_numbers(reports_dir), **same_init_numbers(runs_dir), **late_spike_numbers(runs_dir),
-            **spectra_numbers(runs_dir), **dynamics_numbers(runs_dir), **h4_detail_numbers(runs_dir)}
+            **spectra_numbers(runs_dir), **dynamics_numbers(runs_dir), **h4_detail_numbers(runs_dir), **seed_spread_numbers(runs_dir)}

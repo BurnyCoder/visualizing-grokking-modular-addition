@@ -42,7 +42,7 @@ Paper run (gradients only) and the 11 `wd1` seeds; means with 95 % percentile-bo
      and 0.33 at step 40,001.
    - **Across seeds:** midway between t1 and t2 it is −0.251 [−0.305, −0.199], and it is negative at 97.9 %
      [96.0, 99.6] of the checkpoints between t1 and t2.
-   - **What this means:** during the whole plateau, a small step along the negative training gradient would, to first order, raise the test loss (Adam's actual step is not the gradient; see point 3). This
+   - **What this means:** at almost every checkpoint of circuit formation, a small step along the negative training gradient would, to first order, raise the test loss (Adam's actual step is not the gradient; see point 3). This
      agrees with ARENA's picture of memorising gradients that work against the general solution.
 2. **Equilibrium with weight decay at the end.**
    - **Adam's direction:** at step 40,000, ‖d‖/(λ‖θ‖) = 0.992 [0.972, 1.004] and cos(d, θ) = −0.991 [−1.000, −0.976].
@@ -56,15 +56,18 @@ Paper run (gradients only) and the 11 `wd1` seeds; means with 95 % percentile-bo
      but Adam's momentum-averaged, per-coordinate-normalised direction is still aligned with −θ (cos −0.99 and −1.00).
    - **Takeaway:** conclusions about "which force wins" need the optimiser's actual step, not the raw gradient.
 4. **Weight decay wins briefly, exactly at grokking.**
-   - **The dip:** the ratio ‖d‖/(λ‖θ‖) is slightly below 1 early in circuit formation (0.96–0.97 at step 2,000;
+   - **The dip:** the ratio ‖d‖/(λ‖θ‖) is slightly above 1 at step 1,000, the only saved point in memorisation
+     (1.055–1.067 in all 11 seeds), and slightly below 1 early in circuit formation (0.96–0.97 at step 2,000;
      0.97–0.99 at step 3,000). Its minimum, 0.906 [0.897, 0.914], falls within 1,000 steps of t_grok in 10 of 11
      seeds. `wd1_s4`'s minimum is during its late spikes.
    - **Interpretation:** while the network groks, decay outweighs the loss step by ~10 % and the weights shrink. That
      is the paper's cleanup phase, driven by weight decay, here measured on the optimiser's actual steps.
    - **Resolution:** the moments were saved every 1,000 steps, so timing is resolved only to that grid.
-5. **Update sizes** (logged every 10 steps; inspected visually for `wd1_s0` only). Every parameter's update size peaks
-   together around grokking (step ≈ 10,000) and then decays slowly (dashboard panel "How much each parameter actually
-   moves").
+5. **Update sizes** (logged every 10 steps; `wd1_s0` only, from `runs/wd1_s0/curves.npz` `update_norm`). Every
+   parameter's largest update falls in the warm-up (steps 10–100). After that transient, nine of the 11 parameters'
+   update sizes peak at steps 10,020–10,840, around grokking (t_grok = 10,600), and then decay slowly. W_K and W_Q do not
+   peak there: their updates shrink from early in training (largest after step 3,000: steps 4,340 and 3,000). See the
+   dashboard panel "How much each parameter actually moves".
 
 ## Learnings
 

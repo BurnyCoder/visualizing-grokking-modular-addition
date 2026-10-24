@@ -32,7 +32,7 @@ The same test works on the neurons instead of the logits. Remove the contributio
 If the neurons really are degree-2 polynomials of one frequency (chapter 14), replacing each clustered neuron's activations by its polynomial should not hurt:
 
 - replacing the {{num:paper.neurons_085}} clustered neurons by their 9-term polynomial gives loss {{num:rc.R10a}} (paper: 2.48 × 10⁻⁷, from 2.41 × 10⁻⁷);
-- keeping *only* the cos/sin(w_k(a+b)) parts of the logits — everything else removed — gives {{num:rc.R19a}}, matching the paper's 5.54 × 10⁻⁸ (a 77 % *improvement*). The paper describes this ablation as restricting each *neuron* to those terms; restricting every neuron separately gives {{num:rc.R10b}} in our implementation, so we believe the paper's number was computed on the logits (see the [errata](../errata.html)).
+- keeping *only* the cos/sin(w_k(a+b)) parts of the logits — everything else removed except each answer's average logit — gives {{num:rc.R19a}}, matching the paper's 5.54 × 10⁻⁸ (which the paper calls a 77 % *improvement*). The paper describes this ablation as restricting each *neuron* to those terms; restricting every neuron separately gives {{num:rc.R10b}} in our implementation, so we believe the paper's number was computed on the logits (see the [errata](../errata.html)).
 
 The idealised algorithm is not just compatible with the network — it is *better* than the network, whose extra components are noise left over from memorisation.
 
@@ -50,7 +50,7 @@ Over 1,000 random triples (a, a′, b) on the paper's network:
 | random subspace of the same size (control) | 10 | {{num:paper.patch_random}} |
 | everything *except* the key subspace (control) | 118 | {{num:paper.patch_complement}} |
 
-Swapping 10 of 128 numbers moves the answer completely; swapping the other 118 does essentially nothing. Try it on any input:
+Swapping a 10-dimensional part of the 128-dimensional embedding moves the answer almost completely; swapping the other 118 dimensions does essentially nothing. Try it on any input:
 
 {{fig:patching-live}}
 

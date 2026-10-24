@@ -68,7 +68,7 @@ The first three principal components in 3D (drag to turn):
 
 {{scene:late}}
 
-Training does not end at step 14,000. Around step 43,000, in the paper's run, two attention heads suddenly start attending to “=” again (on average {{num:paper.attn_eq_45k}} for heads 0–3 at step 45,001, up from {{num:paper.attn_eq_pct}} at 40,001), and the sum of squared weights shows a small kink (955 → 942 in ARENA's description) {{cite:arena152}}. Neither the paper nor ARENA explains it; it is a reminder that even this “fully understood” network has unexplained behaviour.
+Training does not end with cleanup at step {{num:paper.t3}}. From around step 43,000, in the paper's run, two attention heads gradually start attending to “=” again (on average {{num:paper.attn_eq_45k}} for heads 0–3 at step 45,001, up from {{num:paper.attn_eq_pct}} at 40,001), and the sum of squared weights shows a small kink (955 → 942 in ARENA's description) {{cite:arena152}}. Neither the paper nor ARENA explains it; it is a reminder that even this “fully understood” network has unexplained behaviour.
 
 {{fig:avg-attn}}
 

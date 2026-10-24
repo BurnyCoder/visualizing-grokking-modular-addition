@@ -13,7 +13,7 @@
     </ol>
   </details>
   <main class="chapter" id="main">
-    <p class="kicker">Chapter {{ chapter.number }} of {{ chapters|length - 1 }}</p>
+    <p class="kicker">Chapter {{ chapter.number }} of 0–{{ chapters|length - 1 }}</p>{#- 22 chapters, numbered from 0 #}
     <h1>{{ chapter.title }}</h1>
     <p class="lede">{{ chapter.summary }}</p>
     {% if chapter.sources %}

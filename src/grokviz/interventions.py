@@ -7,7 +7,7 @@ Global context: these are the paper's "fourth line of evidence" (Sec. 4.4 + App.
 cluster validations, computed for any run; results feed reports/exp-01 (paper comparison), the
 interventions chapter and dashboard group G. Definitions follow docs/operationalizations.md.
 Sources: paper Sec. 4.4, App. A.1, App. C.1.3 (https://arxiv.org/abs/2301.05217); ARENA 1.5.2 "Exercise -
-validate neuron clusters" and "ReLU as multiplier" regression
+validate neuron clusters" and "Exercise - verify the quadratic term matters, and that γ > 0" (the ReLU regression)
 (https://learn.arena.education/chapter1_transformer_interp/32_grokking/2-circuit-and-feature-analysis/).
 """
 

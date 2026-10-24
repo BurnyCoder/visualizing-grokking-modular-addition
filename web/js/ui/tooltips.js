@@ -1,6 +1,6 @@
 // tooltips.js — hover/focus cards for defined terms (glossary) and mathematical symbols.
 //
-// Local explanation: loads assets/glossary.json ({terms: {id: {name, def, src}}, symbols: {id: {tex, def}}})
+// Local explanation: loads assets/glossary.json ({terms: {id: {name, def, src}}, symbols: {id: {name, def}}})
 // written by the build, and shows a small card when the reader hovers or focuses an element with
 // data-term / data-sym. Each card holds the one-sentence definition and its source.
 // Global context: implements "every variable and composite has a one-sentence explanation" everywhere on the

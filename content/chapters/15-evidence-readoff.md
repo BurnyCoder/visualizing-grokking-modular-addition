@@ -39,9 +39,9 @@ Played through training, watch which components light up, and when.
 Putting the pieces together, the paper fits all 113 × 113 × 113 logits with five numbers, $\Logits(a,b)_c \approx \sum_k \alpha_k\cos(w_k(a+b-c))$, by least squares (we add a constant). On the paper's network this simple formula explains {{num:paper.logit_fve}} of the variance of the 1,442,897 logits (paper: 95 %), with coefficients α = {{num:paper.logit_alpha}} for k = {{num:paper.key_freqs}}. Replacing the network's logits by the fitted formula gives loss {{num:paper.logit_fit_loss}} — *lower* than the network's own {{num:rc.R1}} (paper: 4.7 × 10⁻⁸ vs 2.4 × 10⁻⁷).
 
 ::: example
-**What a fit of five numbers means.** For the input (100, 50) the formula predicts that the logit of c is a sum of five cosines peaking at c = 37 (chapter 12's interference picture), and nothing else about the input matters — not whether (100, 50) was a training question, not any memorised detail. 96 % of the variance of 1.4 million logits is captured that way.
+**What a fit of five numbers means.** For the input (100, 50) the formula predicts that the logit of c is a sum of five cosines peaking at c = 37 (chapter 12's interference picture), and nothing else about the input matters — not whether (100, 50) was a training question, not any memorised detail. {{num:paper.logit_fve}} of the variance of all 113³ ≈ 1.4 million logits is captured that way.
 :::
 
 ## The skip connection: why we could ignore it
 
-The paper reasons with $\Logits \approx W_L\,\mathrm{MLP}$, ignoring the residual path that carries $x^{(1)}$ (the attention output plus the “=” embedding) straight to the unembedding. Chapter 6 measured that zero-ablating that path raises the loss only from {{num:rc.R1}} to {{num:rc.R11a}} with unchanged accuracy, so the approximation is justified for the trained network.
+The paper reasons with $\Logits \approx W_L\,\mathrm{MLP}$, ignoring the residual path that carries $x^{(1)}$ (the attention output plus the “=” embedding) straight to the unembedding. Chapter 6 measured that zero-ablating that path raises the loss only from {{num:rc.R1}} to {{num:rc.R11a}} (the paper reports accuracy unchanged), so the approximation is justified for the trained network.

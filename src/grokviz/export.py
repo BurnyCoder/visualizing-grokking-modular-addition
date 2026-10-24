@@ -4,9 +4,9 @@ Local explanation: every array the site plots is written as a little-endian bina
 `site/data/runs/<run_id>/<name>.bin` with an entry in `site/data/manifest.json` describing its dtype, shape,
 optional linear quantisation (uint8 with min/max) and a one-line description; numbers that appear in the
 prose go to `site/data/summary.json`. Weights for the in-browser model are exported as float16 vectors in the
-model's state_dict order (layout in the manifest): densely for the two showcase runs (paper, seed 0) and, for every
-other run, at the checkpoints chosen by `snapshot_steps` (dense through cleanup, sparse afterwards), so every run can
-be animated in the browser.
+manifest's `param_layout` order (the safetensors key order, not the model's state_dict order): densely for the two
+showcase runs (paper, seed 0) and, for every other run, at the checkpoints chosen by `snapshot_steps` (dense through
+cleanup, sparse afterwards), so every run can be animated in the browser.
 Global context: the website is static, so all heavy computation happens here once; the browser only fetches
 and draws (or runs the tiny model for per-input views). The data folder is published to a Hugging Face dataset
 and downloaded by the Pages deploy (docs/deployment.md).

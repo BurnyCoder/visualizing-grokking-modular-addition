@@ -118,9 +118,17 @@ def test_paper_curve_numbers_read_the_curves():
     m = {"steps": s, "acc_test": s / 1001, "acc_train": (s >= 201).astype(float), "loss_test": np.full(len(s), 20.0),
          "restricted_loss": np.full(len(s), 2.0), "ssw_total": np.linspace(100, 50, len(s)), "we_svals": np.tile(np.arange(14.0, 0, -1), (len(s), 1))}
     m["restricted_loss"][s >= 701] = 1e-3  # ratio 2e4 from step 701 (after t2)
-    ph = {"t1": 201, "t2": 601, "t_grok": 801}
+    ph = {"t1": 201, "t2": 601, "t3": 901, "t_grok": 801}
+    m["wl_resid_sq_frac"] = np.linspace(0.9, 0.0, len(s))  # 90 % outside K at the start, 0 % at the end
+    lookup = np.zeros((len(s), 1, 113))  # one head's attention lookup C_j in the Fourier basis
+    lookup[:, 0, 1:9] = 1.0  # plateau: 4 equal frequencies (cos/sin of k = 1…4) → 25 % each
+    lookup[s >= 801, 0, 3:9] = 0.0  # from step 801 only k = 1 remains → 100 %
+    m["attn_C_fourier"] = lookup
+    m["avg_attn"] = np.tile(np.array([[0.3, 0.3, 0.4]]), (len(s), 1, 1))
+    m["avg_attn"][s >= 101, :, 2] = 0.005  # attention to '=' falls below 1 % from step 101
     g = {"steps": s, "cos_train_test": np.where(s <= 501, -0.3, 0.2), "param_names": np.array(["embed.W_E", "blocks.0.mlp.b_in", "unembed.W_U"]),
-         "weight_norm": np.array([[1.0, 0.0, 2.0]] * (len(s) - 1) + [[0.5, 0.1, 3.0]])}
+         "weight_norm": np.array([[1.0, 0.0, 2.0]] * (len(s) - 1) + [[0.5, 0.1, 3.0]]),
+         "grad_ratio_decay": np.where(s < 201, 1.0, np.where(s < 601, 2e-8, 1e-8))}
     gi = lambda step: int(np.argmin(np.abs(s - step)))  # noqa: E731
     out = paper_curve_numbers(m, ph, g, gi)
     assert out["paper.acc_test_t2"]["value"] == pytest.approx(601 / 1001)
@@ -129,6 +137,36 @@ def test_paper_curve_numbers_read_the_curves():
     assert out["paper.cos_tt_last_neg"]["value"] == 501
     assert out["paper.norm_shrunk"]["value"] == "W_E 0.50×" and out["paper.norm_grown"]["value"] == "W_U 1.50×"  # biases skipped
     assert out["paper.we_svals_next2"]["value"] == "4.00 and 3.00"
+    assert out["paper.wl_outside_init"]["value"] == pytest.approx(0.9) and out["paper.grad_decay_ratio"]["value"] == "1.00×10⁻⁸ to 2.00×10⁻⁸"
+    assert out["paper.head_lookup_plateau_max"]["value"] == pytest.approx(0.25) and out["paper.head_lookup_share_40k"]["value"] == "100.0–100.0 %"
+    assert out["paper.attn_eq_drop_step"]["value"] == 101
+
+
+def test_logged_loss_precision_counts_float32_values():
+    """summary.logged_precision_numbers: a loss computed in float32 and read with .item() is exactly representable in
+    float32; a float64 loss almost never is (the evidence that the released paper run used a float64 loss)."""
+    from grokviz.summary import logged_precision_numbers
+
+    f32 = np.float32(np.random.default_rng(0).random(5)).astype(np.float64)
+    out = logged_precision_numbers({"train_loss": f32, "test_loss": np.array([1 / 3, 2 / 3])})
+    assert out["paper.logged_losses_n"]["value"] == 7 and out["paper.logged_losses_f32"]["value"] == 5
+
+
+def test_seed_spread_numbers_count_grokked_runs_and_gini(tmp_path):
+    """summary.seed_spread_numbers: grokked trained runs, and the final Gini range of runs with / without a sparse
+    Fourier solution (figure gini-vs-null)."""
+    import json
+
+    from grokviz.summary import seed_spread_numbers
+
+    for name, t_grok, gw in (("wd1_s0", 900, 0.7), ("split0_init100", 800, 0.8), ("wd0_s0", None, 0.07), ("rand_s0", None, 0.09)):
+        d = tmp_path / name / "analysis"
+        d.mkdir(parents=True)
+        (d / "phases.json").write_text(json.dumps({"t_grok": t_grok}))
+        (d / "final.json").write_text(json.dumps({"gini_we": gw, "gini_wl": gw + 0.05}))
+    out = seed_spread_numbers(tmp_path)
+    assert out["seeds.n_grokked"]["value"] == 2
+    assert out["controls.gini_sparse_range"]["value"] == "0.70–0.85" and out["controls.gini_flat_max"]["value"] == pytest.approx(0.14)
 
 
 def test_h4_detail_names_the_failing_seeds(tmp_path):
@@ -150,3 +188,4 @@ def test_h4_detail_names_the_failing_seeds(tmp_path):
     out = h4_detail_numbers(tmp_path)
     assert out["hyp.h4_key_fails"]["value"] == "wd1_s1: k = 2 costs 5.0× (25 % of the largest W_L norm; its other key frequencies ≥ 100,000×)"
     assert out["hyp.h4_keep_fails"]["value"] == "wd1_s1 (2 key frequencies, 2.00×)" and out["hyp.n_few_keys"]["value"] == 2
+    assert out["hyp.h4_keep_fail_n"]["value"] == 1

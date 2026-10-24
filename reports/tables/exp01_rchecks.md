@@ -18,7 +18,7 @@
 | R11b | MLP skip connection mean-ablated | 7.25e-07 | 7.248e-07 | yes | p.13 |  |
 | R11c | attention heads zero-ablated | 24.3 | 24.27 | yes | p.13 |  |
 | R11d | skip around attention zero-ablated | 19.1 | 1.086 | **no** | p.13 | not reproduced: our ablation sets resid_mid = attention output (the paper does not specify its hook) |
-| R12 | mean attention from '=' to '=' (per head) | 0.1–0.4 % | [0.004418, 0.001111, 0.004427, 0.001177] | yes | p.13 |  |
+| R12 | mean attention from '=' to '=' (per head) | 0.1–0.4 % | [0.004418, 0.001111, 0.004427, 0.001177] | yes | p.13 | match range 0.05–0.45 % (the paper's 0.1–0.4 % at its printed precision); our largest values, 0.44 %, round to the paper's 0.4 % |
 | R13a | linear fit of the attention softmax (variance explained) | 0.975 | 0.9756 | yes | p.16 |  |
 | R13b | loss with softmax replaced by its linear fit | 2.12e-07 | 2.124e-07 | yes | p.16 |  |
 | R14 | head frequencies (Table 2) | [35, 42, 52, 42] | [35, 42, 52, 42] | yes | p.15 Table 2 |  |
@@ -27,6 +27,6 @@
 | R18 | ARENA ReLU regression r² (with / without quadratic) | [0.966, 0.849] | [0.9659, 0.8494] | yes | ARENA |  |
 | R19a | ARENA trig-only (restricted) logits loss | 5.547e-08 | 5.547e-08 | yes | ARENA |  |
 | R19b | ARENA key-frequency neuron projection loss (with / without always-firing) | [2.482e-07, 1.179e-06] | [2.482e-07, 1.179e-06] | yes | ARENA |  |
-| R15 | SSW at the paper's phase boundaries 1.4k / 9.4k / 14k (Fig. 7) | falls; steepest in cleanup | [3373, 2001, 995.5] | yes | p.9 Fig. 7 | qualitative; fall per step 0.171 (circuit formation) vs 0.219 (cleanup) |
+| R15 | SSW at the paper's phase boundaries 1.4k / 9.4k / 14k (Fig. 7) | falls; steepest in cleanup | [3373, 2001, 995.5] | yes | p.8 Fig. 7; boundaries p.9 | qualitative; fall per step 0.171 (circuit formation) vs 0.219 (cleanup) |
 | R20a | total SSW at epoch 40k and at the end of training | [955, 942] | [955.4, 941.8] | yes | ARENA §3 Analysis During Training | last checkpoint: step 49901 |
 | R20b | attention to '=' returns after ~43k (attention at 40k → 45k) | attends to '=' again | [[0.004418, 0.001111, 0.004427, 0.001177], [0.1133, 0.0008202, 0.09146, 0.0008718]] | yes | ARENA §3 Analysis During Training | 2 heads rise ≥ 5× to > 5 %; 2 such heads is our match criterion (ARENA gives no head count) |

@@ -184,7 +184,8 @@ def test_state_dict_matches_paper_layout(net):
 
 
 def test_parameter_count(net):
-    """226,816 trainable numbers (the HF card of the older repo claimed ~2.5M)."""
+    """226,816 trainable numbers (the older TransformerLens repo's HF card said ~2.5M until it was corrected to 227,313,
+    which includes TransformerLens's zero biases)."""
     assert sum(p.numel() for p in net.parameters()) == 226_816
 
 

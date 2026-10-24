@@ -4,7 +4,7 @@
 // with pixelated rendering, shows a tooltip "(row, col): value" on hover and calls `onClick(row, col)` on click;
 // `marks` (viz/overlay.js GridMarks) outlines a selected cell, column or row on top without redrawing the canvas.
 // Colour scale: diverging (centred at 0, symmetric limits) for signed data or sequential for non-negative data,
-// with a small colour bar. Convention throughout the site (as in the paper's Fig. 4): rows = a, columns = b.
+// with a small colour bar. Convention throughout the site: rows = a, columns = b (transposed relative to the paper's Fig. 4, which puts a on the x axis).
 // Global context: neuron grids, attention grids, logit grids, Fourier-coefficient maps and train/test masks
 // all use this; canvas instead of Plotly keeps redraws fast while scrubbing through training.
 // Source: Canvas ImageData (https://developer.mozilla.org/docs/Web/API/ImageData).

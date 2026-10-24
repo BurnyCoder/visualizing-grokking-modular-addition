@@ -16,8 +16,10 @@ Step semantics: checkpoint t holds the parameters after `ckpt_steps[t]` optimize
 ## Site data (`site/data/`, written by `export.py`)
 
 - `manifest.json`: `{schema_version, p, basis_names, train_masks, scalar_columns, runs: [...]}`; each run has `id`, `title`,
-  `group`, `key_freqs`, `ckpt_steps`, `geometry_steps`, `weight_steps`, `param_layout` (name + shape in flat order),
-  `phases`, `final` (final-checkpoint analysis) and `arrays: {name: {file, dtype, shape, desc, bytes, sha256, [min, max], [columns]}}`.
+  `kind`, `group`, `split_seed`, `init_seed`, `weight_decay`, `fn_name`, `label_seed`, `key_freqs`, `ckpt_steps`,
+  `geometry_steps`, `spectra_steps`, `weight_steps`, `param_layout` (name + shape in flat order), `phases`, `final`
+  (final-checkpoint analysis) and `arrays: {name: {file, dtype, shape, desc, bytes, sha256, [min, max], [columns],
+  [step0, step_every]}}`. Per-step arrays (`curve_*`, `update_norm`) carry `step0`/`step_every` instead of checkpoint indices.
   `sha256` holds the first 16 hex digits of the file's SHA-256. Every run has `spectra_steps`, the frames of the 2D-Fourier
   maps `spec_*`: many frames for the showcase runs (`paper`, `wd1_s0`), only the final checkpoint for the others.
   `adam_scalars` (with `steps`) and `update_norm` exist for our retrained runs only.

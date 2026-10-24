@@ -1,6 +1,6 @@
 // grokmodel.js — the paper's one-layer transformer, re-implemented in plain JavaScript for the browser.
 //
-// Local explanation: loads a flat weight vector (state_dict order, layout from manifest.json) and computes
+// Local explanation: loads a flat weight vector (in the order of the manifest's param_layout) and computes
 // the forward pass exactly like src/grokviz/model.py (paper code layout: W_E [d, V], W_K/W_Q/W_V [H, dh, d],
 // W_O [d, H*dh], W_in [n, d], W_out [d, n], W_U [d, V]). Because inputs are one-hot tokens, everything before
 // the softmax/ReLU depends on one token at a time, so we precompute per-token tables once per checkpoint and
@@ -48,7 +48,7 @@ export function softmax(xs) {
 
 export class GrokModel {
   /**
-   * @param {Float32Array} flat  weights in state_dict order
+   * @param {Float32Array} flat  weights in param_layout order
    * @param {Array<{name:string, shape:number[]}>} layout  parameter layout from manifest.json
    * @param {number} p  modulus (113); token p is '='
    */

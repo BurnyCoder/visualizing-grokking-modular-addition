@@ -38,8 +38,11 @@ export async function initDashboard() {
 
 function fmtPhases(ph) {
   if (!ph || !ph.t1) return "not detected";
-  const pb = ph.paper_boundaries; // the paper run also carries its authors' boundaries (dashed on the scrubber)
-  return `memorisation ends ≈${ph.t1}, circuit formation ends ≈${ph.t2 ?? "—"}, cleanup ends ≈${ph.t3 ?? "—"}${pb ? ` (dashed: the paper's own ${pb.t1}, ${pb.t2}, ${pb.t3})` : ""}`;
+  const pb = ph.paper_boundaries; // the paper run also carries its authors' boundaries (dashed on the scrubber), in epochs
+  const n = (t) => t.toLocaleString("en-US"), ends = pb && [pb.t1, pb.t2, pb.t3]; // epoch e = step e + 1 (AGENTS.md)
+  const rest = ph.t2 == null ? "circuit formation and cleanup not detected"
+    : `circuit formation ends ≈${n(ph.t2)}, ${ph.t3 == null ? "end of cleanup not detected" : `cleanup ends ≈${n(ph.t3)}`}`;
+  return `memorisation ends ≈${n(ph.t1)}, ${rest}${ends ? ` (dashed: the paper's own epochs ${ends.map(n).join(", ")} = steps ${ends.map((e) => n(e + 1)).join(", ")})` : ""}`;
 }
 
 function setStatus(t) { $("ctl-status").textContent = t; }

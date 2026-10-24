@@ -54,6 +54,23 @@ test("range presets come from the detected phases (indices into the checkpoint l
   assert.equal(phaseOf(20000, null), "");
 });
 
+test("each phase boundary closes the phase it ends (t2 = end of circuit formation, as in phases.py)", () => {
+  const ph = { t1: 1567, t2: 9301, t3: 14001 }; // the paper run's detected boundaries
+  assert.equal(phaseOf(ph.t1, ph), "memorisation");
+  assert.equal(phaseOf(ph.t1 + 1, ph), "circuit formation");
+  assert.equal(phaseOf(ph.t2, ph), "circuit formation");
+  assert.equal(phaseOf(ph.t2 + 1, ph), "cleanup");
+  assert.equal(phaseOf(ph.t3, ph), "cleanup");
+  assert.equal(phaseOf(ph.t3 + 1, ph), "after cleanup");
+});
+
+test("a run without a detected t2 is never labelled circuit formation", () => {
+  const ph = { t1: 11817, t2: null, t3: null }; // wd0_s0: memorises, never reaches the t2 rule
+  assert.equal(phaseOf(ph.t1, ph), "memorisation");
+  assert.equal(phaseOf(ph.t1 + 1, ph), "no circuit formation detected");
+  assert.equal(phaseOf(40000, ph), "no circuit formation detected");
+});
+
 test("stepAt and frameAt locate fractional positions between stored frames", () => {
   const steps = [0, 100, 300];
   assert.deepEqual(stepAt(steps, 1.5), { step: 300, stepf: 200 }, "nearest stored step and the interpolated step");

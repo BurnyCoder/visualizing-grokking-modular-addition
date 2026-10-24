@@ -3,7 +3,8 @@
 Local explanation: because training is full-batch (every step uses all 3,830 training pairs), the gradient
 the optimiser saw at a checkpoint can be recomputed exactly from the checkpoint's weights. For each checkpoint
 we compute the training-loss gradient g_train and the test-loss gradient g_test and record:
-  per-parameter ‖g_train‖ and ‖θ‖ (the weight-decay pull is λθ, so ‖g‖ vs λ‖θ‖ shows which force dominates);
+  per-parameter ‖g_train‖ and ‖θ‖ (the weight-decay pull is λθ, but AdamW rescales g before it acts, so ‖g‖ vs
+  λ‖θ‖ does not show which force dominates; the Adam ratio below does);
   cos(g_train, θ)  — positive means the loss gradient also pushes weights toward zero (descent moves along −g);
   cos(g_train, g_test) — do steps that reduce training loss also reduce test loss? (generalising vs memorising);
   the Fourier spectrum of the embedding gradient (which frequencies the loss is currently pushing W_E toward);

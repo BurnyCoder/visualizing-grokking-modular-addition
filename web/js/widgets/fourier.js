@@ -2,8 +2,8 @@
 // sparse" with p = 113, the 2D Fourier basis gallery, and ReLU as a multiplier.
 //
 // Local explanation: all transforms use the same real orthonormal basis as the analysis code (paper order:
-// Const, cos k, sin k), built by fourierBasis(p) in figures/weights.js; 2D transforms use fft2 from
-// figures/activations.js; the ReLU regression solves ARENA's least-squares fit with normal equations.
+// Const, cos k, sin k), built by fourierBasis(p) in model/fourier.js; 2D transforms use fft2 from
+// the same module; the ReLU regression solves ARENA's least-squares fit with normal equations.
 // Global context: shows on small, controllable examples the operations later applied to the real network.
 // Sources: ARENA 1.5.2 "Fourier Transforms" and the ReLU regression
 // (https://learn.arena.education/chapter1_transformer_interp/32_grokking/1-periodicity-fourier-basis/,

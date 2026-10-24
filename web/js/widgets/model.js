@@ -32,7 +32,7 @@ export const widgets = {
 
   "forward-walkthrough": {
     async render(el) {
-      el.innerHTML = `<p class="widget-title">One forward pass of the paper's trained network</p>
+      el.innerHTML = `<p class="widget-title">One forward pass of the selected run's network</p>
         <div class="row"><label>a <input type="number" min="0" max="112" class="wa"></label><label>b <input type="number" min="0" max="112" class="wb"></label>
         <span class="fig-note">step <output class="ws mono"></output> (change it with the dashboard or chapter 18's slider)</span></div><div class="workings"></div>`;
       const wa = el.querySelector(".wa"), wb = el.querySelector(".wb"), out = el.querySelector(".workings"), ws = el.querySelector(".ws");

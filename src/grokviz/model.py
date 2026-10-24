@@ -7,10 +7,11 @@ Every intermediate tensor passes through a named hook so analyses can record it 
 replace it (interventions/ablations/patching) without changing the model code.
 Global context: the paper's released checkpoints (Hugging Face callummcdougall/grokking_full_run_data) use
 this exact state_dict layout (W_E is [d_model, d_vocab], W_O is [d_model, heads*d_head], ...), so they load
-with strict=True and no conversion; our own runs use the same class, and the website's JavaScript forward
-pass mirrors it line by line.
+with strict=True and no conversion; our own runs use the same class. The website's JavaScript model
+(web/js/model/grokmodel.js) computes the same maths: its `forwardDetailed` mirrors this forward pass layer by
+layer, while its fast path evaluates precomputed per-token tables (tested against torch in tests/js/).
 Sources: paper code `Embed`, `PosEmbed`, `Attention`, `MLP`, `TransformerBlock`, `Transformer`
-(https://github.com/mechanistic-interpretability-grokking/progress-measures-paper/blob/main/transformers.py,
+(https://github.com/mechanistic-interpretability-grokking/progress-measures-paper/blob/23d2c64/transformers.py,
 commit 23d2c64); paper App. A equations (https://arxiv.org/abs/2301.05217); TransformerLens hook naming
 idea (https://github.com/TransformerLensOrg/TransformerLens).
 """

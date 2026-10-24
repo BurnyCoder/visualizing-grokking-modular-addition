@@ -57,12 +57,17 @@ export function rangePresets(steps, phases) {
   };
 }
 
-/** Name of the phase containing `step` ("" when phases were not detected). */
+/**
+ * Name of the phase containing `step` ("" when phases were not detected). Each boundary closes the phase it ends
+ * (t2 is the end of circuit formation in src/grokviz/phases.py), so step t2 is still circuit formation; a run whose t2
+ * was never reached is not said to form a circuit.
+ */
 export function phaseOf(step, phases) {
   if (!phases?.t1) return "";
-  if (step < phases.t1) return "memorisation";
-  if (phases.t2 == null || step < phases.t2) return "circuit formation";
-  if (phases.t3 == null || step < phases.t3) return "cleanup";
+  if (step <= phases.t1) return "memorisation";
+  if (phases.t2 == null) return "no circuit formation detected";
+  if (step <= phases.t2) return "circuit formation";
+  if (phases.t3 == null || step <= phases.t3) return "cleanup";
   return "after cleanup";
 }
 

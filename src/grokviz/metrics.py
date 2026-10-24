@@ -14,7 +14,7 @@ Each definition was checked against the paper's code and numbers before being fi
   correction, train pairs) — reproduces ARENA's per-frequency test values exactly;
 - neuron frequency/FVE = paper code `calculate_key_freqs` / ARENA `find_neuron_freqs` — gives the paper's 433
   neurons above 0.85 and ARENA's cluster sizes 44/93/145/87/64.
-Sources: https://github.com/mechanistic-interpretability-grokking/progress-measures-paper/blob/main/transformers.py;
+Sources: https://github.com/mechanistic-interpretability-grokking/progress-measures-paper/blob/23d2c64/transformers.py;
 ARENA solutions.py @85d1011 (https://github.com/ARENA-education/ARENA_materials/blob/85d10112344b68addebacb04909392e515dd7068/chapter1_transformer_interp/exercises/part52_grokking_and_modular_arithmetic/solutions.py);
 paper Sec. 4–5 (https://arxiv.org/abs/2301.05217).
 """
@@ -29,7 +29,7 @@ import torch  # tensors
 from grokviz import fourier, losses, task  # Fourier tools, losses, dataset
 from grokviz.model import GrokTransformer  # the network
 
-KEY_FREQ_TAU = 0.25  # key frequency ⇔ its W_L Fourier norm ≥ τ·max (paper model: valid for τ in (0.06, 0.83))
+KEY_FREQ_TAU = 0.25  # key frequency ⇔ its W_L Fourier norm ≥ τ·max (paper model: every τ in (0.060, 0.826] gives the same 5 keys)
 NEURON_FVE_THRESHOLD = 0.85  # paper Sec. 4.3 / ARENA: neuron belongs to a frequency cluster if FVE > 0.85
 
 
@@ -98,7 +98,9 @@ def paper_matrices(model: GrokTransformer, p: int) -> dict[str, torch.Tensor]:
 
 def wl_residual_sq_frac(W_L: torch.Tensor, rows: torch.Tensor) -> float:
     """‖W_L − R^T R W_L‖² / ‖W_L‖² for orthonormal key rows R [2|K|, p]: the share of W_L's squared norm outside the
-    key cos/sin directions (paper Sec. 4.2 reports < 0.55 % for its model)."""
+    key cos/sin directions. Paper Sec. 4.2 (p. 6) says the residual's Frobenius norm is under 0.55 % of ‖W_L‖; on the
+    paper model this squared-norm share is 0.552 % at step 40,001 (0.520 % at the released run's last checkpoint,
+    49,901), while the norm ratio itself is 7.4 % (summary keys paper.wl_resid_sq, _sq_last, _norm)."""
     return float(((W_L - rows.T @ (rows @ W_L)).norm() / W_L.norm()) ** 2)
 
 

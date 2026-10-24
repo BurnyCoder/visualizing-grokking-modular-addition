@@ -108,7 +108,7 @@ export async function trainMask(splitSeed) {
   return new Uint8Array(await once(`data/${m.train_masks[String(splitSeed)]}`, "bin"));
 }
 
-const ablations = new Map(); // "run@step" → Promise<{L, blocks, step}> (the last few only: ~20 MB each)
+const ablations = new Map(); // "run@step" → Promise<{L, blocks, step}> (the last few only: ~6 MB each, 113³ float32 logits plus float64 blocks)
 /** Logits of every answer for every input and their Fourier blocks, at the weight snapshot nearest `step` (model/ablation.js). */
 export async function ablationData(runId, step) {
   const r = await run(runId), s = r.weight_steps[nearest(r.weight_steps, step)], key = `${runId}@${s}`;

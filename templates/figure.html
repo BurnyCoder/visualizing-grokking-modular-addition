@@ -3,8 +3,8 @@
     `fig.anim` ({{anim:id}}) the figure is a scope with its own step (data-scope, data-step = poster frame), plays
     the fixed run `fig.anim.run`, and gets a mini player bar (web/js/ui/anim-figure.js). The ⤢ button enlarges any
     figure in an overlay (web/js/ui/expand.js).
-    Global: identical markup inside chapters and dashboard panels; Playwright screenshots of figure.html?id=...
-    become the report figures, so every figure has exactly one implementation. -#}
+    Global: identical markup inside chapters and dashboard panels; Playwright screenshots of #fig-<id> on
+    dashboard.html?still=1 become the report figures (src/grokviz/figures.py), so every figure has exactly one implementation. -#}
 <figure class="fig {{ fig.size or 'm' }}{% if fig.anim %} anim{% endif %}" id="fig-{{ fig.id }}" data-fig="{{ fig.id }}"
   {%- if fig.anim %} data-run="{{ fig.anim.run }}" data-scope data-anim='{{ fig.anim | tojson }}'{% if fig.anim.poster %} data-step="{{ fig.anim.poster }}"{% endif %}
   {%- elif fig.run %} data-run="{{ fig.run }}"{% endif %}>

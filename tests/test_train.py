@@ -41,7 +41,8 @@ def test_run_matrix_is_the_preregistered_one(cfg):
 
 
 def reference_train(cfg, spec: RunSpec, device, n_steps: int) -> dict[str, torch.Tensor]:
-    """Plain single-run loop with torch.optim.AdamW(weight_decay=λ) — the paper's training code, unbatched."""
+    """Plain single-run loop with torch.optim.AdamW(weight_decay=λ) — the paper's released training code, unbatched,
+    except for float64 cross-entropy (as in the paper's notebook and ARENA; the released helpers.py casts to float32)."""
     torch.use_deterministic_algorithms(True)
     model = GrokTransformer(seed=spec.init_seed).to(device)
     split = task.paper_split(cfg.p, cfg.frac_train, spec.split_seed)

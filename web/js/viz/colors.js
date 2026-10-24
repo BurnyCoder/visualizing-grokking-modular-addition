@@ -3,7 +3,8 @@
 // Local explanation: `rdbu(t)` (diverging, for signed values centred at 0) and `viridis(t)` (sequential, for
 // non-negative values) map t ∈ [0, 1] to RGB by linear interpolation between published anchor colours;
 // `cssVar(name)` reads the current theme's colour tokens from main.css; `freqColor(k)` gives each frequency
-// one fixed colour across the whole site so "frequency 14" always looks the same; `cyclic(t)` is a perceptually
+// the same colour on every page so "frequency 14" always looks the same (10 colours for 56 frequencies, so colours
+// repeat across frequencies, but never inside the key set of a run in runs/); `cyclic(t)` is a perceptually
 // uniform cyclic map (same colour at t = 0 and 1) for positions on a clock.
 // Global context: canvas heatmaps and Plotly charts use these so both themes and all figures stay consistent.
 // Sources: ColorBrewer RdBu 11-class (https://colorbrewer2.org/#type=diverging&scheme=RdBu&n=11);
@@ -44,8 +45,12 @@ export function cssVar(name) {
 }
 
 const PALETTE = ["#d1495b", "#2e86ab", "#edae49", "#00798c", "#8d6a9f", "#66a182", "#e07a5f", "#3d405b", "#c44536", "#2a9d8f"];
-/** A fixed colour for frequency k (same k → same colour on every page). */
-export const freqColor = (k) => PALETTE[(k * 7) % PALETTE.length];
+// (m·k) mod 10 gives k and k + 10 the same colour for every multiplier m, so (7k) mod 10 alone gave k = 42 and 52
+// (both paper key frequencies) one colour. These five frequencies move to another palette entry so that the key frequencies of every
+// run in runs/ get different colours (checked by tests/js/unit/colors.test.mjs); a new run's key set may still collide.
+const FREQ_SLOT = { 3: 0, 18: 1, 27: 7, 47: 4, 52: 1 };
+/** A fixed colour for frequency k, a pure function of k (same k → same colour on every page). */
+export const freqColor = (k) => PALETTE[FREQ_SLOT[k] ?? (k * 7) % PALETTE.length];
 /** A fixed colour per run id. */
 export function runColor(id) {
   if (id === "paper") return "#b4532a";

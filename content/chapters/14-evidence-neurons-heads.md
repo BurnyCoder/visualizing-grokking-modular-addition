@@ -54,5 +54,5 @@ The paper finds that two heads compute such products at a single frequency, whil
 {{fig:ov-fourier}}
 
 ::: nuance
-**“Most”, not “all”.** About 15 % of neurons are not single-frequency, and the attention analysis is described by the paper as a “high-level sketch”. The polynomial description is an approximation that is good enough to replace the neurons without hurting the network (chapter 16) — that, not a perfect fit, is the standard of evidence.
+**“Most”, not “all”.** {{num:paper.always_firing}} of the 512 neurons are not single-frequency, and the attention analysis is described by the paper as a “high-level sketch”. The polynomial description is an approximation that is good enough to replace the neurons without hurting the network (chapter 16) — that, not a perfect fit, is the standard of evidence.
 :::

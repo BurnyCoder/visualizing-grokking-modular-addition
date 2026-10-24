@@ -143,6 +143,7 @@ def paper_numbers(runs_dir: Path, p: int, frac: float) -> dict:
     ssw = m["ssw_total"]
     out["paper.ssw_peak"] = _v(float(ssw.max()), ",.0f")
     out["paper.ssw_peak_step"] = _v(int(m["steps"][int(ssw.argmax())]), "int")
+    out["paper.ssw_t1"] = _v(_at(m, "ssw_total", ph["t1"]), ",.0f")
     out["paper.ssw_t3"] = _v(_at(m, "ssw_total", ph["t3"]), ",.0f")
     mid = int(m["steps"][int(np.argmin(np.abs(m["steps"] - (ph["t1"] + ph["t2"]) / 2)))])  # midpoint of circuit formation
     gi = lambda s: int(np.argmin(np.abs(g["steps"] - s)))  # noqa: E731 — nearest gradient checkpoint
@@ -301,7 +302,7 @@ def h4_detail_numbers(runs_dir: Path) -> dict:
 
 
 def spectra_numbers(runs_dir: Path) -> dict:
-    """paper.*_linear_share: share of the 2D-Fourier energy in linear terms (row/column 0 = Const in b / in a) at the
+    """paper.*_linear_share: share of the 2D-Fourier energy in linear terms (row 0 = Const in a, column 0 = Const in b) at the
     paper's analysis checkpoint, for the neurons (mean over neurons) and for the logits (geometry.spectra)."""
     path = runs_dir / "paper" / "analysis" / "geometry.npz"
     g = np.load(path) if path.exists() else None

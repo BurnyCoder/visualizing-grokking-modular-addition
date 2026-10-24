@@ -31,9 +31,9 @@ The core of the algorithm on one clock:
 ::: object
 **3. How it got there** (chapters 7, 8, 17–20).
 
-$$\begin{aligned}&\theta \leftarrow \theta(1-\gamma\lambda) - \gamma\,\text{AdamStep}(\nabla_\theta\mathcal L):\\ &\underbrace{\text{memorisation}}_{0\,-\,{\sim}1.5\text{k}} \;\to\; \underbrace{\text{circuit formation}}_{\text{restricted loss}\downarrow,\ \text{excluded loss}\uparrow} \;\to\; \underbrace{\text{cleanup}}_{\text{weights}\downarrow,\ \text{test loss}\downarrow\downarrow}\end{aligned}$$
+$$\begin{aligned}&\theta \leftarrow \theta(1-\gamma\lambda) - \gamma\,\text{AdamStep}(\nabla_\theta\mathcal L):\\ &\underbrace{\text{memorisation}}_{\text{train loss}\downarrow} \;\to\; \underbrace{\text{circuit formation}}_{\text{restricted loss}\downarrow,\ \text{excluded loss}\uparrow} \;\to\; \underbrace{\text{cleanup}}_{\text{weights}\downarrow,\ \text{test loss}\downarrow\downarrow}\end{aligned}$$
 
-The generalising circuit forms during the plateau, *before* the test loss drops; weight decay then removes the memorisation.
+On the paper's run the three phases end at steps {{num:paper.t1}}, {{num:paper.t2}} and {{num:paper.t3}}. The generalising circuit forms during the plateau, *before* the test loss drops; weight decay then removes the memorisation.
 
 And the whole story in one view once more:
 
@@ -46,7 +46,7 @@ And the whole story in one view once more:
 2. Four lines of evidence — Fourier sparsity, single-frequency neurons, a rank-10 read-out, and interventions including counterfactual patching — support this description of the trained network (ch. 13–16).
 3. Knowing the mechanism lets us measure hidden progress: the restricted loss falls and the excluded loss rises long before the test loss drops (ch. 17).
 4. Throughout circuit formation and over most of memorisation the gradients of the training and test losses partly oppose each other (negative cosine, {{num:paper.cos_tt_cf_range}} in circuit formation), turning positive only during cleanup, after step {{num:paper.cos_tt_last_neg}}; after grokking the network sits in a balance between the loss and weight decay (ch. 19).
-5. In all 11 of our retrained seeds with weight decay, the Fourier signatures appear — sparse spectra, single-frequency neurons, cosine-shaped logits, and the patching test — each seed with its own key frequencies; the strictest preregistered ablation criterion (H4) held in only {{num:hyp.h4_successes}}, because our rule for naming the key frequencies sometimes includes a weak one or leaves out a little used one. Without weight decay, none of 5 networks grokked (ch. 20).
+5. In all 11 of our retrained seeds with weight decay, the Fourier signatures appear — sparse spectra, single-frequency neurons, cosine-shaped logits, and the patching test — each seed with its own key frequencies; the strictest preregistered ablation criterion (H4) held in only {{num:hyp.h4_successes}}, because our rule for naming the key frequencies sometimes includes a weak one or leaves out a little used one. Without weight decay, none of 5 networks grokked within 40,000 steps (ch. 20).
 
 Point 5 at a glance: the three phases of every run whose phases were detected, on one time axis, and the paper's run with its authors' own boundaries:
 
@@ -56,7 +56,7 @@ Point 5 at a glance: the three phases of every run whose phases were detected, o
 
 - **A toy model.** One task, one layer, and a mechanism that took significant manual effort to find. The paper itself notes {{quote:nanda-specific}}
 - **Hindsight.** The progress measures needed the final algorithm and do not predict *when* grokking happens (ch. 17).
-- **Approximations.** “Most” neurons are single-frequency (~85 %); the attention mechanism is described by the paper as a sketch; several components (e.g. always-firing neurons, the late attention change around step 43,000) remain partly unexplained (ch. 14, 18).
+- **Approximations.** “Most” neurons are single-frequency ({{num:paper.neurons_085}} of 512 in the paper's run); the attention mechanism is described by the paper as a sketch; several components (e.g. always-firing neurons, the late attention change around step 43,000) remain partly unexplained (ch. 14, 18).
 - **Reproduction.** Our code reproduces most of the paper's numbers on its own network; a few intervention numbers could not be matched without knowing the exact procedure, and we list them openly ([Reproduce](../reproduce.html), [Errata](../errata.html)).
 - **Scope of our replication.** We retrained only the paper's main setting; robustness to other data fractions, depths and moduli comes from the paper's appendix.
 

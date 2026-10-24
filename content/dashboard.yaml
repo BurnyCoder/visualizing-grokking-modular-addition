@@ -22,7 +22,7 @@ groups:
     panels: [freq-norm-race, we-fourier-bars, wl-fourier-bars, we-fourier-heatmap, wl-fourier-heatmap, we-svals, svals-over-training, attn-C-fourier, ov-fourier, head-spectra-over-training, wlogit-sorted, wneur-fourier, neuron-stars, pos-embed]
   - id: activations
     title: "C. Activations on every input"
-    blurb: "What the attention heads and MLP neurons compute for each of the 12,769 inputs, computed live in your browser from the selected checkpoint's weights."
+    blurb: "What the attention heads and MLP neurons compute for each of the 12,769 inputs. Views of one head or neuron are computed live in your browser from the selected checkpoint's weights; summaries over all neurons or all checkpoints are precomputed by the pipeline."
     panels: [attn-grid, attn-grids-all, attention-heads-grid, avg-attn, attn-over-training, sigmoid-linearisation, neuron-grid, neuron-small-multiples, neuron-freq-scatter, quad-scatter, neuron-freq-map, neuron-b2-map, cluster-sizes]
   - id: geometry
     title: "D. Geometry: circles, clouds and confidence"

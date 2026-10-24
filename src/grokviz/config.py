@@ -56,7 +56,8 @@ def _setting(env_key: str, parse: Callable[[str], object]) -> object:
 
 @dataclass(frozen=True)
 class Config:
-    """All pipeline settings; one field per key in `.env.example` (see comments there for meaning)."""
+    """All pipeline settings; one field per GROKVIZ_* key in `.env.example` (see comments there for meaning).
+    PYTHONUTF8, CUBLAS_WORKSPACE_CONFIG and HF_TOKEN are process environment, not fields."""
 
     # --- runtime ---
     device: str = _setting("GROKVIZ_DEVICE", str)  # "auto" | "cuda" | "cpu"

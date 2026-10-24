@@ -231,7 +231,7 @@ export const figures = {
         body.append(info);
         hm.draw(grid);
         mark(s);
-        info.textContent = `step ${net.step}, head ${h}: rows = 512 neurons sorted by frequency cluster; columns = Fourier components (Const, cos 1, sin 1, …) over the token a of W_neur = W_in·W_O·W_V·W_E — what head ${h} adds to each neuron's input when it attends fully to a. Other heads: pick one in the dashboard's control bar. Click a row to select a neuron (outlined).`;
+        info.textContent = `step ${net.step}, head ${h}: rows = 512 neurons sorted by frequency cluster; columns = Fourier components (Const, cos 1, sin 1, …) over the token a of W_neur = W_in·W_O·W_V·W_E (a's position-0 embedding W_pos[0] is included; it only shifts the Const column) — what head ${h} adds to each neuron's input when it attends fully to a. Other heads: pick one in the dashboard's control bar. Click a row to select a neuron (outlined).`;
       }, { dedupe: frameKey(ds, "weight_steps", "head"), theme: false });
       follow(body, ["neuron"], mark);
     },

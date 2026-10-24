@@ -24,7 +24,7 @@ The split is made by shuffling all 12,769 pairs with a fixed [[preview:seed|rand
 
 A network can answer its training questions correctly in two very different ways:
 
-- [[dfn:memorization]]: store each of the 3,830 question–answer pairs separately, like a lookup table. This says nothing about the other 8,939 questions.
+- [[dfn:memorization]]: store each of the {{num:task.n_train}} question–answer pairs separately, like a lookup table. This says nothing about the other {{num:task.n_test}} questions.
 - [[dfn:generalization]]: capture the rule itself, so that unseen questions are answered correctly too.
 
 The test set tells the two apart: memorisation scores ~0 % on it (about 1 in 113 right by luck), generalisation scores ~100 %.

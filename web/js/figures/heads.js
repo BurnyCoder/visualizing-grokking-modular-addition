@@ -9,7 +9,8 @@
 //                          line, whose variance explained is the paper's "linear range" measure.
 // Global context: chapter 6 derives A₀ ≈ σ(C_j[a] − C_j[b]) and chapter 14 checks the linear range (paper App. C.1.3);
 // these panels show both on the real network at any step. s₀ − s₁ = C_j[a] − C_j[b] + a per-head constant (the two
-// positional embeddings), which shifts the x axis but changes neither σ's fit nor the line's.
+// positional embeddings), which shifts the x axis; the line's fit is unchanged, and σ's (not shift-invariant) changes negligibly here
+// because the constant is tiny (|D₀ − D₁| ≤ 0.004 on the paper's 40k model, against a C_j range of about 4).
 // Sources: paper App. C.1.3 (https://arxiv.org/abs/2301.05217); line fit as src/grokviz/interventions.py.
 import { array, model, run } from "../core/data.js";
 import { Plot, phaseShapes } from "../viz/plot.js";

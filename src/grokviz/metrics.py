@@ -10,8 +10,9 @@ training) and `rchecks.py` applies them to the paper's epoch-40k model to compar
 Each definition was checked against the paper's code and numbers before being fixed here:
 - restricted loss = paper code `calculate_trig_loss` / ARENA `trig_loss` (10 cos/sin(w_k(a+b)) directions per
   output, bias-corrected, all pairs) — reproduces ARENA's 5.5474e-8 on the paper model;
-- excluded loss = paper code `calculate_excluded_loss` / ARENA `excl_loss` (subtract those directions, no bias
-  correction, train pairs) — reproduces ARENA's per-frequency test values exactly;
+- excluded loss (subtract those directions, no bias correction, train pairs): all of K at once as in the paper's
+  notebook `calculate_excluded_loss_2D_full` (paper Sec. 5.1); one frequency at a time as in paper code
+  `calculate_excluded_loss` / ARENA `excl_loss`, which reproduces ARENA's per-frequency test values exactly;
 - neuron frequency/FVE = paper code `calculate_key_freqs` / ARENA `find_neuron_freqs` — gives the paper's 433
   neurons above 0.85 and ARENA's cluster sizes 44/93/145/87/64.
 Sources: https://github.com/mechanistic-interpretability-grokking/progress-measures-paper/blob/23d2c64/transformers.py;

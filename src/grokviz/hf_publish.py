@@ -9,8 +9,8 @@ Local explanation:
   large to keep in git).
 The paper's own run is never re-uploaded as checkpoints (it stays at its original repository); the website data
 contains float16 copies of its weights, with attribution (decision recorded in NOTICE.md).
-Optimiser states (optim.safetensors) are not uploaded: they are large and exactly regenerable by re-running the
-deterministic training.
+Optimiser states (optim.safetensors) are not uploaded: they are large and regenerable by re-running the deterministic
+training (bitwise on the same software and hardware stack).
 Global context: makes every number on the site re-checkable without retraining.
 Sources: huggingface_hub upload_folder for large folders (https://huggingface.co/docs/huggingface_hub/guides/upload#upload-a-large-folder),
 collections API (https://huggingface.co/docs/huggingface_hub/guides/collections).
@@ -20,6 +20,7 @@ from __future__ import annotations  # postponed annotations
 
 import json  # lock file
 import logging  # module logger
+from pathlib import Path  # runs directory
 
 from huggingface_hub import HfApi  # Hub client (uses the cached login or HF_TOKEN)
 
@@ -35,10 +36,11 @@ tags: [grokking, mechanistic-interpretability, modular-arithmetic, transformer]
 ---
 # Grokking modular addition — retrained runs
 
-{n} one-layer transformers trained on (a + b) mod 113 with the settings of Nanda et al. 2023,
-*Progress measures for grokking via mechanistic interpretability* (arXiv:2301.05217): 30 % of all pairs for
-training, full-batch AdamW (lr 1e-3, betas (0.9, 0.98), weight decay 1 or 0), 10-step warm-up, 40,000 steps,
-deterministic PyTorch. Runs (seeds and controls, see `docs/preregistration.md` in the code repository):
+{n} one-layer transformers trained with the settings of Nanda et al. 2023, *Progress measures for grokking via
+mechanistic interpretability* (arXiv:2301.05217): {n_add} on (a + b) mod 113 and {n_rand} random-label control{s_rand}
+(labels replaced by a fixed random table). 30 % of all pairs for training, full-batch AdamW (lr 1e-3, betas
+(0.9, 0.98), weight decay 1 or 0), 10-step warm-up, float64 cross-entropy, 40,000 steps, deterministic PyTorch.
+Runs (seeds and controls, see `docs/preregistration.md` in the code repository):
 
 {runs}
 
@@ -71,7 +73,8 @@ repository documents every file.
 
 `data/` contains:
 - `manifest.json`: every run (key frequencies, phases, checkpoint steps) and every array (file, dtype, shape, sha256);
-- `runs/<id>/<name>.bin`: little-endian arrays over checkpoints (float32, float16, int16 or quantised uint8);
+- `runs/<id>/<name>.bin`: little-endian arrays (float32, float16, int16 or quantised uint8), one row per checkpoint,
+  or per logged step for the loss curves and update norms;
 - `runs/<id>/w_<step>.bin`: float16 weights at selected checkpoints, for the in-browser model;
 - `train_mask_seed<s>.bin`: the train/test split of each seed;
 - `summary.json`: the numbers and tables quoted in the website's prose.
@@ -86,17 +89,22 @@ Code, website and reports: {github}. Author: Libor Burian.
 """
 
 
+def model_card(runs_dir: Path) -> tuple[str, list[str]]:
+    """The runs repository's model card and the run ids it lists (our runs, not the paper's)."""
+    runs = sorted(d.name for d in runs_dir.iterdir() if (d / "meta.json").exists() and d.name != "paper")
+    metas = {r: json.loads((runs_dir / r / "meta.json").read_text(encoding="utf-8")) for r in runs}
+    n_rand = sum(m.get("fn_name") == "rand" for m in metas.values())  # random-label controls (train.py)
+    lines = "\n".join(f"- `{r}` — {m.get('title', r)}" for r, m in metas.items())
+    return MODEL_CARD.format(n=len(runs), n_add=len(runs) - n_rand, n_rand=n_rand, s_rand="" if n_rand == 1 else "s",
+                             runs=lines, github=GITHUB_URL), runs
+
+
 def publish_runs_to_hub(ctx: PipelineContext) -> None:
     """Phase entry point: upload our runs (not the paper's) + model card; build the collection."""
     api = HfApi()
     repo = ctx.cfg.hf_runs_repo
-    runs = sorted(d.name for d in ctx.cfg.runs_dir.iterdir() if (d / "meta.json").exists() and d.name != "paper")
-    lines = []
-    for r in runs:
-        meta = json.loads((ctx.cfg.runs_dir / r / "meta.json").read_text(encoding="utf-8"))
-        lines.append(f"- `{r}` — {meta.get('title', r)}")
-    card = ctx.cfg.runs_dir / "README.md"
-    card.write_text(MODEL_CARD.format(n=len(runs), runs="\n".join(lines), github=GITHUB_URL), encoding="utf-8")
+    text, runs = model_card(ctx.cfg.runs_dir)
+    (ctx.cfg.runs_dir / "README.md").write_text(text, encoding="utf-8")
     api.create_repo(repo, repo_type="model", exist_ok=True)
     log.info("uploading %d runs to %s (resumable)", len(runs), repo)
     # huggingface_hub ≥ 2.0 removed upload_large_folder; upload_folder now streams large folders in several commits

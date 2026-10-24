@@ -20,9 +20,6 @@ import bisect  # nearest checkpoint to a target step
 import hashlib  # file digests
 import json  # manifest
 import logging  # module logger
-import os  # chmod for read-only folders
-import shutil  # clean output folder
-import stat  # S_IWRITE
 from pathlib import Path  # paths
 
 import numpy as np  # arrays
@@ -32,7 +29,7 @@ from grokviz import fourier, task  # basis names, split masks
 from grokviz.checkpoint_metrics import run_dirs  # selected runs
 from grokviz.context import PipelineContext  # phase argument
 from grokviz.geometry import HERO_RUNS  # runs exported in full detail
-from grokviz.runstore import RunStore  # run access
+from grokviz.runstore import RunStore, remove_tree  # run access; clean output folder
 from grokviz.summary import build_summary  # prose numbers
 
 log = logging.getLogger("grokviz.export")
@@ -185,18 +182,11 @@ def export_run(root: Path, store: RunStore, p: int, weight_every: int | None, sn
     }
 
 
-def _clear_readonly(func, path, _exc) -> None:
-    """rmtree error handler: Windows refuses to remove a read-only file or folder, so clear the bit and retry.
-    Source: shutil.rmtree example (https://docs.python.org/3/library/shutil.html#rmtree-example)."""
-    os.chmod(path, stat.S_IWRITE)
-    func(path)
-
-
 def export_site_data(ctx: PipelineContext) -> None:
     """Phase entry point: write site/data (manifest, summary, arrays) for every analysed run."""
     root = ctx.cfg.site_dir / "data"
     if root.exists() and ctx.force:
-        shutil.rmtree(root, onexc=_clear_readonly)
+        remove_tree(root)
     root.mkdir(parents=True, exist_ok=True)
     runs = []
     for run_dir in run_dirs(ctx, all_runs=True):  # the manifest lists every run, whatever --runs says

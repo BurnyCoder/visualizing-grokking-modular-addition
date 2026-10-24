@@ -319,7 +319,7 @@ def dynamics_numbers(runs_dir: Path) -> dict:
 
 
 def same_init_numbers(runs_dir: Path) -> dict:
-    """seeds.same_init.*: our wd1_s0 starts from the paper's exact initial weights and split (exploratory comparison).
+    """seeds.same_init.*: our wd1_s0 starts from the paper's initial weights (equal up to float32 rounding) and split (exploratory comparison).
 
     The paper's first checkpoint is taken after one update with learning rate 0 (warm-up), i.e. it is the
     initialisation; comparing it with our step-0 checkpoint shows whether the two runs start identically.

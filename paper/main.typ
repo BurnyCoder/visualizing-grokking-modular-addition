@@ -120,7 +120,7 @@ summation order diverges from $3 times 10^(-7)$ after 20 steps to $0.24$ after 2
 so seed-level results must be compared as distributions, not trajectories.
 
 Before training, we fixed five hypotheses, their metrics and falsification rules (git tag `prereg-v1`):
-*H1* restricted loss falls before test loss; *H2* excluded loss rises ≥ 10× during circuit formation; *H3* the final
+*H1* restricted loss falls before test loss; *H2* excluded loss rises > 10× during circuit formation; *H3* the final
 Gini sparsity @hurley2009 of the $W_E$ and $W_L$ Fourier spectra exceeds both its initial value + 0.3 and the 99th
 percentile under 100 random orthonormal bases; *H4* each single key-frequency ablation raises loss ≥ 100×, each
 non-key ablation ≤ 2×, removing all non-key frequencies ≤ 1.5×; *H5* weight decay is necessary for grokking within

@@ -18,7 +18,7 @@ H.264 for the web, yuv420p and faststart (https://trac.ffmpeg.org/wiki/Encode/H.
 from __future__ import annotations  # postponed annotations
 
 import logging  # module logger
-import shutil  # ffmpeg on PATH, clean frame folders
+import shutil  # ffmpeg on PATH
 import struct  # frame size from the PNG header
 import subprocess  # run ffmpeg
 from dataclasses import dataclass  # clip specification
@@ -29,6 +29,7 @@ from playwright.sync_api import sync_playwright  # headless browser
 from grokviz.config import REPO_ROOT  # output folders
 from grokviz.context import PipelineContext  # phase argument
 from grokviz.figures import open_figure, serve  # dashboard in capture mode; quiet local server of site/
+from grokviz.runstore import remove_tree  # clean frame folders (also read-only ones on Windows)
 
 log = logging.getLogger("grokviz.media")
 FPS = 10  # frames per second of every clip
@@ -89,7 +90,7 @@ def run_ffmpeg(*args: str) -> None:
 def capture(page, base: str, clip: Clip, frames: Path) -> int:
     """Screenshot every frame of `clip` into `frames/frame_0000.png …`; return the number of frames."""
     if frames.exists():
-        shutil.rmtree(frames)
+        remove_tree(frames)
     frames.mkdir(parents=True)
     fig = open_figure(page, base, clip.selector, clip.state)  # its first draw has finished, so it cannot reset a slider later
     values = list(range(*clip.steps)) if clip.steps else list(range(*clip.slider[1:]))

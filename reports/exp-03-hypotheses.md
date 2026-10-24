@@ -65,7 +65,7 @@ The table below is [`tables/hypotheses.md`](tables/hypotheses.md), produced by `
 | Hypothesis | Seeds passing | p (one-sided) | Holm-adjusted p | Verdict |
 |---|---|---|---|---|
 | H1: restricted loss falls before test loss | 11/11 | 4.9 × 10⁻⁴ | 0.0020 | supported |
-| H2: excluded loss rises ≥ 10× during circuit formation | 11/11 | 4.9 × 10⁻⁴ | 0.0020 | supported |
+| H2: excluded loss rises > 10× during circuit formation | 11/11 | 4.9 × 10⁻⁴ | 0.0020 | supported |
 | H3: Fourier sparsity is learned and basis-specific | 11/11 | 4.9 × 10⁻⁴ | 0.0020 | supported |
 | H4: key frequencies necessary, others dispensable | 6/11 | 0.50 | 0.50 | **not supported** |
 | H5: weight decay is necessary for grokking within 40,000 steps | wd1 11/11 vs wd0 0/5 grokked | 2.3 × 10⁻⁴ | 0.0011 | supported |

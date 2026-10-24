@@ -20,7 +20,9 @@ import bisect  # nearest checkpoint to a target step
 import hashlib  # file digests
 import json  # manifest
 import logging  # module logger
+import os  # chmod for read-only folders
 import shutil  # clean output folder
+import stat  # S_IWRITE
 from pathlib import Path  # paths
 
 import numpy as np  # arrays
@@ -183,11 +185,18 @@ def export_run(root: Path, store: RunStore, p: int, weight_every: int | None, sn
     }
 
 
+def _clear_readonly(func, path, _exc) -> None:
+    """rmtree error handler: Windows refuses to remove a read-only file or folder, so clear the bit and retry.
+    Source: shutil.rmtree example (https://docs.python.org/3/library/shutil.html#rmtree-example)."""
+    os.chmod(path, stat.S_IWRITE)
+    func(path)
+
+
 def export_site_data(ctx: PipelineContext) -> None:
     """Phase entry point: write site/data (manifest, summary, arrays) for every analysed run."""
     root = ctx.cfg.site_dir / "data"
     if root.exists() and ctx.force:
-        shutil.rmtree(root)
+        shutil.rmtree(root, onexc=_clear_readonly)
     root.mkdir(parents=True, exist_ok=True)
     runs = []
     for run_dir in run_dirs(ctx, all_runs=True):  # the manifest lists every run, whatever --runs says

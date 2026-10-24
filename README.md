@@ -15,7 +15,7 @@ addition modulo 113. The network was reverse-engineered by Nanda, Chan, Lieberum
 - **Reports:** [`reports/`](reports/), with one file per experiment, a [summary of all experiments](reports/summary.md) and a
   paper (`reports/paper.pdf`).
 
-![Grokking in one view, played over steps 1 to 15,401 of the paper's run: loss curves with the step cursor, which of the 12,769 inputs the network answers correctly, the embedding clock of key frequency 14, and one MLP neuron's activation on every input](docs/images/clips/grokking-one-view.gif)
+![Grokking in one view, played over steps 1 to 15,401 of the paper's run: loss curves with the step cursor, the probability of the right answer on each of the 12,769 inputs, the embedding clock of key frequency 14, and one MLP neuron's activation on every input](docs/images/clips/grokking-one-view.gif)
 
 ![The dashboard at step 9,301 of the paper's run, the end of circuit formation](docs/images/dashboard.png)
 

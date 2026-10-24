@@ -75,7 +75,9 @@ def paper_numbers(runs_dir: Path, p: int, frac: float) -> dict:
     out["paper.val_step"] = _v(first["step"], "int")
     out["paper.val_loss_recomputed"] = _v(first["train_loss_recomputed"], ".6f")
     out["paper.val_loss_logged"] = _v(first["train_loss_logged"], ".6f")
-    out.update(logged_precision_numbers(store.curves()))
+    curves = store.curves()
+    out.update(logged_precision_numbers(curves))
+    out["paper.loss_start"] = _v(f"{curves['train_loss'][0]:.2f} (train) and {curves['test_loss'][0]:.2f} (test)", "str")
     for row in rc["rows"]:  # rc.R* = our value of each reproduction check
         ours = row["ours"]
         out[f"rc.{row['id']}"] = _v(ours, "sci") if isinstance(ours, float) else _v(ours)

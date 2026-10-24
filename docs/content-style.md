@@ -19,7 +19,7 @@ enforces the mechanical parts of that promise; the rest is editorial.
   Not part of the build: `tests/test_quotes.py` verifies every quote verbatim against the cited PDF page (skipped until
   `acquire_paper_sources` has downloaded the PDFs).
 - **References:** every `{{cite:key}}` exists in `content/references.yaml` (numbered in file order).
-- **Numbers:** every `{{num:key}}` exists in `site/data/summary.json` — prose numbers are never typed by hand.
+- **Numbers:** every `{{num:key}}` exists in `site/data/summary.json` — measured numbers in the prose are never typed by hand (values quoted from the paper or ARENA, setup constants and arithmetic are; see AGENTS.md).
 - **Figures/widgets:** every `{{fig:id}}` / `{{widget:id}}` has metadata and a registered JS implementation.
 
 ## Editorial rules

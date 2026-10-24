@@ -37,7 +37,7 @@ All functions were re-implemented. None was copied verbatim: P, PC and A have no
 | `interventions.table1_readoff` | Paper Table 1; A W_logit read-off | — |
 | `interventions.relu_multiplier_regression` | A regression cell | Uses A's exact constant 0.5/√p. A's printed label says 0.5. |
 | `patching.patch_recovery` | New: counterfactual interchange (Geiger et al. 2021) | — |
-| `gradients.*`, `geometry.*` | New; ARENA bonus "training dynamics" motivates them | — |
+| `gradients.*`, `geometry.*` | New; motivated by ARENA §3 "Analysis During Training" and its bonus discussion of memorising vs. generalising gradients | — |
 
 ## Bugs found in the sources (documented on the site's errata page)
 - **T112:** `W_logit @ fourier_basis` should be `@ fourier_basis.T`.

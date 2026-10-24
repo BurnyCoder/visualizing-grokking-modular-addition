@@ -9,13 +9,17 @@ addition modulo 113. The network was reverse-engineered by Nanda, Chan, Lieberum
   - one big dashboard of linked visualizations that you can scrub across training.
 - **Models and data:** Hugging Face collection [*Visualizing grokking modular addition*](https://huggingface.co/collections/BurnyCoder/visualizing-grokking-modular-addition-6ad822354f93a379ba50756a). It contains:
   - our 22 runs: [`BurnyCoder/grokking-modular-addition-runs`](https://huggingface.co/BurnyCoder/grokking-modular-addition-runs);
-  - the site data: [`BurnyCoder/grokking-modular-addition-site-data`](https://huggingface.co/datasets/BurnyCoder/grokking-modular-addition-site-data).
+  - the site data: [`BurnyCoder/grokking-modular-addition-site-data`](https://huggingface.co/datasets/BurnyCoder/grokking-modular-addition-site-data);
+  - an earlier TransformerLens replication (seed 999): [`BurnyCoder/grokking-modular-addition-transformer`](https://huggingface.co/BurnyCoder/grokking-modular-addition-transformer);
+  - the paper's own mainline run: [`callummcdougall/grokking_full_run_data`](https://huggingface.co/callummcdougall/grokking_full_run_data).
 - **Reports:** [`reports/`](reports/), with one file per experiment, a [summary of all experiments](reports/summary.md) and a
   paper (`reports/paper.pdf`).
 
-![Grokking in one view, played over steps 1 to 15,401 of the paper's run: loss curves with the step cursor, which of the 12,769 inputs the network answers correctly, the embedding clock of key frequency 14, and one MLP neuron's activation on every input](docs/images/clips/grokking-one-view.gif)
+![Grokking in one view, played over steps 1 to 15,401 of the paper's run: loss curves with the step cursor, the probability of the right answer on each of the 12,769 inputs, the embedding clock of key frequency 14, and one MLP neuron's activation on every input](docs/images/clips/grokking-one-view.gif)
 
 ![The dashboard at step 9,301 of the paper's run, the end of circuit formation](docs/images/dashboard.png)
+
+![Chapter 12 of the website, "The Fourier multiplication algorithm": the chapter list on the left, the paper's quoted claim, and the first two steps of the algorithm, numbers becoming angles cos(wa), sin(wa) and the angle-addition identities that combine them](docs/images/chapter.png)
 
 ## Methodology
 
@@ -36,10 +40,10 @@ We then test the central claims on 11 independently trained seeds plus controls.
 - **Implementation.** `src/grokviz/model.py` re-implements it in the paper's exact parameter layout, so the paper's
   checkpoints load with `strict=True`.
 
-**Training** (identical to the paper's released code):
+**Training** (the paper's settings, Sec. 3, and its released code):
 - full-batch AdamW: learning rate 10⁻³, β = (0.9, 0.98), weight decay λ = 1, and a 10-step linear warm-up;
-- cross-entropy computed in float64;
-- 40,000 steps, with a checkpoint every 100 steps.
+- cross-entropy computed in float64, as in the paper's notebook and ARENA (the released `helpers.py` casts to float32);
+- 40,000 steps, as stated in the paper (the released run continued to 50,000), with a checkpoint every 100 steps.
 
 All 22 runs train together on one GPU, vectorised with `torch.func.vmap`. This is deterministic and resumable
 (`src/grokviz/train.py`). The run matrix comes from [the preregistration](docs/preregistration.md):
@@ -54,7 +58,8 @@ All 22 runs train together on one GPU, vectorised with `torch.func.vmap`. This i
 
 **Analysis** (`src/grokviz/metrics.py`, `interventions.py`, `patching.py`, `gradients.py`, `geometry.py`).
 - **Origin.** The functions are re-implementations of the paper's code, of ARENA 1.5.2 and of this repo's submodule
-  notebooks. Each carries a `Source:` link; see [`docs/porting-map.md`](docs/porting-map.md).
+  notebooks. Each module's docstring links its sources at pinned commits, and [`docs/porting-map.md`](docs/porting-map.md)
+  maps every function to its origin.
 - **Definitions.** Every metric has an exact definition in [`docs/operationalizations.md`](docs/operationalizations.md).
 - **Metrics computed:**
   - Fourier spectra of the weights;
@@ -66,7 +71,7 @@ All 22 runs train together on one GPU, vectorised with `torch.func.vmap`. This i
   - counterfactual activation patching of the key-frequency subspace;
   - exact full-batch gradients;
   - activation and output-distribution geometry.
-- **Validation.** The code was first checked against 30 numbers published by the paper and ARENA, using the paper's
+- **Validation.** The code was first checked against 30 numbers and claims published by the paper and ARENA, using the paper's
   network ([experiment 1](reports/exp-01-paper-validation.md)).
 
 **Statistics.**
@@ -81,7 +86,8 @@ All 22 runs train together on one GPU, vectorised with `torch.func.vmap`. This i
   - a glossary word appears in plain text before its defining chapter without a hover card (`[[preview:…]]`);
   - a relative link or asset in the built pages is missing;
   - a quote is longer than the quote policy allows;
-  - a number in the prose is not bound to the analysis output (`site/data/summary.json`).
+  - a `{{num:key}}` in the prose names a key missing from `site/data/summary.json` (a number typed by hand cannot be
+    detected).
 - **Quote check.** Separately, `tests/test_quotes.py` checks every quote word for word against its PDF page. It runs
   locally, once `acquire_paper_sources` has downloaded the PDFs.
 - **Figures.** Every figure is one JavaScript module, used by both the chapters and the dashboard.
@@ -95,22 +101,24 @@ All 22 runs train together on one GPU, vectorised with `torch.func.vmap`. This i
 See [`reports/summary.md`](reports/summary.md) for all experiments and [`reports/tables/hypotheses.md`](reports/tables/hypotheses.md)
 for the preregistered tests. In short:
 
-- **Our analysis code reproduces 26 of 30 published numbers** on the paper's network. The 4 it does not reproduce are
+- **Our analysis code reproduces 26 of 30 published numbers and claims** on the paper's network. The 4 it does not reproduce are
   explained in [experiment 1](reports/exp-01-paper-validation.md).
 - **Swapping the key-frequency subspace** of a's embedding with that of a′ moves the paper network's output to a′ + b:
   - recovered: 99.7 % of the logit difference;
   - complement-subspace control: 0.2 %;
   - random-subspace control: 6 %.
 - **Seeds and controls (preregistered, 11 seeds):**
-  - All 11 seeds with weight decay grok; none of the 5 without it does (Fisher p = 2.3 × 10⁻⁴).
+  - All 11 seeds with weight decay grok within 40,000 steps; none of the 5 without it does (Fisher p = 2.3 × 10⁻⁴).
   - Supported (11/11 seeds each, Holm-adjusted p = 0.002):
     - restricted loss falls before test loss (H1);
     - excluded loss rises during circuit formation (H2);
     - Fourier sparsity is learned and specific to the Fourier basis (H3).
-  - **Not supported:** the strict key-frequency ablation criterion (H4, 6/11). The weight-norm rule that names the key
-    frequencies sometimes includes a weak one, or misses small joint contributions.
+  - **Not supported:** the strict key-frequency ablation criterion (H4, 6/11). In 2 seeds the weight-norm rule that
+    names the key frequencies admits one whose removal costs less than 100× (5.9×, 70×); in 3 seeds the frequencies
+    it leaves out jointly cost 1.6–2.8× (limit 1.5×).
   - Patching recovers 0.997 [0.995, 0.998] of the logit difference across seeds.
-- **Exploratory:** our seed 0 starts from the paper's exact initial weights. It diverges numerically within ~50 steps,
+- **Exploratory:** our seed 0 starts from the paper's initial weights, identical up to float32 rounding (max |Δ| =
+  3.0 × 10⁻⁸). It diverges numerically within ~50 steps,
   yet ends with the paper's key frequencies.
 - **Exploratory dynamics** (gradients, and Adam's step rebuilt from the saved Adam states). During circuit formation the
   training-loss gradient opposes the test-loss gradient. At the end, Adam's loss step and the weight-decay step are
@@ -159,11 +167,12 @@ flowchart LR
    - Download the paper's checkpoints, pinned by revision and sha256 (~0.5 GB).
    - Store them in our run format (`runs/paper/`).
    - Check that recomputed training losses match the logged ones; this fixes the split and the step offset.
-   - Run the 27 reproduction checks.
-2. **Training.** Train the 22 runs: about 70 minutes on an RTX 5070 laptop GPU. Training saves a resume point every
+   - Run the 30 reproduction checks (26 match).
+2. **Training.** Train the 22 runs: 73 minutes on an RTX 5070 laptop GPU. Training saves a resume point every
    2,000 steps; if it is interrupted, rerunning the phase continues from there.
 3. **Measurement.**
-   - Compute every metric at every checkpoint (`runs/<id>/analysis/ckpt_metrics.npz`; ~70 minutes for 22 runs).
+   - Compute every metric at every checkpoint (`runs/<id>/analysis/ckpt_metrics.npz`): 72 minutes for the paper run
+     and the 22 runs.
    - Compute exact full-batch gradients and the activation/output geometry.
    - Detect phase boundaries.
    - Run the ablations, random-basis nulls and patching on the final checkpoints.
@@ -175,7 +184,7 @@ flowchart LR
    - Build `site/` and render the report figures from the site itself (Playwright).
    - Record the clips below from the site (`render_media`): GIFs for this README, MP4s in `reports/media/` and
      5-frame film strips for the paper.
-   - Compile the paper (`paper/main.typ` → `reports/paper.pdf`, Typst). Its numbers come from the same `summary.json`.
+   - Compile the paper (`paper/main.typ` → `reports/paper.pdf`, Typst). Its measured numbers come from the same `summary.json`.
 
 Data formats are documented in [`docs/data-formats.md`](docs/data-formats.md); module responsibilities are in
 [`docs/architecture.md`](docs/architecture.md).
@@ -215,19 +224,20 @@ uv run grokviz --phases compute_checkpoint_metrics,compute_geometry --runs wd1_s
 The CLI flags:
 - `--phases`: phases to run;
 - `--skip`: phases to leave out;
-- `--runs`: runs to process, as exact ids (`wd1_s1`) or groups (`wd1`). Phases that aggregate all runs ignore it:
-  `test_hypotheses` and `export_site_data`;
+- `--runs`: runs to process, as exact ids (`wd1_s1`) or groups (`wd1`). Phases that aggregate or publish all runs
+  ignore it: `test_hypotheses`, `export_site_data`, `publish_runs_to_hub`, `publish_site_data`, `build_site`,
+  `render_report_figures`, `render_media` and `build_paper_pdf`;
 - `--force`: recompute existing outputs;
 - `--verbose`: also log DEBUG messages.
 
 The two publishing phases need a Hugging Face login (`hf auth login`); skip them with
 `--skip publish_runs_to_hub,publish_site_data`.
 
-**Only view the website (no GPU, no training).** Download the published site data into `site/`, then build and serve it:
+**Only view the website (no torch, no GPU, no training).** Download the published site data into `site/`, then build and serve it:
 
 ```bash
-uv sync --extra cpu
-uv run python -c "import json; from huggingface_hub import snapshot_download as s; l=json.load(open('site-data.lock')); s(l['repo'], repo_type='dataset', revision=l['revision'], local_dir='site')"
+uv sync --no-dev
+uv run python -c "import json; from huggingface_hub import snapshot_download as s; l=json.load(open('site-data.lock')); s(l['repo'], repo_type='dataset', revision=l['revision'], local_dir='site', allow_patterns='data/*')"
 uv run python -m grokviz.site_build
 uv run python -m grokviz.serve --dir site --port 8766
 ```
@@ -248,7 +258,7 @@ Then open <http://localhost:8766>.
   ```
 
 - Two of the tests check the built site and its data: `tests/test_site_data.py` (every array matches its manifest
-  entry, plus the 1 GB Pages limit) and `tests/test_site_browser.py`. The browser test opens every page in headless
+  entry, plus the [1 GB Pages limit](https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits)) and `tests/test_site_browser.py`. The browser test opens every page in headless
   Chromium, waits for every figure to draw, fails on console errors, and checks the dashboard's first paint is under 3 s.
   Both are skipped until `site/` has been built with data.
 
@@ -283,7 +293,7 @@ seeds, steps, logging intervals, paths, pinned revisions and Hugging Face repo i
   - pinned inputs;
   - deterministic, resumable batched training;
   - a preregistration;
-  - every prose number bound to the analysis output.
+  - prose numbers bound to the analysis output (`{{num:key}}`).
 - **Reports and paper** generated from the same data and figures.
 
 **Clips.** `render_media` records these from the dashboard. Each frame is a stored checkpoint of the paper's run (every

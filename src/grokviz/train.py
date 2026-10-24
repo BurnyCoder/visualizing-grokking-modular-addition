@@ -1,11 +1,13 @@
 """Phase `train_all_runs`: retrain the paper's architecture from scratch for every run in the run matrix.
 
-Local explanation: one run = (initialisation seed, data-split seed, weight decay, task). Training replicates
+Local explanation: one run = (initialisation seed, data-split seed, weight decay, task). Training follows
 the paper's released code: full-batch AdamW (lr 1e-3, betas (0.9, 0.98)), LambdaLR warm-up min(step/10, 1)
 — so the very first step has learning rate 0 —, cross-entropy over all 114 outputs, trainable MLP biases,
-checkpoints every `ckpt_every` steps. Unlike the paper we log densely: per-step train loss/accuracy, test
-loss/accuracy every `test_every` steps, per-parameter weight/gradient/update norms every `norms_every`
-steps, and Adam's moment estimates every `optim_every` steps (they cannot be recomputed afterwards).
+checkpoints every `ckpt_every` steps. One exception: cross-entropy is computed in float64, as in the paper's
+notebook and ARENA (the released helpers.py casts it to float32; see losses.py). Unlike the paper we log
+densely: per-step train loss/accuracy, test loss/accuracy every `test_every` steps, per-parameter
+weight/gradient/update norms every `norms_every` steps, and Adam's moment estimates every `optim_every` steps
+(they cannot be recomputed afterwards).
 Speed: the model is tiny, so one run leaves the GPU mostly idle. All runs are therefore trained *together*:
 their parameters are stacked along a leading run axis and the same forward pass is vectorised over runs with
 torch.func.vmap. Each run still has its own data, labels and weight decay, and every operation (forward,
@@ -14,7 +16,7 @@ independent — tested against an unbatched torch.optim.AdamW reference in tests
 Global context: these runs provide error bars across seeds, the controls (no weight decay; random labels;
 same split, new initialisation) and optimiser-state data. The run matrix and hypotheses are fixed in
 docs/preregistration.md before training.
-Sources: paper code Trainer/train_model (https://github.com/mechanistic-interpretability-grokking/progress-measures-paper/blob/main/transformers.py);
+Sources: paper code Trainer/train_model (https://github.com/mechanistic-interpretability-grokking/progress-measures-paper/blob/23d2c64/transformers.py);
 AdamW decoupled decay (https://pytorch.org/docs/stable/generated/torch.optim.AdamW.html);
 model ensembling with vmap (https://pytorch.org/tutorials/intermediate/ensembling.html);
 determinism (https://pytorch.org/docs/stable/notes/randomness.html).

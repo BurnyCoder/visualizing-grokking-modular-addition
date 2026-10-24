@@ -16,8 +16,9 @@ Treat it as read-only reference: port code from it with `Source:` links instead 
   - `PYTHONUTF8=1` (set in `.env.example`) keeps logs with math symbols from crashing.
   - While a pipeline process is running, `uv sync` cannot replace `grokviz.exe`. Use `.venv/Scripts/python.exe -m grokviz …`
     and `uv pip install` instead of re-syncing.
-- **Determinism.** `CUBLAS_WORKSPACE_CONFIG=:4096:8` is required. Training is bitwise reproducible across processes and
-  across resume (`tests/test_train.py`).
+- **Determinism.** `CUBLAS_WORKSPACE_CONFIG=:4096:8` is required. Training is bitwise reproducible within a process and
+  across resume (`tests/test_train.py`); a relaunch in a new process reproduced every logged test accuracy to the
+  printed 3 decimals.
 
 ## Pipeline conventions
 - **One wrapper.** `pipeline.PHASES` is the ordered registry. A new phase is a function `phase(ctx: PipelineContext)` in
@@ -30,7 +31,8 @@ Treat it as read-only reference: port code from it with `Source:` links instead 
 - **Fourier basis order.** Follows the paper's code: index 0 = constant, `2k-1` = cos k, `2k` = sin k.
 - **Frozen definitions.** Metric definitions are frozen in `docs/operationalizations.md` and the hypotheses in
   `docs/preregistration.md` (tag `prereg-v1`). Any change after the tag goes under *Deviations* there, with date and reason.
-- **Large artifacts.** `runs/`, `data/`, `site/` and `logs/` are gitignored. Never commit `.env`, tokens or `paper.pdf`.
+- **Large artifacts.** `runs/`, `data/`, `site/` and `logs/` are gitignored. Never commit `.env`, tokens or the arXiv PDF
+  (`/paper.pdf` at the repo root); `reports/paper.pdf` is our own paper and is committed.
 
 ## Website conventions
 - **Content.** Content lives in `content/`; `src/grokviz/site_build.py` turns it into `site/`. The checks it enforces

@@ -107,3 +107,46 @@ def test_preregistered_hypotheses_on_synthetic_runs():
     wd1[0], wd1[1] = _synthetic_run("wd1_s0", "wd1", excl_t2=5e-4), _synthetic_run("wd1_s1", "wd1", excl_t2=5e-4)  # ratio 5 < 10
     v = evaluate_hypotheses(wd1 + wd0)["verdict"]
     assert v["H2"]["successes"] == 9 and not v["H2"]["supported"] and v["H1"]["supported"]
+
+
+def test_paper_curve_numbers_read_the_curves():
+    """The caption numbers (summary.paper_curve_numbers) come straight off the curves: accuracy at a step, the
+    test ÷ restricted loss range inside [t1, t2], the last negative train/test gradient cosine, and norm ratios."""
+    from grokviz.summary import paper_curve_numbers
+
+    s = np.arange(1, 1002, 100)  # checkpoints 1, 101, …, 1001
+    m = {"steps": s, "acc_test": s / 1001, "acc_train": (s >= 201).astype(float), "loss_test": np.full(len(s), 20.0),
+         "restricted_loss": np.full(len(s), 2.0), "ssw_total": np.linspace(100, 50, len(s)), "we_svals": np.tile(np.arange(14.0, 0, -1), (len(s), 1))}
+    m["restricted_loss"][s >= 701] = 1e-3  # ratio 2e4 from step 701 (after t2)
+    ph = {"t1": 201, "t2": 601, "t_grok": 801}
+    g = {"steps": s, "cos_train_test": np.where(s <= 501, -0.3, 0.2), "param_names": np.array(["embed.W_E", "blocks.0.mlp.b_in", "unembed.W_U"]),
+         "weight_norm": np.array([[1.0, 0.0, 2.0]] * (len(s) - 1) + [[0.5, 0.1, 3.0]])}
+    gi = lambda step: int(np.argmin(np.abs(s - step)))  # noqa: E731
+    out = paper_curve_numbers(m, ph, g, gi)
+    assert out["paper.acc_test_t2"]["value"] == pytest.approx(601 / 1001)
+    assert out["paper.train_acc_full_step"]["value"] == 201
+    assert out["paper.ratio_cf_range"]["value"] == "10–10" and out["paper.ratio_1e4_steps"]["value"] == "701–1,001"
+    assert out["paper.cos_tt_last_neg"]["value"] == 501
+    assert out["paper.norm_shrunk"]["value"] == "W_E 0.50×" and out["paper.norm_grown"]["value"] == "W_U 1.50×"  # biases skipped
+    assert out["paper.we_svals_next2"]["value"] == "4.00 and 3.00"
+
+
+def test_h4_detail_names_the_failing_seeds(tmp_path):
+    """summary.h4_detail_numbers lists the seed whose weakest key frequency costs < 100× (with its W_L norm share)
+    and the seed where keeping only the key frequencies costs > 1.5×."""
+    import json
+
+    from grokviz.summary import h4_detail_numbers
+
+    for name, weak, keep in (("wd1_s0", 1e3, 1.0), ("wd1_s1", 5.0, 2.0)):
+        d = tmp_path / name / "analysis"
+        d.mkdir(parents=True)
+        single = [1.0] * 56
+        single[1], single[2] = weak, 1e5  # k = 2 (the weak one), k = 3
+        (d / "final.json").write_text(json.dumps({"key_freqs": [2, 3], "ablation": {"single_freq": single, "original": 1.0, "only_key_kept": keep}}))
+        wl = np.zeros(113)
+        wl[3], wl[5] = 1.0, 4.0  # cos 2 → norm 1; cos 3 → norm 4 (the largest)
+        np.savez(d / "ckpt_metrics.npz", wl_fourier=wl[None])
+    out = h4_detail_numbers(tmp_path)
+    assert out["hyp.h4_key_fails"]["value"] == "wd1_s1: k = 2 costs 5.0× (25 % of the largest W_L norm; its other key frequencies ≥ 100,000×)"
+    assert out["hyp.h4_keep_fails"]["value"] == "wd1_s1 (2 key frequencies, 2.00×)" and out["hyp.n_few_keys"]["value"] == 2

@@ -8,10 +8,11 @@ orthonormal p×p matrix whose rows are a constant and cos/sin waves of frequency
 Global context: the paper's central claim is that the trained network is *sparse* in this basis — it uses
 only a handful of "key frequencies" — so almost every figure on the site is computed with these helpers.
 Convention (paper code): row 0 = "Const", row 2k-1 = "cos k", row 2k = "sin k" (ARENA uses the same in
-code). The older TransformerLens notebook in the submodule (cell 74) puts sin first; we do not.
+code). The TransformerLens notebook in the submodule (grokking-transformerlens-explained.ipynb, cell 74, 0-based
+like the cell numbers below) puts sin first; we do not.
 Sources: paper notebook cells 30–31 (submodule grokking-original.ipynb @38776db); paper code
 `make_fourier_basis` and helpers.py `fft2d`, `get_component_cos_xpy`, `extract_freq_2d`
-(https://github.com/mechanistic-interpretability-grokking/progress-measures-paper);
+(https://github.com/mechanistic-interpretability-grokking/progress-measures-paper/tree/23d2c64);
 ARENA 1.5.2 "Fourier Transforms" (https://learn.arena.education/chapter1_transformer_interp/32_grokking/1-periodicity-fourier-basis/);
 DFT as orthonormal change of basis (https://en.wikipedia.org/wiki/Discrete_Fourier_transform#The_unitary_DFT);
 Gini index of sparsity: Hurley & Rickard 2009, "Comparing Measures of Sparsity" (https://arxiv.org/abs/0811.4706).

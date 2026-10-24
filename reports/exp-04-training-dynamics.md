@@ -5,8 +5,8 @@ suggests a mechanism: memorising gradients from individual examples cancel, whil
 these forces directly, on the paper's run and across our 11 weight-decay seeds?
 
 **Status:** done; exploratory, not preregistered. The phase is `compute_gradient_dynamics` (`src/grokviz/gradients.py`),
-writing `runs/<id>/analysis/gradients.npz`. The numbers below come from `site/data/summary.json` (keys `paper.cos_*` and
-`seeds.*`, computed in `src/grokviz/summary.py`). Website: chapter 19 and dashboard group F.
+writing `runs/<id>/analysis/gradients.npz`. Most numbers below come from `site/data/summary.json` (keys `paper.cos_*` and
+`seeds.*`, computed in `src/grokviz/summary.py`); per-seed values are read from the `gradients.npz` files. Website: chapter 19 and dashboard group F.
 
 ## Method
 
@@ -42,13 +42,13 @@ Paper run (gradients only) and the 11 `wd1` seeds; means with 95 % percentile-bo
      and 0.33 at step 40,001.
    - **Across seeds:** midway between t1 and t2 it is −0.251 [−0.305, −0.199], and it is negative at 97.9 %
      [96.0, 99.6] of the checkpoints between t1 and t2.
-   - **What this means:** during the whole plateau, a step that lowers the training loss raises the test loss. This
+   - **What this means:** during the whole plateau, a small step along the negative training gradient would, to first order, raise the test loss (Adam's actual step is not the gradient; see point 3). This
      agrees with ARENA's picture of memorising gradients that work against the general solution.
 2. **Equilibrium with weight decay at the end.**
    - **Adam's direction:** at step 40,000, ‖d‖/(λ‖θ‖) = 0.992 [0.972, 1.004] and cos(d, θ) = −0.991 [−1.000, −0.976].
    - **Interpretation:** Adam's loss step and the decay step are nearly equal and opposite, a steady state in which the
      loss keeps pushing the logits up and decay pulls the weights back.
-   - **Ten seeds are within 1.2 % of balance.** The exception is `wd1_s4` (ratio 0.90, cos −0.92), the seed with
+   - **Ten seeds are within 1.2 % of balance.** The exception is `wd1_s4` (ratio 0.89, cos −0.92), the seed with
      repeated late loss spikes (exp-03).
 3. **The raw gradient alone is misleading.**
    - **The spread:** at the last checkpoint, cos(g_train, θ) ranges from −0.996 to −0.157 across seeds (mean −0.814).
@@ -56,9 +56,9 @@ Paper run (gradients only) and the 11 `wd1` seeds; means with 95 % percentile-bo
      but Adam's momentum-averaged, per-coordinate-normalised direction is still aligned with −θ (cos −0.99 and −1.00).
    - **Takeaway:** conclusions about "which force wins" need the optimiser's actual step, not the raw gradient.
 4. **Weight decay wins briefly, exactly at grokking.**
-   - **The dip:** the ratio ‖d‖/(λ‖θ‖) is slightly below 1 during memorisation (≈ 0.95–0.98 at steps 2k–4k). Its
-     minimum, 0.906 [0.897, 0.914], falls within 1,000 steps of t_grok in 10 of 11 seeds. `wd1_s4`'s minimum is
-     during its late spikes.
+   - **The dip:** the ratio ‖d‖/(λ‖θ‖) is slightly below 1 early in circuit formation (0.96–0.97 at step 2,000;
+     0.97–0.99 at step 3,000). Its minimum, 0.906 [0.897, 0.914], falls within 1,000 steps of t_grok in 10 of 11
+     seeds. `wd1_s4`'s minimum is during its late spikes.
    - **Interpretation:** while the network groks, decay outweighs the loss step by ~10 % and the weights shrink. That
      is the paper's cleanup phase, driven by weight decay, here measured on the optimiser's actual steps.
    - **Resolution:** the moments were saved every 1,000 steps, so timing is resolved only to that grid.

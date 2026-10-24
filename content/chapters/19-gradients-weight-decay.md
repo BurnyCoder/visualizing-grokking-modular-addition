@@ -18,7 +18,7 @@ The cosine between the loss gradient and the weights tells us how the two forces
 
 On the paper's run, cos(gradient, weights) is {{num:paper.cos_gw_40k}} at step 40,001. Once the network is perfectly accurate, the cheapest way to lower cross-entropy is to scale all logits up (chapter 4), i.e. to grow the weights uniformly; weight decay shrinks them uniformly. The two cancel — the network sits in a balance between them, which is why its loss stops at ~10⁻⁷ instead of going to zero.
 
-The second curve compares the gradient of the *training* loss with the gradient of the *test* loss. At the very start they are aligned (cosine {{num:paper.cos_tt_start}}): any improvement is a general improvement. During memorisation and circuit formation the cosine is **negative** (e.g. {{num:paper.cos_tt_mid}} at step {{num:paper.mid_step}}, midway through circuit formation): a step that lowers the training loss *raises* the test loss — memorisation actively hurts generalisation. Only around grokking does it turn positive again ({{num:paper.cos_tt_40k}} at step 40,001).
+The second curve compares the gradient of the *training* loss with the gradient of the *test* loss. At the very start they are aligned (cosine {{num:paper.cos_tt_start}}): any improvement is a general improvement. The cosine is **negative** throughout circuit formation ({{num:paper.cos_tt_cf_range}}; e.g. {{num:paper.cos_tt_mid}} at step {{num:paper.mid_step}}, midway through it) and over most of memorisation: to first order, a small gradient step that lowers the training loss *raises* the test loss — memorisation works against generalisation. It turns positive only during cleanup, after step {{num:paper.cos_tt_last_neg}} ({{num:paper.cos_tt_40k}} at step 40,001).
 
 ## Which frequencies the gradient builds
 
@@ -28,7 +28,7 @@ Finally, which frequencies does the gradient push into the embedding at each mom
 
 {{fig:grad-norms}}
 
-And the weights themselves, one line per parameter. On the paper's run most matrices grow while the network memorises and shrink through circuit formation and cleanup, ending smaller than they started; the attention matrices W_K and W_Q shrink the most.
+And the weights themselves, one line per parameter. On the paper's run most matrices grow while the network memorises and shrink through circuit formation and cleanup. By step 40,001 only four end smaller than they started ({{num:paper.norm_shrunk}} their initial norm), the attention matrices W_K and W_Q most; the others end a little larger ({{num:paper.norm_grown}}). In total the weights still shrink: their sum of squares falls from {{num:paper.ssw_init}} at initialisation to {{num:paper.ssw_40k}}.
 
 {{fig:weight-norms}}
 
@@ -60,7 +60,7 @@ Combining the measurements, the paper's explanation (Sec. 5 and the speculative 
 2. Weight decay therefore slowly favours the circuit, which grows while train loss stays flat (circuit formation).
 3. Once the circuit carries the training data, the memorising weights are pure cost and weight decay removes them (cleanup) — only then does the test loss drop.
 
-ARENA's bonus chapter adds intuition: gradients from individual memorised examples point in unrelated directions and largely cancel, while gradients that serve the general pattern agree across examples and add up {{cite:arena152}}. These accounts are explanations of the measurements, not proofs; the paper labels parts of its App. E as speculative.
+ARENA's bonus chapter adds intuition: when the model lacks the capacity to memorise all of its data, gradients from individual memorised examples point in unrelated directions and largely cancel, while gradients that serve the general pattern agree across examples and add up {{cite:arena152}}. These accounts are explanations of the measurements, not proofs; the paper labels parts of its App. E as speculative.
 
 ::: nuance
 **What we can and cannot measure here.** For the paper's run we can recompute gradients but not Adam's internal running averages (they were not saved), so the size of the actual updates is unknown. For our own runs we saved Adam's state every 1,000 steps and logged each update's size, which the panels in “What Adam actually does” use; the gradient panels work for both.

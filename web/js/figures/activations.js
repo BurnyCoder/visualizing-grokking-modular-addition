@@ -99,7 +99,7 @@ export const figures = {
         grid.replaceChildren();
         for (let h = 0; h < net.H; h++) {
           const f = el(grid, "figure");
-          f.append(miniHeatmap(net.attentionGrid(h, 0), 113, 113, false));
+          f.append(miniHeatmap(net.attentionGrid(h, 0), 113, 113, false, { min: 0, max: 1 })); // fixed 0–1 scale, as the caption says
           el(f, "figcaption", "", `head ${h}`);
           f.style.cursor = "pointer";
           f.onclick = () => set({ head: h });

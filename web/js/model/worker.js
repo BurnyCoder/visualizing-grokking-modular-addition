@@ -1,8 +1,8 @@
 // worker.js — a Web Worker for the network's heavy, per-snapshot computations, off the main thread.
 //
 // Local explanation: receives {id, op, flat, layout, p}. op "tables": builds a GrokModel from the weights (its
-// precompute is the ~45-million-multiply-add part) and returns model.toTables(). op "ablation": returns the logits of
-// every answer for every input (model.logitsGrid, ~740 million multiply-adds) and their per-answer Fourier blocks
+// precompute is the ~47-million-multiply-add part) and returns model.toTables(). op "ablation": returns the logits of
+// every answer for every input (model.logitsGrid, ~835 million multiply-adds) and their per-answer Fourier blocks
 // (model/ablation.js logitBlocks), the inputs of the ablation playground; the two big arrays are transferred, not
 // copied. Errors come back as {id, error}.
 // Global context: core/data.js asks this worker for every new weight snapshot, so playing or ablating never freezes the

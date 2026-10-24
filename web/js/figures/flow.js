@@ -24,7 +24,7 @@ const STAGES = {
   embed: { tex: "x^{(0)}_i = W_E\\, t_i + W_{pos}[i]", say: "Each token is looked up in the embedding matrix and gets its position's vector added: 128 numbers per position." },
   attention: { tex: "A^j = \\softmax(s_0, s_1, s_2), \\quad \\text{head}_j = W_O^j W_V^j \\sum_{i=0}^{2} A^j_i\\, x^{(0)}_i", say: "Each head decides how much '=' reads from a, b and itself (bars) and writes a mix of their values back." },
   residual: { tex: "x^{(1)} = x^{(0)}_2 + \\sum_{j=0}^{3} \\text{head}_j", say: "The heads' outputs are added to the '=' position's own vector (the dashed skip connection)." },
-  mlp: { tex: "\\mathrm{MLP}(a,b) = \\ReLU\\big(W_{in}x^{(1)} + b_{in}\\big)", say: "512 neurons each take a weighted sum of x⁽¹⁾ and keep it only if positive (grid: brighter = more active; rows of the grid are frequency clusters)." },
+  mlp: { tex: "\\mathrm{MLP}(a,b) = \\ReLU\\big(W_{in}x^{(1)} + b_{in}\\big)", say: "512 neurons each take a weighted sum of x⁽¹⁾ and keep it only if positive (grid: brighter = more active; neurons in frequency-cluster order, read row by row)." },
   logits: { tex: "x^{(2)} = x^{(1)} + W_{out}\\,\\mathrm{MLP}(a,b) + b_{out}, \\qquad \\Logits(a,b) = W_U\\,x^{(2)}", say: "The neurons' outputs are added back and read out as one score per candidate answer c = 0 … 112." },
   answer: { tex: "P(c) = \\softmax\\big(\\Logits(a,b)\\big)_c, \\qquad \\text{answer} = \\argmax_c P(c)", say: "Softmax turns the scores into probabilities; the prediction is the most likely answer." },
 };

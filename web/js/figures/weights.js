@@ -79,7 +79,7 @@ export function stepHeatmap(arrayName, { perRow, format, what, limits = null, ke
           label: (rr, cc) => `${rowName(rows - 1 - rr)}, step ${steps[cc]}`, onClick: (rr, cc) => storeOf(body).set({ step: steps[cc], ...select(rows - 1 - rr) }) });
         body.append(info);
         hm.draw(grid, limits);
-        info.textContent = `${what} Rows: ${rowsText}; columns: checkpoints from step 0 to ${kstep(steps[T - 1])}. Highlighted: the current step's column${selected(s) == null ? "" : " and the selected row"} (click a cell to select).`;
+        info.textContent = `${what} Rows: ${rowsText}; columns: checkpoints from step ${kstep(steps[0])} to ${kstep(steps[T - 1])}. Highlighted: the current step's column${selected(s) == null ? "" : " and the selected row"} (click a cell to select).`;
         mark(s);
       }, { theme: false });
       follow(body, ["step", "freq"], mark);

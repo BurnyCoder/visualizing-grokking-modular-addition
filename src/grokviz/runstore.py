@@ -16,6 +16,9 @@ numpy npz (https://numpy.org/doc/stable/reference/generated/numpy.savez_compress
 from __future__ import annotations  # postponed annotations
 
 import json  # meta.json
+import os  # chmod for read-only folders
+import shutil  # remove folders
+import stat  # S_IWRITE
 from pathlib import Path  # paths
 from typing import Iterator  # generator return types
 
@@ -45,6 +48,15 @@ def save_analysis(path: Path, **arrays) -> None:
     tmp = path.with_name(path.stem + ".tmp.npz")  # np.savez keeps names that already end in .npz
     np.savez_compressed(tmp, **arrays)
     tmp.replace(path)
+
+
+def remove_tree(path: Path) -> None:
+    """shutil.rmtree that also removes read-only files and folders: Windows refuses to delete them, so the error
+    handler clears the bit and retries. Source: shutil.rmtree example (https://docs.python.org/3/library/shutil.html#rmtree-example)."""
+    def clear_readonly(func, p, _exc):
+        os.chmod(p, stat.S_IWRITE)
+        func(p)
+    shutil.rmtree(path, onexc=clear_readonly)
 
 
 class RunStore:

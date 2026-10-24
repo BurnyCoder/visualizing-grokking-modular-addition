@@ -46,3 +46,21 @@ def test_paper_run_phases_reproduce_logged_losses(monkeypatch):
     assert report["epoch40k_matches_paper"]
     store = RunStore(cfg.runs_dir / "paper")
     assert len(store.ckpt_steps) == 500 and store.ckpt_steps[400] == 40001
+
+
+@pytest.mark.skipif(__import__("os").name != "nt", reason="the read-only attribute blocks deletion only on Windows")
+def test_remove_tree_deletes_read_only_folders(tmp_path):
+    """runstore.remove_tree removes a tree whose folder and file carry the read-only bit (on Windows plain
+    shutil.rmtree fails there with "Access is denied", which stopped export_site_data and render_media)."""
+    import os
+    import stat
+
+    from grokviz.runstore import remove_tree
+
+    d = tmp_path / "data" / "runs" / "paper"
+    d.mkdir(parents=True)
+    (d / "w.bin").write_bytes(b"\0")
+    os.chmod(d / "w.bin", stat.S_IREAD)
+    os.chmod(d, stat.S_IREAD | stat.S_IEXEC)
+    remove_tree(tmp_path / "data")
+    assert not (tmp_path / "data").exists()

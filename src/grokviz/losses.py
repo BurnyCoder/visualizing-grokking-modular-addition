@@ -8,7 +8,7 @@ metric (113 classes: the '=' output is dropped, as in the paper's `[:, -1, :-1]`
 excluded loss, which evaluate *modified* logits for the whole input grid and then select train/test rows.
 Sources: paper notebook cell 26 `cross_entropy_high_precision`, `test_logits` (submodule grokking-original.ipynb);
 note that the published helpers.py casts to float32 despite its float64 comment — we follow the notebook/ARENA
-(float64): https://github.com/mechanistic-interpretability-grokking/progress-measures-paper/blob/main/helpers.py;
+(float64): https://github.com/mechanistic-interpretability-grokking/progress-measures-paper/blob/23d2c64/helpers.py;
 torch log_softmax (https://pytorch.org/docs/stable/generated/torch.nn.functional.log_softmax.html).
 """
 

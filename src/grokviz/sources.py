@@ -3,8 +3,9 @@
 Local explanation:
 - `acquire_paper_sources` downloads the paper's checkpoint file from Hugging Face at a pinned revision,
   verifies its sha256, and downloads the two arXiv PDFs (used only locally to verify website quotes).
-- `convert_paper_run` turns the 456 MB pickle-free torch file (500 state_dicts + loss lists) into our
-  run format `runs/paper/` (stacked safetensors + curves + meta), recording the step of every checkpoint.
+- `convert_paper_run` turns the 456 MB torch file (500 state_dicts + loss lists; a pickle-based zip archive, read
+  with torch.load(weights_only=True), which unpickles only tensors and plain containers) into our run format
+  `runs/paper/` (stacked safetensors + curves + meta), recording the step of every checkpoint.
 - `validate_paper_run` proves the conversion is faithful: recomputing the training loss from each
   checkpoint on our reconstruction of the paper's train/test split must reproduce the logged losses.
 Global context: the paper run is the default subject of the website, so every later number depends on
@@ -15,8 +16,10 @@ after j steps; test_losses[j] is the test loss after 10·j steps. The first opti
 (the paper's LambdaLR warm-up min(step/10, 1) starts at 0), which is why train_losses[0] == train_losses[1].
 Sources: checkpoint https://huggingface.co/callummcdougall/grokking_full_run_data (loaded with
 weights_only=True as in ARENA 1.5.2: https://learn.arena.education/chapter1_transformer_interp/32_grokking/1-periodicity-fourier-basis/);
-training loop and warm-up: https://github.com/mechanistic-interpretability-grokking/progress-measures-paper/blob/main/transformers.py;
-hf_hub_download (https://huggingface.co/docs/huggingface_hub/guides/download).
+training loop and warm-up: https://github.com/mechanistic-interpretability-grokking/progress-measures-paper/blob/23d2c64/transformers.py;
+hf_hub_download (https://huggingface.co/docs/huggingface_hub/guides/download); torch.save's zip-of-pickle format
+(https://pytorch.org/docs/stable/notes/serialization.html) and torch.load's weights_only
+(https://pytorch.org/docs/stable/generated/torch.load.html).
 """
 
 from __future__ import annotations  # postponed annotations

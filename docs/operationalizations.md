@@ -33,7 +33,7 @@ Cross-entropy, computed in float64.
 
 ### Key frequencies K
 K = {k : n_k ≥ τ·max_j n_j}, where n_k = √(‖F_{2k−1} W_L‖² + ‖F_{2k} W_L‖²) and τ = **0.25**.
-- On the paper model, every τ in (0.06, 0.83) gives {14, 35, 41, 42, 52}.
+- On the paper model, every τ in (0.060, 0.826] gives {14, 35, 41, 42, 52}.
 - This matches the paper's text: take the DFT of W_L, keep frequencies with nontrivial coefficients (p.18).
 
 ### Restricted loss

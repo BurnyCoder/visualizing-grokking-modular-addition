@@ -117,7 +117,7 @@ export const figures = {
           { x: xs, y: xs.map(sig), type: "scatter", mode: "lines", name: "σ(s₀ − s₁): no attention to '='", line: { color: cssVar("--ink"), dash: "dot", width: 2 } },
           { x: xs, y: xs.map((v) => b0 + E * v), type: "scatter", mode: "lines", name: "best straight line", line: { color: cssVar("--accent"), width: 2 } },
         ], { xaxis: { title: { text: "score difference s₀ − s₁ (= C_j[a] − C_j[b] + const)" } }, yaxis: { title: { text: `head ${h}: attention from '=' to a` }, range: [-0.02, 1.02] }, hovermode: "closest" });
-        info.textContent = `Head ${h}, weights from step ${net.step.toLocaleString("en-US")}, over all 12,769 inputs: σ(s₀ − s₁) explains ${pct(sseSig)} of the attention's variance, the best straight line ${pct(sseLine)} (the paper reports 97.5 % for the straight line, averaged over the heads of its final model). Pick another head in the control bar.`;
+        info.textContent = `Head ${h}, weights from step ${net.step.toLocaleString("en-US")}, over all 12,769 inputs: σ(s₀ − s₁) explains ${pct(sseSig)} of the attention's variance, the best straight line ${pct(sseLine)} (the paper, p. 16, gives one figure for its final model, without per-head values: the straight line explains 97.5 % of the variance). Pick another head in the control bar.`;
       }, { dedupe: frameKey(ds, "weight_steps", "head"), minGap: 1000 }); // 800 SVG points: a diagnostic view, refreshed about once a second while playing
     },
   },

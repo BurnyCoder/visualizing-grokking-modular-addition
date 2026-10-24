@@ -32,7 +32,7 @@ function overTraining(traces, layout = {}, height = 270) {
           const r = await run(id);
           const t = await traces(id, r);
           const xmax = r.ckpt_steps[r.ckpt_steps.length - 1];
-          await plot.draw(t, { ...layout, shapes: phaseShapes(r.phases, xmax), xaxis: { title: { text: "training step (epoch)" }, ...(layout.xaxis || {}) } });
+          await plot.draw(t, { ...layout, shapes: phaseShapes(r.phases, xmax), xaxis: { title: { text: "training step" }, ...(layout.xaxis || {}) } });
         }
         plot.cursor(s.step);
       });
@@ -105,7 +105,7 @@ export const figures = {
     traces.push(line(r.ckpt_steps, await column(id, "ckpt_scalars", "loss_train"), "train loss", cssVar("--train"), { line: { color: cssVar("--train"), dash: "dot" } }));
     traces.push(line(r.ckpt_steps, await column(id, "ckpt_scalars", "loss_test"), "test loss", cssVar("--test"), { line: { color: cssVar("--test"), dash: "dot" } }));
     return traces;
-  }, { yaxis: { type: "log", title: { text: "train loss after removing one frequency" }, exponentformat: "power" } }, 300),
+  }, { yaxis: { type: "log", title: { text: "loss (log scale)" }, exponentformat: "power" } }, 300),
 
   "gini-curves": overTraining(async (id, r) => [
     line(r.ckpt_steps, await column(id, "ckpt_scalars", "gini_we"), "Gini of W_E Fourier norms", "#d1495b"),

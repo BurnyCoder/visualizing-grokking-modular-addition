@@ -1,4 +1,4 @@
-A small [[preview:neural-network|neural network]] was trained to answer one kind of question: *what is a + b, if you count on a clock with 113 hours?* For thousands of [[preview:training|training]] steps it simply memorised the answers it was shown and failed on everything else. Then — long after it had stopped improving on its training questions — it suddenly started answering *every* question correctly. Researchers reverse-engineered what it had learned: it turns numbers into angles and adds them by rotating. In the words of the paper that did this {{cite:nanda2023}}, the network's algorithm
+A small [[preview:neural-network|neural network]] was trained to answer one kind of question: *what is a + b, if you count on a clock with 113 hours?* For thousands of [[preview:training|training]] steps it seemed only to have memorised the answers it was shown, failing on most others. Then — long after it had stopped improving on its training questions — it suddenly started answering *every* question correctly. Researchers reverse-engineered what it had learned: it turns numbers into angles and adds them by rotating. In the words of the paper that did this {{cite:nanda2023}}, the network's algorithm
 
 {{quote:nanda-algorithm}}
 
@@ -85,11 +85,11 @@ and along the way passes through three phases — memorisation, circuit formatio
 ## How to read this site
 
 - **Chapters 1–11** build the background: clock arithmetic, the [[preview:dataset|dataset]], vectors and matrices, probabilities, the network itself, how it learns, what [[preview:grokking|grokking]] is, waves, the [[preview:fourier-basis|Fourier basis]], and how to measure a fit. Each chapter only uses what earlier chapters defined.
-- **Chapters 12–16** derive the algorithm and test it against the trained network in four independent ways, following the paper {{cite:nanda2023}} and the ARENA course {{cite:arena152}}.
+- **Chapters 12–16** derive the algorithm and test it against the trained network in four ways, following the paper {{cite:nanda2023}} and the ARENA course {{cite:arena152}}.
 - **Chapters 17–20** go back in time: how the algorithm forms during training, what drives it, and whether it happens the same way for other random seeds (we retrained 22 networks to check).
 - **Chapter 21** returns to the three objects above, now with every piece explained, plus the limitations and open questions.
 - **The [dashboard](../dashboard.html)** shows every visualization on one page, linked together and scrubbable through training.
 
 Every number on this site is computed from real networks: by default the paper's own published training run {{cite:paperckpt}}, with our replications one click away. Our analysis code reproduces most of the paper's reported numbers on the paper's own network, and the few it does not are listed with explanations (see the [reproduction page](../reproduce.html)). Where a step or claim comes from somewhere, it is cited; quotations are exact and short.
 
-This model is a toy: one task, one layer, ~227 thousand learned numbers. Its value is that it is completely understood — the paper's authors used it as a proof of concept for measuring hidden progress in training. The three videos that inspired this site tell the same story from different angles {{cite:video_replication}} {{cite:video_paper}} {{cite:video_welch}}.
+This model is a toy: one task, one layer, ~227 thousand learned numbers. Its value is that its algorithm has been reverse-engineered in unusual detail — the paper's authors used it as a proof of concept for measuring hidden progress in training. The three videos that inspired this site tell the same story from different angles {{cite:video_replication}} {{cite:video_paper}} {{cite:video_welch}}.

@@ -18,7 +18,7 @@ hero-grokking:
     frames around the current step (stored every 200 steps for the paper's run); paused, every tile shows a stored
     frame and its note says which.
   expect: "During memorisation tile 2 shows a speckle (training pairs right, test pairs wrong); the circle in tile 3 and the stripes in tile 4 form during the plateau; the whole grid turns yellow during cleanup."
-  chapter: "08-grokking.html"
+  chapter: "00-overview.html"
   cite: "{{cite:nanda2023}} Fig. 1–4"
   producer: "export.py, geometry.py, web/js/model/grokmodel.js"
   anim: {run: paper, range: grokking, speed: 1, loop: loop}
@@ -44,7 +44,7 @@ acc-curves:
   title: "Accuracy during training"
   what: "Fraction of training (blue) and test (red) pairs answered correctly, at every checkpoint."
   eq: "\\text{accuracy} = \\frac{1}{N}\\sum_{(a,b)} \\mathbb{1}\\big[\\argmax_c \\Logits(a,b)_c = c^*\\big]"
-  expect: "Training accuracy reaches 100 % after a few hundred steps; test accuracy stays near chance (1/113 ≈ 0.9 %) for thousands of steps, then jumps to ~100 %."
+  expect: "On the paper's run training accuracy reaches 100 % by step {{num:paper.train_acc_full_step}}; test accuracy stays low for thousands of steps but creeps up ({{num:paper.acc_test_501}} at step 501, {{num:paper.acc_test_t1}} at about step {{num:paper.t1}}, {{num:paper.acc_test_7k}} at step 7,001, {{num:paper.acc_test_t2}} at step {{num:paper.t2}}), then jumps to {{num:paper.acc_test_tgrok}} by step {{num:paper.t_grok}}."
   chapter: "08-grokking.html"
   cite: "{{cite:nanda2023}} Fig. 2"
   producer: "checkpoint_metrics.py"
@@ -83,7 +83,7 @@ ssw-curves:
 trig-loss-ratio:
   title: "Test loss ÷ restricted loss"
   what: "How much worse the full model is on the test set than its key-frequency part alone."
-  expect: "Huge (10⁴–10⁵) during circuit formation: the generalising circuit exists but is drowned out by memorisation noise until cleanup."
+  expect: "On the paper's run {{num:paper.ratio_cf_range}} during circuit formation, then far larger around grokking: above 10⁴ at steps {{num:paper.ratio_1e4_steps}}, peaking at {{num:paper.ratio_peak}} at step {{num:paper.ratio_peak_step}}. The key-frequency part already works while the full model still carries memorisation noise, which cleanup removes."
   chapter: "17-progress-measures.html"
   cite: "{{cite:arena152}} section 3, “Small lag to clean up noise”"
   producer: "checkpoint_metrics.py"
@@ -99,7 +99,7 @@ alpha-growth:
   what: "For all 56 frequencies at every checkpoint: how strongly cos(w_k(a+b−c)) appears in the logits, or how much the training loss rises without frequency k; below, the selected frequency over time."
   read: "Rows are frequencies k = 1 (bottom) to 56 (top), columns are checkpoints. The outlined column is the current step and the outlined row the selected frequency; click a cell to select both. The line below draws the selected frequency up to the current step over a faint copy of the whole run."
   expect: "Only the key frequencies' rows light up, and they grow during the plateau, before the test loss drops."
-  chapter: "18-watch-it-form.html"
+  chapter: "15-evidence-readoff.html"
   cite: "{{cite:nanda2023}} Fig. 14"
   producer: "metrics.cos_coefficients, metrics.excluded_loss_per_freq"
 freq-norm-race:
@@ -172,16 +172,16 @@ we-svals:
   title: "Singular values of the embedding"
   what: "The 113 singular values of W_E (largest first) at the selected step."
   read: "A [[term:svd]] shows how many independent directions the embedding really uses."
-  expect: "Starts as a smooth random-matrix profile; ends with about two singular values per key frequency standing out."
+  expect: "Starts as a smooth random-matrix profile; ends with two large singular values per key frequency standing out, plus (on the paper's run) two smaller ones from frequency 31, which only the embedding uses."
   chapter: "11-measuring-fit.html"
   cite: "{{cite:arena152}} section 3, “Examine the SVD of W_E”"
   producer: "checkpoint_metrics.py"
 svals-over-training:
   title: "The embedding's singular values over training"
   what: "All 113 singular values of W_E at every checkpoint (largest at the bottom)."
-  expect: "Late in training about ten singular values (two per key frequency, cos and sin) stand above the rest."
-  chapter: "13-evidence-periodicity.html"
-  cite: "{{cite:arena152}} section 2, “Examine the SVD of W_E”"
+  expect: "Late in training two large singular values per key frequency (cos and sin; ten on the paper's run) stand above the rest, plus, on the paper's run, two smaller ones from frequency 31, which only the embedding uses."
+  chapter: "11-measuring-fit.html"
+  cite: "{{cite:arena152}} section 3, “Examine the SVD of W_E”"
   producer: "checkpoint_metrics.py"
 attn-C-fourier:
   title: "Attention lookup tables in the Fourier basis"
@@ -269,7 +269,7 @@ attention-heads-grid:
   title: "Every attention pattern on every input"
   what: "For each head, the attention from '=' to a, to b and to '=' on all 12,769 inputs at the selected step."
   expect: "In the trained network the attention to a and to b form periodic stripes and the attention to '=' is close to 0 everywhere."
-  chapter: "14-evidence-neurons-heads.html"
+  chapter: "06-simplifying-the-model.html"
   cite: "{{cite:nanda2023}} Fig. 4"
   producer: "web/js/model/grokmodel.js"
 sigmoid-linearisation:
@@ -292,14 +292,14 @@ neuron-grid:
   what: "Left: the selected neuron's activation for all (a, b). Right: the same grid in the 2D Fourier basis."
   read: "Hover the right panel to see which [[term:linear-term]] or [[term:quadratic-term]] a coefficient belongs to; click it to select that frequency."
   expect: "A periodic pattern whose transform has only the 3×3 block of one frequency: constant, linear and quadratic terms."
-  chapter: "14-evidence-neurons-heads.html"
+  chapter: "13-evidence-periodicity.html"
   cite: "{{cite:nanda2023}} Fig. 4 (centre); {{cite:arena152}} “Neurons produce quadratic terms”"
   producer: "browser (GrokModel)"
   size: l
 neuron-small-multiples:
   title: "Neurons from every frequency cluster"
   what: "Three neurons from each key-frequency cluster of the final model, shown at the selected step: play the run to watch the same neurons turn into waves."
-  chapter: "14-evidence-neurons-heads.html"
+  chapter: "13-evidence-periodicity.html"
   cite: "{{cite:nanda2023}} Fig. 12"
   producer: "browser (GrokModel)"
   size: l
@@ -479,7 +479,7 @@ grad-alignment:
   title: "Where the gradient points"
   what: "Cosine between the training-loss gradient and the weights, and between the training- and test-loss gradients."
   read: "A gradient-descent step moves along −gradient. cos(gradient, weights) ≈ −1 means the loss wants the weights to grow, exactly against weight decay's pull."
-  expect: "After grokking the gradient is almost exactly anti-parallel to the weights (an equilibrium with weight decay); during memorisation the train and test gradients are nearly unrelated."
+  expect: "After grokking the gradient is almost exactly anti-parallel to the weights, i.e. it points against the pull of weight decay (whether Adam's step and weight decay balance is measured separately, chapter 19). On the paper's run the cosine between the train and test gradients is negative throughout circuit formation ({{num:paper.cos_tt_cf_range}}) and over most of memorisation, and turns positive only during cleanup, after step {{num:paper.cos_tt_last_neg}}."
   chapter: "19-gradients-weight-decay.html"
   producer: "gradients.py"
 adam-alignment:

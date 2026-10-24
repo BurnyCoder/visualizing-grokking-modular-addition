@@ -18,17 +18,17 @@ Both definitions follow the paper's code exactly {{cite:paperrepo}}, and ARENA's
 {{fig:progress-measures}}
 
 ::: example
-**Reading the plot** (paper's run): at step 5,001 the test loss is still ~21 — worse than guessing — but the restricted loss is already down to {{num:paper.restricted_5k}}: the Fourier part alone would already do far better than the whole network on unseen inputs. Meanwhile the excluded loss climbs from {{num:paper.excluded_t1}} at the end of memorisation to {{num:paper.excluded_t2}} at step {{num:paper.t2}}: by then, without its Fourier circuit, the network could no longer even fit its *training* data — the memorised answers have been replaced. The restricted loss falls to a tenth of its value at the end of memorisation by step {{num:paper.restricted_drop_step}}; the test loss gets there only at step {{num:paper.test_drop_step}} (the rule of hypothesis H1, chapter 20).
+**Reading the plot** (paper's run): at step 5,001 the test loss is still {{num:paper.loss_test_5k}} — worse than guessing — but the restricted loss is already down to {{num:paper.restricted_5k}}: the Fourier part alone would already do far better than the whole network on unseen inputs. Meanwhile the excluded loss climbs from {{num:paper.excluded_t1}} at the end of memorisation to {{num:paper.excluded_t2}} at step {{num:paper.t2}}: by then, without its Fourier circuit, the network could no longer even fit its *training* data — the memorised answers have been replaced. The restricted loss falls to a tenth of its value at the end of memorisation by step {{num:paper.restricted_drop_step}}; the test loss gets there only at step {{num:paper.test_drop_step}} (the rule of hypothesis H1, chapter 20).
 :::
 
 ## Three phases
 
 From these curves the paper splits training into three phases {{cite:nanda2023}} — it {{quote:nanda-three-phases}}
 
-The paper drew the boundaries by eye (1.4k, 9.4k, 14k). To compare runs fairly we defined objective rules in advance, using only the train/test loss and the weight norm (so they cannot be circular with respect to the progress measures): see [docs/operationalizations.md](https://github.com/BurnyCoder/visualizing-grokking-modular-addition/blob/main/docs/operationalizations.md). On the paper's run they give {{num:paper.t1}}, {{num:paper.t2}} and {{num:paper.t3}}.
+The paper drew the boundaries by eye (1.4k, 9.4k, 14k). To compare runs fairly we defined objective rules in advance (their constants calibrated once on the paper's run, then frozen before our runs were analysed), using only the train/test loss and the weight norm (so they cannot be circular with respect to the progress measures): see [docs/operationalizations.md](https://github.com/BurnyCoder/visualizing-grokking-modular-addition/blob/main/docs/operationalizations.md). On the paper's run they give {{num:paper.t1}}, {{num:paper.t2}} and {{num:paper.t3}}.
 
 1. **[[dfn:phase-memorization|Memorisation]]** (0 – {{num:paper.t1}}): train loss and excluded loss fall together, test and restricted loss stay high: the network memorises without using the key frequencies.
-2. **[[dfn:phase-circuit-formation|Circuit formation]]** ({{num:paper.t1}} – {{num:paper.t2}}): excluded loss rises, restricted loss falls, the weights shrink, while train and test loss barely move. {{quote:nanda-circuit-before}}
+2. **[[dfn:phase-circuit-formation|Circuit formation]]** ({{num:paper.t1}} – {{num:paper.t2}}): excluded loss rises, restricted loss falls, the weights shrink, while the train loss barely moves and the test loss falls only gradually, from about {{num:paper.loss_test_peak}} to {{num:paper.loss_test_t2}} (still above the guessing level). {{quote:nanda-circuit-before}}
 3. **[[dfn:phase-cleanup|Cleanup]]** ({{num:paper.t2}} – {{num:paper.t3}}): the test loss suddenly drops, the weights shrink fast and the Fourier spectra become sparse: {{quote:nanda-cleanup}}
 
 The test/restricted-loss ratio shows the “lag” between having the circuit and using it cleanly, which ARENA highlights {{cite:arena152}}:

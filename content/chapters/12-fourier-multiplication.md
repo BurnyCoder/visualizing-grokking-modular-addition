@@ -8,7 +8,7 @@ We now have every ingredient to state the paper's central claim. Nanda et al. wr
 
 Fix one frequency k and write $w = w_k = 2\pi k/113$.
 
-**Step 1 — embed: numbers become angles.** Map a to $\cos(w a)$ and $\sin(w a)$, and b to $\cos(w b)$ and $\sin(w b)$. In the network this is done by the embedding matrix $W_E$ (chapter 13 shows its columns *are* such waves).
+**Step 1 — embed: numbers become angles.** Map a to $\cos(w a)$ and $\sin(w a)$, and b to $\cos(w b)$ and $\sin(w b)$. In the network this is done by the embedding matrix $W_E$ (chapter 13 shows that its rows, read as functions of the number, are mixtures of such waves).
 
 **Step 2 — combine: add the angles with the identities of chapter 9.**
 

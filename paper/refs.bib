@@ -1,6 +1,8 @@
 % refs.bib — bibliography of paper/main.typ (Typst reads BibTeX directly).
 % Global context: the same sources as content/references.yaml (the website's reference list), restricted to those the
 % paper cites; details checked against the arXiv / proceedings pages linked in each entry.
+% Entry types: Typst's IEEE style prints no year for @misc/@online/@software/@video, so arXiv-only papers are @article
+% with journal "arXiv preprint arXiv:…" and web resources are @manual (publisher + year) or @dataset.
 
 @inproceedings{nanda2023,
   author = {Neel Nanda and Lawrence Chan and Tom Lieberum and Jess Smith and Jacob Steinhardt},
@@ -11,33 +13,38 @@
   url = {https://arxiv.org/abs/2301.05217}
 }
 
-@misc{power2022,
+@article{power2022,
   author = {Alethea Power and Yuri Burda and Harri Edwards and Igor Babuschkin and Vedant Misra},
-  title = {Grokking: Generalization beyond overfitting on small algorithmic datasets},
+  title = {Grokking: Generalization Beyond Overfitting on Small Algorithmic Datasets},
+  journal = {arXiv preprint arXiv:2201.02177},
   year = {2022},
-  note = {arXiv:2201.02177},
   url = {https://arxiv.org/abs/2201.02177}
 }
 
-@misc{arena152,
+@manual{arena152,
   author = {{ARENA}},
   title = {Chapter 1.5.2: Grokking and Modular Arithmetic},
-  note = {Course pages and code, ARENA-education/ARENA\_materials, commit 85d1011; accessed October 2026},
+  publisher = {Course pages with code, GitHub ARENA-education/ARENA\_materials, commit 85d1011},
+  year = {2026},
+  month = oct,
   url = {https://learn.arena.education/chapter1_transformer_interp/32_grokking/intro}
 }
 
-@misc{paperckpt,
-  author = {Neel Nanda and Lawrence Chan and Tom Lieberum and Jess Smith and Jacob Steinhardt},
-  title = {Mainline training run of ``Progress measures for grokking'' (checkpoints and losses)},
-  year = {2023},
-  note = {Hugging Face callummcdougall/grokking\_full\_run\_data, revision 80e5dbb},
+@dataset{paperckpt,
+  author = {Callum McDougall},
+  title = {Mainline training run of {Nanda} et al. (checkpoints and losses), uploaded as grokking\_full\_run\_data},
+  publisher = {Hugging Face, revision 80e5dbb},
+  year = {2024},
+  month = jan,
   url = {https://huggingface.co/callummcdougall/grokking_full_run_data}
 }
 
-@misc{paperrepo,
+@manual{paperrepo,
   author = {Neel Nanda and Lawrence Chan and Tom Lieberum and Jess Smith and Jacob Steinhardt},
   title = {progress-measures-paper (code)},
-  year = {2023},
+  publisher = {GitHub, commit 23d2c64},
+  year = {2022},
+  month = oct,
   url = {https://github.com/mechanistic-interpretability-grokking/progress-measures-paper}
 }
 
@@ -76,19 +83,23 @@
   url = {https://arxiv.org/abs/2306.17844}
 }
 
-@misc{chughtai2023,
+@inproceedings{chughtai2023,
   author = {Bilal Chughtai and Lawrence Chan and Neel Nanda},
-  title = {A Toy Model of Universality: Reverse Engineering How Networks Learn Group Operations},
+  title = {A Toy Model of Universality: Reverse Engineering how Networks Learn Group Operations},
+  booktitle = {Proceedings of the 40th International Conference on Machine Learning (ICML)},
+  series = {Proceedings of Machine Learning Research},
+  volume = {202},
+  pages = {6243--6267},
+  publisher = {PMLR},
   year = {2023},
-  note = {arXiv:2302.03025},
-  url = {https://arxiv.org/abs/2302.03025}
+  url = {https://proceedings.mlr.press/v202/chughtai23a.html}
 }
 
-@misc{gromov2023,
+@article{gromov2023,
   author = {Andrey Gromov},
   title = {Grokking modular arithmetic},
+  journal = {arXiv preprint arXiv:2301.02679},
   year = {2023},
-  note = {arXiv:2301.02679},
   url = {https://arxiv.org/abs/2301.02679}
 }
 
@@ -108,34 +119,39 @@
   url = {https://arxiv.org/abs/2106.02997}
 }
 
-@misc{thilak2022,
+@article{thilak2022,
   author = {Vimal Thilak and Etai Littwin and Shuangfei Zhai and Omid Saremi and Roni Paiss and Joshua Susskind},
   title = {The Slingshot Mechanism: An Empirical Study of Adaptive Optimizers and the Grokking Phenomenon},
+  journal = {arXiv preprint arXiv:2206.04817},
   year = {2022},
-  note = {arXiv:2206.04817},
   url = {https://arxiv.org/abs/2206.04817}
 }
 
-@misc{pair2023,
+@manual{pair2023,
   author = {Adam Pearce and Asma Ghandeharioun and Nada Hussein and Nithum Thain and Martin Wattenberg and Lucas Dixon},
   title = {Do Machine Learning Models Memorize or Generalize?},
+  publisher = {Google PAIR Explorables},
   year = {2023},
-  note = {Google PAIR Explorables},
+  month = aug,
   url = {https://pair.withgoogle.com/explorables/grokking/}
 }
 
-@misc{welch2025,
+@manual{welch2025,
   author = {{Welch Labs}},
   title = {The most complex model we actually understand},
+  publisher = {YouTube video},
   year = {2025},
-  note = {YouTube video},
+  month = dec,
   url = {https://www.youtube.com/watch?v=D8GOeCFFby4}
 }
 
-@misc{holm1979,
+@article{holm1979,
   author = {Sture Holm},
   title = {A Simple Sequentially Rejective Multiple Test Procedure},
-  howpublished = {Scandinavian Journal of Statistics 6(2):65--70},
+  journal = {Scandinavian Journal of Statistics},
+  volume = {6},
+  number = {2},
+  pages = {65--70},
   year = {1979},
   url = {https://www.jstor.org/stable/4615733}
 }

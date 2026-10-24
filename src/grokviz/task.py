@@ -7,9 +7,9 @@ Global context: the whole input "universe" has only p² = 12,769 points, so ever
 on all of them at once and indexes train/test with boolean masks — the trick that makes the paper's
 Fourier analysis over the input grid possible (ARENA 1.5.2 calls this out in "Helper variables").
 Sources: paper Sec. 3 (https://arxiv.org/abs/2301.05217); paper code `gen_train_test`
-(https://github.com/mechanistic-interpretability-grokking/progress-measures-paper/blob/main/transformers.py);
+(https://github.com/mechanistic-interpretability-grokking/progress-measures-paper/blob/23d2c64/transformers.py);
 paper notebook cell 34 (submodule grokking-original.ipynb @38776db); ARENA utils.gen_train_test
-(https://github.com/ARENA-education/ARENA_materials/blob/main/chapter1_transformer_interp/exercises/part52_grokking_and_modular_arithmetic/utils.py).
+(https://github.com/ARENA-education/ARENA_materials/blob/85d10112344b68addebacb04909392e515dd7068/chapter1_transformer_interp/exercises/part52_grokking_and_modular_arithmetic/utils.py).
 """
 
 from __future__ import annotations  # postponed annotations

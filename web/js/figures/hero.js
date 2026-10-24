@@ -27,9 +27,10 @@ import { el, fill, follow, frameKey, note, runOf, set, watch } from "./common.js
 const P = 113;
 const SAY = { // one line per phase (phases detected by src/grokviz/phases.py)
   memorisation: "Memorisation: the training loss plunges while the test loss rises — the network fits its training sums only.",
-  "circuit formation": "Circuit formation: the test loss barely moves, yet the numbers spread onto circles — the Fourier circuit is being built.",
+  "circuit formation": "Circuit formation: the test loss stays high for most of this phase and only starts to fall near its end, while the numbers spread onto circles — the Fourier circuit is being built.",
   cleanup: "Cleanup: weight decay removes the memorising weights; the test loss collapses and every input lights up.",
   "after cleanup": "After cleanup: the network adds on every input with a few frequencies.",
+  "no circuit formation detected": "After memorisation: no circuit formation was detected in this run — its test loss never falls to a fifth of its level just after memorisation.",
 };
 
 export const figures = {

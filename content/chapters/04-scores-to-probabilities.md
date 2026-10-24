@@ -46,5 +46,5 @@ The fraction of examples whose argmax is the correct answer is the [[dfn:accurac
 Even with 100 % accuracy, the loss can always be lowered by making the logits more extreme, so [[preview:training|training]] never “finishes” — which will matter when we look at what [[preview:weight-decay|weight decay]] does in chapter 19.
 
 ::: nuance
-**Precision.** When the network is very confident, probabilities like $1 - 10^{-9}$ cannot be represented accurately in standard 32-bit floating point (it cannot distinguish numbers closer than about $1.2\times10^{-7}$ to 1). The paper's analysis code therefore computes the loss in 64-bit precision; this avoids artificial loss spikes {{cite:paperrepo}} {{cite:arena152code}}. We do the same.
+**Precision.** When the network is very confident, probabilities like $1 - 10^{-9}$ cannot be represented accurately in standard 32-bit floating point (it cannot distinguish numbers closer than about $1.2\times10^{-7}$ to 1). The paper's analysis notebook and ARENA's code therefore compute the loss in 64-bit precision, which avoids artificial loss spikes {{cite:paperrepo}} {{cite:arena152code}}; we do the same. (The loss helper in the paper's repository casts to 32-bit despite its comment; see the [errata](../errata.html).)
 :::

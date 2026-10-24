@@ -4,7 +4,7 @@
 // frequencies each run chose (the selected run's row shaded), the preregistered hypothesis results with their
 // statistics (from site/data/summary.json), each seed's value of every hypothesis metric against its preregistered
 // threshold, initial → final Gini against the random-basis null, every run's phases on one time axis, and the
-// embedding clock of every weight-decay seed played together.
+// embedding clock of every wd1 seed (λ = 1, own split) and the paper run played together.
 // Global context: turns the single-model story into a claim about the setup — does the same mechanism appear
 // in every seed, and do the controls (no weight decay, random labels) behave as predicted?
 // Sources: docs/preregistration.md (tests and thresholds); paper App. C.2 (other seeds), D.1 (weight decay).
@@ -22,7 +22,7 @@ const natural = (a, b) => a.localeCompare(b, undefined, { numeric: true }); // w
 /** Preregistered per-seed metrics and pass conditions (docs/preregistration.md; values from reports/tables/hypotheses.json). */
 const METRICS = [
   { key: "H1_delta", title: "H1: test-loss drop minus restricted-loss drop (steps)", pass: (v) => v > 0, line: 0, log: false, side: "right of the line" },
-  { key: "H2_ratio", title: "H2: excluded loss at t2 ÷ at t1", pass: (v) => v >= 10, line: 10, log: true, side: "right of the line" },
+  { key: "H2_ratio", title: "H2: excluded loss at t2 ÷ at t1", pass: (v) => v > 10, line: 10, log: true, side: "right of the line" },
   { key: "H4_key_min_ratio", title: "H4 (i): loss ratio, removing the least important key frequency", pass: (v) => v >= 100, line: 100, log: true, side: "right of the line" },
   { key: "H4_nonkey_max_ratio", title: "H4 (ii): loss ratio, removing the most important other frequency", pass: (v) => v <= 2, line: 2, log: true, side: "left of the line" },
   { key: "H4_keep_ratio", title: "H4 (iii): loss ratio, keeping only the key frequencies", pass: (v) => v <= 1.5, line: 1.5, log: true, side: "left of the line" },
@@ -86,7 +86,7 @@ export const figures = {
       const ids = Object.keys(per).sort(natural), grid = el(body, "div", "small-multiples");
       grid.style.gridTemplateColumns = "repeat(auto-fill, minmax(260px, 1fr))";
       const plots = METRICS.map((m) => { const f = el(grid, "figure"); el(f, "figcaption", "", m.title); return new Plot(f, { height: 70 + 16 * ids.length }).on("plotly_click", (ev) => set({ run: ev.points[0].y })); });
-      note(body).textContent = "One dot per weight-decay seed; filled dots meet the preregistered condition (docs/preregistration.md), hollow ones do not; the dotted line is the threshold. Click a dot to select that run everywhere.";
+      note(body).textContent = "One dot per wd1 seed (λ = 1, own split); filled dots meet the preregistered condition (docs/preregistration.md), hollow ones do not; the dotted line is the threshold. Click a dot to select that run everywhere.";
       watch(body, ["run"], async (s) => {
         await Promise.all(METRICS.map((m, j) => {
           const xs = ids.map((id) => per[id][m.key]), ok = xs.map(m.pass);
@@ -170,7 +170,7 @@ export const figures = {
           t.cp.draw(clockScene(t.xy, t.r.key_freqs[0], planeRadius(a, 0, `${t.r.id}|geo_we_planes|0`), [[c, "--accent", "a+b"]]));
           t.f.classList.toggle("selected", t.r.id === s.run);
         }
-        info.textContent = `${label}: every weight-decay seed (and the paper's run) at the same step, each number's embedding on the plane of the run's first key frequency, coloured by its clock position. Different seeds choose different frequencies, but all build the same circle. Click a clock to select that run.`;
+        info.textContent = `${label}: every wd1 seed (λ = 1, own split) and the paper's run at the same step, each number's embedding on the plane of the run's first key frequency, coloured by its clock position. Different seeds choose different frequencies, but all build the same circle. Click a clock to select that run.`;
       }, { minGap: 100 });
     },
   },
@@ -180,7 +180,7 @@ export const figures = {
       const h = (await summary())["hypotheses.verdict"]?.value;
       if (!h) { body.innerHTML = '<p class="fig-note">Hypothesis tests not computed yet.</p>'; return; }
       // one-line statements of the preregistered hypotheses (docs/preregistration.md)
-      const claim = { H1: "restricted loss falls before test loss", H2: "excluded loss rises ≥ 10× during circuit formation",
+      const claim = { H1: "restricted loss falls before test loss", H2: "excluded loss rises > 10× during circuit formation",
         H3: "Fourier sparsity is learned and specific to the Fourier basis", H4: "key frequencies necessary, all others dispensable",
         H5: "weight decay is necessary for grokking" };
       const rows = Object.entries(h).map(([k, v]) => `<tr><td>${k}: ${claim[k] ?? ""}</td><td>${v.successes !== undefined ? `${v.successes}/${v.n} seeds` : `grokked: ${v.wd1_grokked}/${v.wd1_n} (λ=1) vs ${v.wd0_grokked}/${v.wd0_n} (λ=0)`}</td><td>${v.p.toPrecision(2)}</td><td>${v.p_holm.toPrecision(2)}</td><td>${v.supported ? "supported" : "<strong>not supported</strong>"}</td></tr>`).join("");

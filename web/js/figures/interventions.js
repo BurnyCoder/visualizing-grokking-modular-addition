@@ -142,13 +142,16 @@ export const figures = {
           { x: cs, y: softmax(clean), type: "scatter", mode: "lines", name: `clean input (${s.a}, ${s.b})`, line: { color: cssVar("--train") } },
           { x: cs, y: softmax(patched), type: "scatter", mode: "lines", name: `key part of a swapped with a′ = ${s.ap}`, line: { color: cssVar("--test") } },
         ], { xaxis: { title: { text: "answer c" } }, yaxis: { title: { text: "probability" }, range: [0, 1.02] }, hovermode: "x unified" });
-        info.textContent = `Expected answer after the swap: ${s.ap} + ${s.b} = ${(s.ap + s.b) % p} (mod ${p}); original answer ${(s.a + s.b) % p}. Step ${net.step}.`;
+        info.textContent = `Expected answer after the swap: ${s.ap} + ${s.b} = ${(s.ap + s.b) % p} (mod ${p}); original answer ${(s.a + s.b) % p}. Step ${net.step}.${s.a === s.b ? " Here b = a, so b's embedding is patched too (the demo edits a's column of W_E; patching.py patches position 0 only)." : ""}`;
       }, { dedupe: frameKey(ds, "weight_steps", "a", "b", "ap") });
     },
   },
 };
 
-/** Logits after replacing the key-frequency component of token a's embedding by token a′'s (JS version of patching.py). */
+/**
+ * Logits after replacing the key-frequency component of token a's embedding by token a′'s (JS version of patching.py).
+ * It edits column a of W_E, so when b = a the token at position 1 is patched as well; patching.py patches position 0 only.
+ */
 export function patchedLogits(net, freqs, a, ap, b) {
   const { d, V, p } = net;
   const F = fourierBasis(p);
